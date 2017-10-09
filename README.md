@@ -5,8 +5,6 @@ Orders management automation.
 
 Author: Ashton J. Hanisch < <ajhanisch@gmail.com> >  
   
-Disclaimer: I do not claim to be a PowerShell expert. I do know there can be improvements made in the code itself to improve flow and functionality. I would be more than happy to hear about any constructive critiques the experts out there amongst us would have and would love to work through any proposed solutions.  
-  
 # **SYNOPSIS**  
 Automates splitting of orders file, creates UIC/SSN based folder structure, moves orders to SSN folders, moves orders to historical folders, backs up folder structure, assigns permissions to folders, notifies users of newly published and organized orders.
   
