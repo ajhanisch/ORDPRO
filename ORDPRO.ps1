@@ -490,7 +490,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
             Write-Host "[+] Specific format $($format) not currently handled, skipping." -ForegroundColor Cyan
             continue
         }
-        elseif($($format) -eq '172')
+        elseif($($format) -eq '172' -and !($($following_request_exists)))
         {
             Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
 
@@ -569,7 +569,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
             Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
             #>
         }
-        elseif($($format) -eq '700' -and $($following_order_exists)) # Amendment order for "700" and "700 *" formats
+        elseif($($format) -eq '700' -and $($following_order_exists) -and !($($following_request_exists))) # Amendment order for "700" and "700 *" formats
         {
             Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
 
@@ -627,7 +627,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
             Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
             #>
         }
-        elseif($($format) -eq '705') # Revoke.
+        elseif($($format) -eq '705' -and !($($following_request_exists))) # Revoke.
         {
             Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
 
@@ -685,7 +685,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
             Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
             #>
         }
-        elseif($($format) -eq '290') # Pay order only.
+        elseif($($format) -eq '290' -and !($($following_request_exists))) # Pay order only.
         {
             Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
 
@@ -760,7 +760,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
             Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
             #>
         }
-        elseif($($format) -eq '296' -or $($format) -eq '282' -or $($format) -eq '294' -or $($format) -eq '284') # 296 AT Orders // 282 Unknown // 294 Full Time National Guard Duty - Operational Support (FTNGD-OS) // 284 Unknown.
+        elseif($($format) -eq '296' -or $($format) -eq '282' -or $($format) -eq '294' -or $($format) -eq '284' -and !($($following_request_exists))) # 296 AT Orders // 282 Unknown // 294 Full Time National Guard Duty - Operational Support (FTNGD-OS) // 284 Unknown.
         {
             Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
 
