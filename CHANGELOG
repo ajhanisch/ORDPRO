@@ -1,6 +1,15 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+version: 0.2
+date: 10/10/2017
+CHANGES
+    - added multiple parameter functionality for main order and cert file handing
+    - added functions for each action of script
+    - renamed and moved variables to be more consistant and make more sense
+    - added progress bar display for main order and cert file handling
+    - added cert file handling
+------------------------------------
 version: 0.1
 date: 10/2/2017
 CHANGES
