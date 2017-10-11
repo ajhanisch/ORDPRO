@@ -560,8 +560,6 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
             Write-Host "[#] Created: $($orders_created)." -ForegroundColor Yellow
 
-            Read-Host -Prompt "Enter to continue ..."
-
             <#
             $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
             $estimated_time = (($($total_to_create) - $($documents_created)) * 0.1 / 60)
@@ -618,7 +616,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
             $orders_created ++
 
-            Write-Host "[#] Created: $($orders_created)." -ForegroundColor Yellow
+            Write-Host "[#] Created: $($orders_created) / $($total_to_create)." -ForegroundColor Yellow
 
             <#
             $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -676,7 +674,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
             $orders_created ++
 
-            Write-Host "[#] Created: $($orders_created)." -ForegroundColor Yellow
+            Write-Host "[#] Created: $($orders_created) / $($total_to_create)." -ForegroundColor Yellow
 
             <#
             $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -751,7 +749,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
             $orders_created ++
 
-            Write-Host "[#] Created: $($orders_created)." -ForegroundColor Yellow
+            Write-Host "[#] Created: $($orders_created) / $($total_to_create)." -ForegroundColor Yellow
 
             <#
             $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -828,7 +826,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
             $orders_created ++
 
-            Write-Host "[#] Created: $($orders_created)." -ForegroundColor Yellow
+            Write-Host "[#] Created: $($orders_created) / $($total_to_create)." -ForegroundColor Yellow
 
             <#
             $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -918,7 +916,7 @@ function Parse-OrdersCertificate($tmp_directory, $exclude_directories)
 
         $orders_created ++
 
-        Write-Host "[#] Created: $($orders_created)." -ForegroundColor Yellow
+        Write-Host "[#] Created: $($orders_created) / $($total_to_create)." -ForegroundColor Yellow
 
         <#
         $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
