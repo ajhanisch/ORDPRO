@@ -157,7 +157,7 @@ function Create-RequiredDirectories($directories)
             else
             {
                 Write-Host "[!] $($directory) creation failed." ([char]7) -ForegroundColor Red
-                #throw "[!] $($directory) creation failed."
+                throw "[!] $($directory) creation failed."
             }
         }
         else
@@ -187,7 +187,7 @@ function Move-OriginalToHistorical($files_orders_original, $master_history_edite
             else
             {
                 Write-Host "[!] $($file.BaseName) move to $($master_history_unedited) failed." ([char]7) -ForegroundColor Red
-                #throw "[!] $($file.BaseName) move to $($master_history_unedited) failed."
+                throw "[!] $($file.BaseName) move to $($master_history_unedited) failed."
             }
         }
     }
@@ -221,7 +221,7 @@ function Split-OrdersMain($tmp_directory, $files_orders_m_prt, $regex_beginning_
                 else
                 {
                     Write-Host "[!] $($out_file) file creation failed." ([char]7) -ForegroundColor Red
-                    #throw "[!] $($out_file) file creation failed."
+                    throw "[!] $($out_file) file creation failed."
                 }
             }
         }
@@ -256,7 +256,7 @@ function Split-OrdersCertificate($tmp_directory, $files_orders_c_prt, $regex_end
                 else
                 {
                     Write-Host "[!] $($out_file) file creation failed." ([char]7) -ForegroundColor Red
-                    #throw "[!] $($out_file) file creation failed." 
+                    throw "[!] $($out_file) file creation failed." 
                 }
             }
         }
@@ -352,7 +352,7 @@ $old_fouo_6 = @"
             else
             {
                 Write-Host "[!] $($file.Name) editing failed." ([char]7) -ForegroundColor Red
-                #throw "[!] $($file.Name) editing failed."
+                throw "[!] $($file.Name) editing failed."
             }
         }
         else
@@ -404,7 +404,7 @@ $old_header_4 = @"
             else
             {
                 Write-Host "[!] $($file.Name) editing failed." ([char]7) -ForegroundColor Red
-                #throw "[!] $($file.Name) editing failed."
+                throw "[!] $($file.Name) editing failed."
             }
         }
         else
@@ -430,7 +430,7 @@ function Combine-OrdersMain($tmp_directory, $run_date)
     else
     {
         Write-Host "[!] Combining .mof files failed." ([char]7) -ForegroundColor Red
-        #throw "[!] Combining .mof files failed."
+        throw "[!] Combining .mof files failed."
     }
 }
 
@@ -450,7 +450,7 @@ function Combine-OrdersCertificate($tmp_directory, $run_date)
     else
     {
         Write-Host "[!] Combining .cof files failed." ([char]7) -ForegroundColor Red
-        #throw "[!] Combining .cof files failed."
+        throw "[!] Combining .cof files failed."
     }
 }
 
@@ -950,7 +950,7 @@ function Work-Magic($uic_directory, $soldier_directory, $uic_soldier_order_file_
         {
             Write-Host "[!] Failed to process for $($last_name) $($first_name) $($uic)" ([char]7) -ForegroundColor Red
             Write-Host "[!] $($uic_directory) creation failed." ([char]7) -ForegroundColor Red
-            #throw "[!] $($uic_directory) creation failed."
+            throw "[!] $($uic_directory) creation failed."
         }
     }
 
@@ -971,7 +971,7 @@ function Work-Magic($uic_directory, $soldier_directory, $uic_soldier_order_file_
         {
             Write-Host "[!] Failed to process for $($last_name) $($first_name) $($uic)" ([char]7) -ForegroundColor Red
             Write-Host "[!] $($soldier_directory) creation failed." ([char]7) -ForegroundColor Red
-            #throw "[!] $($soldier_directory) creation failed."
+            throw "[!] $($soldier_directory) creation failed."
         }
     }
 
@@ -992,7 +992,7 @@ function Work-Magic($uic_directory, $soldier_directory, $uic_soldier_order_file_
         {
             Write-Host "[!] Failed to process for $($last_name) $($first_name) $($uic)" ([char]7) -ForegroundColor Red
             Write-Host "[!] $($soldier_directory)\$($uic_soldier_order_file_name) creation failed." ([char]7) -ForegroundColor Red
-            #throw "[!] $($soldier_directory)\$($uic_soldier_order_file_name) creation failed."
+            throw "[!] $($soldier_directory)\$($uic_soldier_order_file_name) creation failed."
         }
     }
 }
@@ -1011,7 +1011,7 @@ function Start-CleanUpOrdersMain($tmp_directory, $exclude_directories)
         else
         {
             Write-Host "[!] Failed to remove $($file)." ([char]7) -ForegroundColor Red
-            #throw "[!] Failed to remove $($file)."
+            throw "[!] Failed to remove $($file)."
         }
     }
 }
@@ -1031,7 +1031,7 @@ function Start-CleanUpOrdersCertificate($tmp_directory, $exclude_directories)
         else
         {
             Write-Host "[!] Failed to remove $($file)." ([char]7) -ForegroundColor Red
-            #throw "[!] Failed to remove $($file)."
+            throw "[!] Failed to remove $($file)."
         }
     }
 }
@@ -1072,7 +1072,7 @@ elseif($dir_create)
         Write-Host ""
         Write-Host "[!] Directory creation failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
         Write-Host ""
-        #exit 1
+        exit 1
     }
 
     # Stop logging
@@ -1101,7 +1101,7 @@ elseif($backups)
         Write-Host ""
         Write-Host "[!] Backing up original orders failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
         Write-Host ""
-        #exit 1
+        exit 1
     }
 
     # Stop logging
@@ -1130,7 +1130,7 @@ elseif($split_main)
         Write-Host ""
         Write-Host "[!] Splitting '*m.prt' order file(s) into individual order files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
         Write-Host ""
-        #exit 1
+        exit 1
     }
 
     # Stop logging
@@ -1159,7 +1159,7 @@ elseif($split_cert)
         Write-Host ""
         Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
         Write-Host ""
-        #exit 1
+        exit 1
     }
 
     # Stop logging
@@ -1188,7 +1188,7 @@ elseif($edit_main)
         Write-Host ""
         Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
         Write-Host ""
-        #exit 1
+        exit 1
     }
 
     # Stop logging
@@ -1217,7 +1217,7 @@ elseif($edit_cert)
         Write-Host ""
         Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
         Write-Host ""
-        #exit 1
+        exit 1
     }
 
     # Stop logging
@@ -1246,7 +1246,7 @@ elseif($combine_main)
         Write-Host ""
         Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
         Write-Host ""
-        #exit 1
+        exit 1
     }
 
     # Stop logging
@@ -1275,7 +1275,7 @@ elseif($combine_cert)
         Write-Host ""
         Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
         Write-Host ""
-        #exit 1
+        exit 1
     }
 
     # Stop logging
@@ -1304,7 +1304,7 @@ elseif($magic_main)
         Write-Host ""
         Write-Host "[!] Magic on .mof failed?! Impossible. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
         Write-Host ""
-        #exit 1
+        exit 1
     }
 
     # Stop logging
@@ -1333,7 +1333,7 @@ elseif($magic_cert)
         Write-Host ""
         Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
         Write-Host ""
-        #exit 1
+        exit 1
     }
 
     # Stop logging
