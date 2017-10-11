@@ -59,7 +59,7 @@ PARAMETERS
 param(
     [switch]$h,
     [switch]$dir_create,
-    [switch]$bacukups,
+    [switch]$backups,
     [switch]$split_main,
     [switch]$split_cert,
     [switch]$edit_main,
@@ -896,7 +896,7 @@ elseif($dir_create)
     # Stop logging
     Stop-Transcript
 }
-elseif($bacukups)
+elseif($backups)
 {
     # Start logging
     Start-Transcript -Path $($log_path)
