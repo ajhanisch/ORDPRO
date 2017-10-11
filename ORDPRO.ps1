@@ -744,8 +744,6 @@ function Parse-OrdersCertificate($tmp_directory, $exclude_directories)
         $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
 
         Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
-
-        Start-Sleep -Seconds 5
     }
 }
 
