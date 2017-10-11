@@ -30,7 +30,7 @@
 
    AUTHOR: Ashton J. Hanisch
 
-   VERSION: 0.1
+   VERSION: 0.2
 
    TROUBLESHOOTING: All script output will be in .\tmp\logs folder. Should you have any problems script use, email ajhanisch@gmail.com with a description of your issue and the log file that is associated with your problem.
 
