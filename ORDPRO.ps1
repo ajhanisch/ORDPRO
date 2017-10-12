@@ -51,6 +51,7 @@
             Ashton Hanisch  - (10/6/2017)  [x] Progress bar with estimated time. Similar to YASP progress bar notification information.
                             - (10/6/2017)  [] Output summary results of orders parsed.
                             - (10/10/2017) [] Handle all formats not currently handled.
+                            - (10/11/2017) [] Have orders follow soldier as they move UIC's
 #>
 
 <#
@@ -87,12 +88,12 @@ $log_directory = "$($tmp_directory)\LOGS"
 ARRAYS
 #>
 $directories = @("$($master_history_edited)","$($master_history_unedited)","$($uics_directory)","$($tmp_directory)", "$($log_directory)")
+$
 
 <#
 HASH TABLES
 #>
 $months = @{"January" = "01"; "February" = "02"; "March" = "03"; "April" = "04"; "May" = "05"; "June" = "06"; "July" = "07"; "August" = "08"; "September" = "09"; "October" = "10"; "November" = "11"; "December" = "12";}
-$totals = @{"Success" = ""; "Skipped" = ""; "Failed" = ""; "Total" = "";}
 
 <#
 REGEX MAGIX
@@ -127,6 +128,7 @@ $exclude_directories = '$($master_history_edited)|$($master_history_unedited)'
 $files_orders_original = Get-ChildItem -Path $current_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq ".prt" }
 $files_orders_m_prt = Get-ChildItem -Path $current_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.FullName -like "*m.prt" }
 $files_orders_c_prt = Get-ChildItem -Path $current_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.FullName -like "*c.prt" }
+[console]::TreatControlCAsInput = $true
 
 <#
 FUNCTIONS
@@ -616,7 +618,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
             $orders_created ++
 
-            Write-Host "[#] Created: $($orders_created) / $($total_to_create)." -ForegroundColor Yellow
+            Write-Host "[#] Created: $($orders_created)/$($total_to_create)." -ForegroundColor Yellow
 
             <#
             $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -674,7 +676,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
             $orders_created ++
 
-            Write-Host "[#] Created: $($orders_created) / $($total_to_create)." -ForegroundColor Yellow
+            Write-Host "[#] Created: $($orders_created)/$($total_to_create)." -ForegroundColor Yellow
 
             <#
             $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -749,7 +751,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
             $orders_created ++
 
-            Write-Host "[#] Created: $($orders_created) / $($total_to_create)." -ForegroundColor Yellow
+            Write-Host "[#] Created: $($orders_created)/$($total_to_create)." -ForegroundColor Yellow
 
             <#
             $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -826,7 +828,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
             $orders_created ++
 
-            Write-Host "[#] Created: $($orders_created) / $($total_to_create)." -ForegroundColor Yellow
+            Write-Host "[#] Created: $($orders_created)/$($total_to_create)." -ForegroundColor Yellow
 
             <#
             $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -1034,6 +1036,34 @@ function Start-CleanUpOrdersCertificate($tmp_directory, $exclude_directories)
     }
 }
 
+function Process-KeyboardCommands()
+{
+    if ([console]::KeyAvailable)
+    {
+        $key = [system.console]::readkey($true)
+
+        if(($key.modifiers -band [consolemodifiers]"control") -and ($key.key -eq "P"))
+        {
+            Write-Host "[-] Pausing at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)." -ForegroundColor White
+
+            Pause
+
+		    Write-Host "[-] Resuming at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)." -ForegroundColor White
+        }
+        elseif(($key.modifiers -band [consolemodifiers]"control") -and ($key.key -eq "Q" ))
+        {
+            $response = Read-Host -Prompt "Are you sure you want to exit?"
+            
+            switch($response)
+            {
+                { @("y", "Y") -contains $_ } { "Terminating at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."; exit 0 }
+                { @("n", "N") -contains $_ } { continue }
+                default { "Response not determined." }
+            }
+        }
+    }
+}
+
 # Output summary results of parsing? Send summary results of parsing?
 
 <#
@@ -1059,6 +1089,7 @@ elseif($dir_create)
         Write-Host "[-] Creating required directories." -ForegroundColor White
 
         Create-RequiredDirectories -directories $($directories)
+        Process-KeyboardCommands
     
         if($?)
         {
@@ -1088,6 +1119,7 @@ elseif($backups)
         Write-Host "[-] Backing up original orders file." -ForegroundColor White
 
         Move-OriginalToHistorical -files_orders_original $($files_orders_original) -master_history_edited $($master_history_edited) -master_history_unedited $($master_history_unedited)
+        Process-KeyboardCommands
 
         if($?)
         {
@@ -1117,6 +1149,7 @@ elseif($split_main)
         Write-Host "[-] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor White
 
         Split-OrdersMain -tmp_directory $($tmp_directory) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
+        Process-KeyboardCommands
     
         if($?)
         {
@@ -1146,6 +1179,7 @@ elseif($split_cert)
         Write-Host "[-] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor White
 
         Split-OrdersCertificate -tmp_directory $($tmp_directory) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
+        Process-KeyboardCommands
     
         if($?)
         {
@@ -1175,6 +1209,7 @@ elseif($edit_main)
         Write-Host "[-] Editing orders '*m.prt' files." -ForegroundColor White
 
         Edit-OrdersMain -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main)
+        Process-KeyboardCommands
 
         if($?)
         {
@@ -1204,6 +1239,7 @@ elseif($edit_cert)
         Write-Host "[-] Editing orders '*c.prt' files." -ForegroundColor White
 
         Edit-OrdersCertificate -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert)
+        Process-KeyboardCommands
 
         if($?)
         {
@@ -1233,6 +1269,7 @@ elseif($combine_main)
         Write-Host "[-] Combining .mof orders files." -ForegroundColor White
 
         Combine-OrdersMain -tmp_directory $($tmp_directory) -run_date $($run_date)
+        Process-KeyboardCommands
 
         if($?)
         {
@@ -1262,6 +1299,7 @@ elseif($combine_cert)
         Write-Host "[-] Combining .cof orders files." -ForegroundColor White
 
         Combine-OrdersCertificate -tmp_directory $($tmp_directory) -run_date $($run_date)
+        Process-KeyboardCommands
 
         if($?)
         {
@@ -1291,6 +1329,7 @@ elseif($magic_main)
         Write-Host "[-] Working magic on .mof files now." -ForegroundColor White
 
         Parse-OrdersMain -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_order_amdend_revoke_parse_orders_main $($regex_order_number_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
+        Process-KeyboardCommands
 
         if($?)
         {
@@ -1320,6 +1359,7 @@ elseif($magic_cert)
         Write-Host "[-] Working magic on .cof files." -ForegroundColor White
 
         Parse-OrdersCertificate -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories)
+        Process-KeyboardCommands
 
         if($?)
         {
@@ -1349,6 +1389,7 @@ elseif($clean_main)
         Write-Host "[-] Cleaning up .mof files." -ForegroundColor White
 
         Start-CleanUpOrdersMain -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories)
+        Process-KeyboardCommands
 
         if($?)
         {
@@ -1378,6 +1419,7 @@ elseif($clean_cert)
         Write-Host "[-] Cleaning up .cof files." -ForegroundColor White
 
         Start-CleanUpOrdersCertificate -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories)
+        Process-KeyboardCommands
 
         if($?)
         {
