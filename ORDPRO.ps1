@@ -537,7 +537,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
             <#
             $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
-            $estimated_time = (($($total_to_create) - $($documents_created)) * 0.1 / 60)
+            $estimated_time = (($($total_to_create) - $(orders_created)) * 0.1 / 60)
             $formatted_estimated_time = [math]::Round($estimated_time,2)
             $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
 
@@ -808,7 +808,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
             <#
             $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
-            $estimated_time = (($($total_to_create) - $($documents_created)) * 0.1 / 60)
+            $estimated_time = (($($total_to_create) - $($orders_created)) * 0.1 / 60)
             $formatted_estimated_time = [math]::Round($estimated_time,2)
             $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
 
