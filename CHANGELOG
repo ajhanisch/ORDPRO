@@ -6,6 +6,7 @@ date: 10/11/2017
 CHANGES
 - refined multiple types of form handling
 - refined variable capturing for various form handling functions
+- added keyboard processing functionality to include ability to pause and resume script at anytime during processing
 ------------------------------------
 version: 0.2
 date: 10/10/2017
