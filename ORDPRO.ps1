@@ -5,18 +5,20 @@
    Script designed to assist in management and processing of orders given in the format of a single file containing numerous orders. The script begins by splitting each order into individual orders. It determines what folders need to be created based on UIC and SSN information parsed from each order. It creates folders for each UIC and SSN and places orders in appropriate SSN folder. During this time it also creates historical backups of each order parsed for back and redundancy. After this it will assign permissions to appropiate groups on each UIC and SSN folder. When it has finished this and cleaned up, it will notify appropriate users and groups of newly published orders.
 .PARAMETER h
    Help page. Alias: 'help'. This parameter tells the script you want to learn more about it. It will display this page after running the command 'Get-Help .\ORDPRO.ps1 -Full' for you.
+.PARAMETER v
+   Version information. Alias: 'version'. This parameter tells the script you want to check its version number.
 .PARAMETER dir_create
-   Directory creation. Alias: 'd'. This parameter tells the script to create the required directories for the script to run. Directories created are ".\MASTER-HISTORY\{EDITED}{NONEDITED}" ".\UICS" ".\TMP".
+   Directory creation. Alias: 'd'. This parameter tells the script to create the required directories for the script to run. Directories created are ".\MASTER-HISTORY\{EDITED}{NONEDITED}" ".\UICS" ".\TMP\{___LOGS}{__MOF}{__COF}".
 .PARAMETER backups
    Backup original order files. Alias: 'b'. This parameter tells the script to create backups of all files in current directory. Backups all files with ".prt" extension in current directory to ".\MASTER-HISTORY\NONEDITED" directory.
 .PARAMETER split_main
-   Split main order files with "*m.prt" name. Alias: 'sM'. This parameter tells the script to split the main "*m.prt" file into individual orders. Individual order files are split to ".\TMP\{n}.mof" files for editing.
+   Split main order files with "*m.prt" name. Alias: 'sM'. This parameter tells the script to split the main "*m.prt" file into individual orders. Individual order files are split to ".\TMP\__MOF\{run_date}_{n}.mof" files for editing.
 .PARAMETER split_cert
-   Split certificate order files with "*c.prt" name. Alias: 'sC'. This parameter tells the script to split the main "*c.prt" file into individual certificate orders. Individual certificate orders files are split to ".\TMP\{n}.cof" files for editing.
+   Split certificate order files with "*c.prt" name. Alias: 'sC'. This parameter tells the script to split the main "*c.prt" file into individual certificate orders. Individual certificate orders files are split to ".\TMP\__COF\{run_date}_{n}.cof" files for editing.
 .PARAMETER edit_main
-   Edit main order files. Alias: 'eM'. This parameter tells the script to edit the individual ".\TMP\{n}.mof" files to be ready to be combined.
+   Edit main order files. Alias: 'eM'. This parameter tells the script to edit the individual ".\TMP\__MOF\{run_date}_{n}.mof" files to be ready to be combined.
 .PARAMETER edit_cert
-   Edit certificate order files. Alias: 'eC'. This parameter tells the script to edit the individual ".\TMP\{n}.cof" files to be ready to be combined.
+   Edit certificate order files. Alias: 'eC'. This parameter tells the script to edit the individual ".\TMP\__COF\{run_date}_{n}.cof" files to be ready to be combined.
 .PARAMETER combine_main
    Combine main order files. Alias: 'cM'. This parameter tells the script to combine the edited main order files into a single document to be used at a later date.
 .PARAMETER combine_cert
@@ -24,11 +26,13 @@
 .PARAMETER magic_main
    Magic work on main orders. TAlias: 'mM'. his parameter tells the script to parse the split main order files, create directory structure based on parsed data, and put orders in appropriate ".\UICS\UIC\SSN" folders.
 .PARAMETER magic_cert
-   Magic work on certificate orders. Alias: 'mC'. This parameter tells the script to parse the split certificate order files, create directory structure based on parsed data, and put orders in appropriate ".\UICS\UIC\SSN" folders.
+   Magic work on certificate orders. Alias: 'mC'. This parameter tells the script to parse the split certificate order files, create directory structure based on parsed data, and put orders in appropriate ".\UICS\UIC\SSN" folders. If you are not using the 'all' parameter, make sure to run 'magic_main' or 'mM' before this parameter.
 .PARAMETER clean_main
-   Cleanup main order files. Alias: 'xM'. This parameter tells the script to cleanup the ".\TMP" directory of all {n}.mof files.
+   Cleanup main order files. Alias: 'xM'. This parameter tells the script to cleanup the ".\TMP\__MOF" directory of all "\TMP\__MOF\{run_date}_{n}.mof" files.
 .PARAMETER clean_cert
-   Cleanup certificate order files. Alias: 'xC'. This parameter tells the script to cleanup the ".\TMP" directory of all {n}.cof files.
+   Cleanup certificate order files. Alias: 'xC'. This parameter tells the script to cleanup the ".\TMP" directory of all "\TMP\__COF\{run_date}_{n}.cof" files.
+.PARAMETER clean_uics
+   Cleanup UICS folder. Alias: 'xU'. This parameter tells the script to cleanup the ".\UICS" directory of all UIC folders. This parameter is NOT used when 'all' is used. This is typically only for development and administrative use.
 .PARAMETER all
    All parameters. Alias: 'a'. This parameter tells the script to run all required parameters needed to be successful. Most common parameter to those new to using this script.
 .INPUTS
@@ -40,13 +44,11 @@
 
    AUTHOR: Ashton J. Hanisch
 
-   VERSION: 0.4
+   TROUBLESHOOTING: All script output will be in ".\TMP\___LOGS" folder. Should you have any problems script use, email ajhanisch@gmail.com with a description of your issue and the log file that is associated with your problem.
 
-   TROUBLESHOOTING: All script output will be in .\tmp\logs folder. Should you have any problems script use, email ajhanisch@gmail.com with a description of your issue and the log file that is associated with your problem.
+   SUPPORT: For any issues, comments, concerns, ideas, contributions, etc. to any part of this script or its functionality, reach out to me at ajhanisch@gmail.com. I am open to any thoughts you may have to make this work better for you or things you think are broken or need to be different. I will ensure to give credit where credit is due for any contributions or improvement ideas that are shared.
 
-   SUPPORT: For any issues, comments, concerns, ideas, contributions, etc. to any part of this script or its functionality, reach out to me at ajhanisch@gmail.com. I am open to any thoughts you may have to make this work better for you or things you think are broken or need to be different. I will ensure to give credit where credit is due for any contributions or improvement ideas that are shared with me in the "Credits and Acknowledgements" section in the README.txt file.
-
-   UPDATES: To check out any updates or revisions made to this script check out the updated README.txt included with this script.
+   UPDATES: To check out any updates or revisions made to this script check out the updated CHANGELOG file with this script.
    
    WISHLIST: 
             Warren Hofmann  - * - [x] Handle *c.prt files
@@ -75,9 +77,12 @@ param(
     [switch]$h,
 
     [parameter()]
+    [alias('version')]
+    [switch]$v,
+
+    [parameter()]
     [alias('d')]
     [switch]$dir_create,
-
 
     [parameter()]
     [alias('b')]
@@ -124,6 +129,10 @@ param(
     [switch]$clean_cert,
 
     [parameter()]
+    [alias('xU')]
+    [switch]$clean_uics,
+
+    [parameter()]
     [alias('a')]
     [switch]$all
 )
@@ -132,16 +141,20 @@ param(
 DIRECTORIES
 #>
 $current_directory = (Get-Item -Path ".\" -Verbose).FullName
-$master_history_edited = "$($current_directory)\MASTER-HISTORY\EDITED"
-$master_history_unedited = "$($current_directory)\MASTER-HISTORY\UNEDITED"
 $uics_directory = "$($current_directory)\UICS"
 $tmp_directory = "$($current_directory)\TMP"
-$log_directory = "$($tmp_directory)\LOGS"
+$master_history_edited = "$($current_directory)\MASTER-HISTORY\EDITED"
+$master_history_unedited = "$($current_directory)\MASTER-HISTORY\UNEDITED"
+$mof_directory = "$($tmp_directory)\__MOF"
+$mof_directory_original_splits = "$($mof_directory)\__ORIGINALSPLITS"
+$cof_directory = "$($tmp_directory)\__COF"
+$cof_directory_original_splits = "$($cof_directory)\__ORIGINALSPLITS"
+$log_directory = "$($tmp_directory)\___LOGS"
 
 <#
 ARRAYS
 #>
-$directories = @("$($master_history_edited)","$($master_history_unedited)","$($uics_directory)","$($tmp_directory)", "$($log_directory)")
+$directories = @("$($uics_directory)","$($tmp_directory)", "$($master_history_edited)","$($master_history_unedited)", "$($mof_directory)", "$($cof_directory)", "$($log_directory)", "$($mof_directory_original_splits)", "$($cof_directory_original_splits)")
 
 <#
 HASH TABLES
@@ -172,19 +185,18 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
+$version = '0.5'
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
-$log_path = "$($log_directory)\$($run_date).log"
-$error_path = "$($log_directory)\$($run_date)_errors.log"
 $script_name = $($MyInvocation.MyCommand.Name)
 $year_prefix = (Get-Date -Format yyyy).Substring(0,2)
-$exclude_directories = '$($master_history_edited)|$($master_history_unedited)'
-$files_orders_original = Get-ChildItem -Path $current_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq ".prt" }
-$files_orders_m_prt = Get-ChildItem -Path $current_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.FullName -like "*m.prt" }
-$files_orders_c_prt = Get-ChildItem -Path $current_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.FullName -like "*c.prt" }
+$exclude_directories = '$($master_history_edited)|$($master_history_unedited)|$($mof_directory_original_splits)|$($cof_directory_original_splits)'
+$files_orders_original = (Get-ChildItem -Path $current_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq ".prt" })
+$files_orders_m_prt = (Get-ChildItem -Path $current_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.FullName -like "*m.prt" })
+$files_orders_c_prt = (Get-ChildItem -Path $current_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.FullName -like "*c.prt" })
 
 if(Test-Path variable:global:psISE)
 {
-    Write-Host "[-] Working in PowerShell ISE. Unable to use administrative commands while using PowerShell ISE." -ForegroundColor White
+    Write-Host "[#] Working in PowerShell ISE. Unable to use administrative commands while using PowerShell ISE." -ForegroundColor Yellow
 }
 else
 {
@@ -203,7 +215,7 @@ function Create-RequiredDirectories($directories)
         if(!(Test-Path $($directory)))
         {
             Write-Host "[#] $($directory) not created. Creating now." -ForegroundColor Yellow
-            New-Item -ItemType Directory -Path $($directory) -ErrorAction SilentlyContinue > $null
+            New-Item -ItemType Directory -Path $($directory) > $null
 
             if($?)
             {
@@ -258,16 +270,40 @@ function Move-OriginalToHistorical($current_directory, $files_orders_original, $
     }
 }
 
-function Split-OrdersMain($tmp_directory, $files_orders_m_prt, $regex_beginning_m_split_orders_main)
+function Split-OrdersMain($current_directory, $mof_directory, $run_date, $files_orders_m_prt, $regex_beginning_m_split_orders_main)
 {
-    if(Get-ChildItem -Path $tmp_directory | Where { $_.Extension -eq '.prt' -and $_.Name -like "*m.prt" })
+    $total_to_parse_orders_main_files = ($($files_orders_m_prt)).Length
+
+    if($total_to_parse_orders_main_files -gt '0')
     {
-        $count = 0
+        $count_files = 0
+        $count_orders = 0
+
+        $out_directory = "$($mof_directory)"
+
+        if(!(Test-Path $($out_directory)))
+        {
+            Write-Host "[#] $($out_directory) not created. Creating now." -ForegroundColor Yellow
+            New-Item -ItemType Directory -Path $($out_directory) > $null
+
+            if($?)
+            {
+                Write-Host "[*] $($out_directory) created successfully." -ForegroundColor Green
+            }
+            else
+            {
+                Write-Host "[!] $($out_directory) creation failed." ([char]7) -ForegroundColor Red
+                throw "[!] $($out_directory) creation failed."
+            }
+        }
 
         foreach($file in $files_orders_m_prt)
         {
             $content = (Get-Content $($file) -ErrorAction SilentlyContinue | Out-String)
             $orders = [regex]::Match($content,'(?<=STATE OF SOUTH DAKOTA).+(?=The Adjutant General)',"singleline").Value -split "$($regex_beginning_m_split_orders_main)"
+            $count_files ++
+
+            Write-Host "[#] Parsing $($file) ($($count_files)/$($total_to_parse_orders_main_files)) now." -ForegroundColor Yellow
 
             foreach($order in $orders)
             {
@@ -275,12 +311,13 @@ function Split-OrdersMain($tmp_directory, $files_orders_m_prt, $regex_beginning_
 
                 if($order)
                 {
-                    $count ++
+                    $count_orders ++
 
-                    $out_file = "$($count).mof"
+                    $out_file = "$($run_date)_$($count_orders).mof"
 
                     Write-Host "[#] Processing $($out_file) now." -ForegroundColor Yellow
-                    $order >> "$($tmp_directory)\$($out_file)"
+
+                    New-Item -ItemType File -Path $($out_directory) -Name $($out_file) -Value $($order) > $null
 
                     if($?)
                     {
@@ -293,25 +330,51 @@ function Split-OrdersMain($tmp_directory, $files_orders_m_prt, $regex_beginning_
                     }
                 }
             }
+
+            Write-Host "[*] $($file) ($($count_files)/$($total_to_parse_orders_main_files)) parsed successfully." -ForegroundColor Green
         }   
     }
     else
     {
-        Write-Host "[!] No *m.prt files in $($tmp_directory). Come back with proper input next time." ([char]7) -ForegroundColor Red
+        Write-Host "[!] No *m.prt files in $($current_directory). Come back with proper input next time." ([char]7) -ForegroundColor Red
         throw "[!] No *m.prt files in $($current_directory). Come back with proper input next time."
     }
 }
 
-function Split-OrdersCertificate($tmp_directory, $files_orders_c_prt, $regex_end_cert)
+function Split-OrdersCertificate($current_directory, $cof_directory, $run_date, $files_orders_c_prt, $regex_end_cert)
 {
-    if(Get-ChildItem -Path $tmp_directory | Where { $_.Extension -eq '.prt' -and $_.Name -like "*c.prt" })
+    $total_to_parse_orders_cert_files = ($($files_orders_c_prt)).Length
+
+    if($total_to_parse_orders_cert_files -gt '0')
     {
-        $count = 0
+        $count_files = 0
+        $count_orders = 0
+
+        $out_directory = "$($cof_directory)"
+
+        if(!(Test-Path $($out_directory)))
+        {
+            Write-Host "[#] $($out_directory) not created. Creating now." -ForegroundColor Yellow
+            New-Item -ItemType Directory -Path $($out_directory) > $null
+
+            if($?)
+            {
+                Write-Host "[*] $($out_directory) created successfully." -ForegroundColor Green
+            }
+            else
+            {
+                Write-Host "[!] $($out_directory) creation failed." ([char]7) -ForegroundColor Red
+                throw "[!] $($out_directory) creation failed."
+            }
+        }
 
         foreach($file in $files_orders_c_prt)
         {
             $content = (Get-Content $($file) -ErrorAction SilentlyContinue | Out-String)
             $orders = [regex]::Match($content,'(?<=FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=Automated NGB Form 102-10A  dtd  12 AUG 96)',"singleline").Value -split "$($regex_end_cert)"
+            $count_files ++
+
+            Write-Host "[#] Parsing $($file) ($($count_files)/$($total_to_parse_orders_cert_files)) now." -ForegroundColor Yellow
 
             foreach($order in $orders)
             {
@@ -319,16 +382,17 @@ function Split-OrdersCertificate($tmp_directory, $files_orders_c_prt, $regex_end
 
                 if($order)
                 {
-                    $count ++
+                    $count_orders ++
 
-                    $out_file = "$($count).cof"
+                    $out_file = "$($run_date)_$($count_orders).cof"
 
                     Write-Host "[#] Processing $($out_file) now." -ForegroundColor Yellow
-                    $order >> "$($tmp_directory)\$($out_file)"
+
+                    New-Item -ItemType File -Path $($out_directory) -Name $($out_file) -Value $($order) > $null
 
                     if($?)
                     {
-                        Write-Host "[*]$($out_file) file created successfully." -ForegroundColor Green
+                        Write-Host "[*] $($out_file) file created successfully." -ForegroundColor Green
                     }
                     else
                     {
@@ -337,18 +401,21 @@ function Split-OrdersCertificate($tmp_directory, $files_orders_c_prt, $regex_end
                     }
                 }
             }
+
+            Write-Host "[*] $($file) ($($count_files)/$($total_to_parse_orders_cert_files)) parsed successfully." -ForegroundColor Green
         }
     }
     else
     {
-        Write-Host "[!] No *c.prt files in $($tmp_directory). Come back with proper input next time." ([char]7) -ForegroundColor Red
+        Write-Host "[!] No *c.prt files in $($current_directory). Come back with proper input next time." ([char]7) -ForegroundColor Red
         throw "[!] No *c.prt files in $($current_directory). Come back with proper input next time."
     }
 }
 
-function Edit-OrdersMain($tmp_directory, $exclude_directories, $regex_old_fouo_3_edit_orders_main)
+# WOrking properly now. Use same code in Edit-OrdersCertificate
+function Edit-OrdersMain($mof_directory, $exclude_directories, $regex_old_fouo_3_edit_orders_main, $mof_directory_original_splits)
 {
-    $total_to_edit_orders_main = (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
+    $total_to_edit_orders_main = (Get-ChildItem -Path "$($mof_directory)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
 
     if($($total_to_edit_orders_main) -gt '0')
     {
@@ -356,46 +423,72 @@ function Edit-OrdersMain($tmp_directory, $exclude_directories, $regex_old_fouo_3
         $total_edited_orders_main = 0
 
 $old_header = @"
-
                                DEPARTMENT OF MILITARY
                            OFFICE OF THE ADJUTANT GENERAL
                   2823 West Main Street, Rapid City, SD 57702-8186
 "@
 $new_header = @"
-                              STATE OF SOUTH DAKOTA
-                              DEPARTMENT OF MILITARY
+                               STATE OF SOUTH DAKOTA
+                               DEPARTMENT OF MILITARY
                            OFFICE OF THE ADJUTANT GENERAL
                   2823 West Main Street, Rapid City, SD 57702-8186
 "@
-$old_spacing = @"
+$old_spacing_1 = @"
 
                           
                           
 
 
 "@ # Spacing between APC DJMS-RC: and APC STANFINS Pay: created after removing FOUO's and others below
+$old_spacing_2 = @"
 
-        foreach($file in (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }))
+                          
+                          
+
+
+
+"@ # Spacing between last line of Additional Instructions and FOR ARMY USE caused by removing FOUO and ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4} below
+
+        foreach($file in (Get-ChildItem -Path "$($mof_directory)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof'}))
         {
             Process-DevCommands
 
-            $file_content = (Get-Content "$($tmp_directory)\$($file)" -Raw -ErrorAction SilentlyContinue)
+            $file_content = (Get-Content "$($file)" -Raw -ErrorAction SilentlyContinue)
             $file_content = $file_content -replace $old_header,$new_header
             $file_content = $file_content -replace "`f",''
             $file_content = $file_content -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT",''
             $file_content = $file_content -replace $regex_old_fouo_3_edit_orders_main,''
-            $file_content = $file_content -replace "`n$old_spacing",''
+            $file_content = $file_content -replace "`n$old_spacing_1",''
+            $file_content = $file_content -replace "$old_spacing_2",''
 
-            if(!((Get-Item "$($tmp_directory)\$($file)") -is [System.IO.DirectoryInfo]))
+           if(!((Get-Item "$($file)") -is [System.IO.DirectoryInfo]))
             {
+                $out_file_name = "$($file.BaseName)_edited.mof"
+
                 Write-Host "[#] Editing $($file.Name) now." -ForegroundColor Yellow
 
-                Set-Content -Path "$($tmp_directory)\$($file.Name)" $file_content
+                Set-Content -Path "$($mof_directory)\$($out_file_name)" $file_content
             
                 if($?)
                 {
-                    Write-Host "[*] $($file.Name) edited successfully." -ForegroundColor Green
+                    Write-Host "[*] $($file.Name) edited successfully." -ForegroundColor Green                    
                     $total_edited_orders_main ++
+
+                    if($($file.Name) -cnotcontains "*_edited.mof")
+                    {
+                        Write-Host "[#] Moving $($file.Name) to $($mof_directory_original_splits)" -ForegroundColor Yellow
+                        Move-Item "$($file)" -Destination "$($mof_directory_original_splits)" -Force
+
+                        if($?)
+                        {
+                            Write-Host "[*] $($file) moved to $($mof_directory_original_splits) successfully." -ForegroundColor Green
+                        }
+                        else
+                        {
+                            Write-Host "[!] $($file) move to $($mof_directory_original_splits) failed." -ForegroundColor Red
+                            throw "[!] $($file) move to $($mof_directory_original_splits) failed."
+                        }
+                    }
                 }
                 else
                 {
@@ -408,46 +501,64 @@ $old_spacing = @"
                 Write-Host "[#] $($file) is a directory. Skipping." -ForegroundColor Yellow
             }
 
-            Write-Host "[#] Edited: $($total_edited_orders_main)/$($total_to_edit_orders_main)." -ForegroundColor Yellow
+            Write-Host "[#] Edited: ($($total_edited_orders_main)/$($total_to_edit_orders_main))." -ForegroundColor Yellow
         }
     }
     else
     {
         Write-Host "[!] Total to edit: $($total_to_edit_orders_main)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .mof files in $($tmp_directory). Make sure to split *m.prt files first. Use '$($script_name) -sM' first, then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .mof files in $($current_directory). Make sure to split *m.prt files first. Use '$($script_name) -sM' first, then try again."
+        Write-Host "[!] No .mof files in $($mof_directory). Make sure to split *m.prt files first. Use '$($script_name) -sM' first, then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .mof files in $($mof_directory). Make sure to split *m.prt files first. Use '$($script_name) -sM' first, then try again."
     }
 }
 
-function Edit-OrdersCertificate($tmp_directory, $exclude_directories, $regex_end_cert)
+function Edit-OrdersCertificate($cof_directory, $exclude_directories, $regex_end_cert, $cof_directory_original_splits)
 {
-    $total_to_edit_orders_cert = (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
+    $total_to_edit_orders_cert = (Get-ChildItem -Path "$($cof_directory)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
 
     if($($total_to_edit_orders_cert) -gt '0')
     {
         Write-Host "[#] Total to edit: $($total_to_edit_orders_cert)" -ForegroundColor Yellow
         $total_edited_orders_cert = 0
 
-        foreach($file in (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }))
+        foreach($file in (Get-ChildItem -Path "$($cof_directory)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof'}))
         {
             Process-DevCommands
 
-            $file_content = (Get-Content "$($tmp_directory)\$($file)" -Raw -ErrorAction SilentlyContinue)
+            $file_content = (Get-Content "$($cof_directory)\$($file)" -Raw -ErrorAction SilentlyContinue)
             $file_content = $file_content -replace "`f",''
             $file_content = $file_content -replace "                          FOR OFFICIAL USE ONLY - PRIVACY ACT",''
             $file_content = $file_content -replace "                          FOR OFFICIAL USE ONLY - PRIVACY ACT",''
 
-            if(!((Get-Item "$($tmp_directory)\$($file)") -is [System.IO.DirectoryInfo]))
+            if(!((Get-Item "$($file)") -is [System.IO.DirectoryInfo]))
             {
+                $out_file_name = "$($file.BaseName)_edited.cof"
+
                 Write-Host "[#] Editing $($file.Name) now." -ForegroundColor Yellow
 
-                Set-Content -Path "$($tmp_directory)\$($file.Name)" $file_content
-                Add-Content -Path "$($tmp_directory)\$($file.Name)" -Value $($regex_end_cert)
-
+                Set-Content -Path "$($out_file_name)" $file_content
+				Add-Content -Path "$($out_file_name)" -Value $($regex_end_cert)
+            
                 if($?)
                 {
-                    Write-Host "[*] $($file.Name) edited successfully." -ForegroundColor Green
+                    Write-Host "[*] $($file.Name) edited successfully." -ForegroundColor Green                    
                     $total_edited_orders_cert ++
+
+                    if($($file.Name) -cnotcontains "*_edited.cof")
+                    {
+                        Write-Host "[#] Moving $($file.Name) to $($cof_directory_original_splits)" -ForegroundColor Yellow
+                        Move-Item -Path "$($file)" -Destination "$($cof_directory_original_splits)" -Force
+
+                        if($?)
+                        {
+                            Write-Host "[*] $($file) moved to $($cof_directory_original_splits) successfully." -ForegroundColor Green
+                        }
+                        else
+                        {
+                            Write-Host "[!] $($file) move to $($cof_directory_original_splits) failed." -ForegroundColor Red
+                            throw "[!] $($file) move to $($cof_directory_original_splits) failed."
+                        }
+                    }
                 }
                 else
                 {
@@ -460,39 +571,38 @@ function Edit-OrdersCertificate($tmp_directory, $exclude_directories, $regex_end
                 Write-Host "[#] $($file) is a directory. Skipping." -ForegroundColor Yellow
             }
 
-            Write-Host "[#] Edited: $($total_edited_orders_cert)/$($total_to_edit_orders_cert)." -ForegroundColor Yellow
+            Write-Host "[#] Edited: ($($total_edited_orders_cert)/$($total_to_edit_orders_cert))." -ForegroundColor Yellow
         }
     }
     else
     {
         Write-Host "[!] Total to edit: $($total_to_edit_orders_cert)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .cof files in $($tmp_directory). Make sure to split *c.prt files first. Use '$($script_name) -sC' first, then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .cof files in $($current_directory). Make sure to split *c.prt files first. Use '$($script_name) -sC' first, then try again."
+        Write-Host "[!] No .cof files in $($cof_directory). Make sure to split *c.prt files first. Use '$($script_name) -sC' first, then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .cof files in $($cof_directory). Make sure to split *c.prt files first. Use '$($script_name) -sC' first, then try again."
     }
 }
 
-function Combine-OrdersMain($tmp_directory, $exclude_directories, $run_date)
+function Combine-OrdersMain($mof_directory, $run_date, $exclude_directories)
 {
-    $total_to_combine_orders_main = (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
+    $total_to_combine_orders_main = (Get-ChildItem -Path "$($mof_directory)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
 
     if($($total_to_combine_orders_main) -gt '0')
     {
         $orders_combined_orders_main = 0
-        $out_file = "$($tmp_directory)\$($run_date)_combined_orders_m.txt"
+        $out_file = "$($mof_directory)\$($run_date)_combined_orders_m.txt"
 
         Write-Host "[#] Total to combine: $($total_to_combine_orders_main)" -ForegroundColor Yellow
         Write-Host "[#] Combining .mof files now." -ForegroundColor Yellow
 
-        Get-ChildItem -Path $($tmp_directory) -Recurse | Where { ! $_.PSIsContainer } | Where { $_.Extension -eq '.mof' } | 
-            ForEach-Object 
-            {
+        Get-ChildItem -Path $($mof_directory) -Recurse | Where { ! $_.PSIsContainer } | Where { $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" } | 
+            ForEach-Object {
                 Process-DevCommands
 
                 Out-File -FilePath $($out_file) -InputObject (Get-Content $_.FullName) -Append
                 if($?)
                 {
                     $orders_combined_orders_main ++
-                    Write-Host "[#] Combined $($orders_combined_orders_main)/$($total_to_combine_orders_main) .mof files." -ForegroundColor Yellow
+                    Write-Host "[#] Combined ($($orders_combined_orders_main)/$($total_to_combine_orders_main)) .mof files." -ForegroundColor Yellow
                 }
                 else
                 {
@@ -500,37 +610,38 @@ function Combine-OrdersMain($tmp_directory, $exclude_directories, $run_date)
                     throw "[!] Combining .mof files failed."
                 }
             }
+
+        Write-Host "[*] Combining .mof files finished successfully. Check your results at $($out_file)" -ForegroundColor Green
     }
     else
     {
         Write-Host "[!] Total to combine: $($total_to_combine_orders_main)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .mof files in $($tmp_directory) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .mof files in $($tmp_directory) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again."
+        Write-Host "[!] No .mof files in $($mof_directory) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .mof files in $($mof_directory) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again."
     }
 }
 
-function Combine-OrdersCertificate($tmp_directory, $run_date)
+function Combine-OrdersCertificate($cof_directory, $run_date)
 {
-    $total_to_combine_orders_cert = (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
+    $total_to_combine_orders_cert = (Get-ChildItem -Path "$($cof_directory)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }).Length
 
     if($($total_to_combine_orders_cert) -gt '0')
     {
         $orders_combined_orders_cert = 0
-        $out_file = "$($tmp_directory)\$($run_date)_combined_orders_c.txt"
+        $out_file = "$($cof_directory)\$($run_date)_combined_orders_c.txt"
 
         Write-Host "[#] Total to combine: $($total_to_combine_orders_cert)" -ForegroundColor Yellow
         Write-Host "[#] Combining .cof files now." -ForegroundColor Yellow
 
-        Get-ChildItem -Path $($tmp_directory) -Recurse | Where { ! $_.PSIsContainer } | Where { $_.Extension -eq '.cof' } | 
-            ForEach-Object 
-            {
+        Get-ChildItem -Path $($cof_directory) -Recurse | Where { ! $_.PSIsContainer } | Where { $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" } | 
+            ForEach-Object {
                 Process-DevCommands
 
                 Out-File -FilePath $($out_file) -InputObject (Get-Content $_.FullName) -Append
                 if($?)
                 {
                     $orders_combined_orders_cert ++
-                    Write-Host "[#] Combined $($orders_combined_orders_cert)/$($total_to_combine_orders_cert) .mof files." -ForegroundColor Yellow
+                    Write-Host "[#] Combined ($($orders_combined_orders_cert)/$($total_to_combine_orders_cert)) .cof files." -ForegroundColor Yellow
                 }
                 else
                 {
@@ -538,45 +649,48 @@ function Combine-OrdersCertificate($tmp_directory, $run_date)
                     throw "[!] Combining .cof files failed."
                 }
             }
+
+        Write-Host "[*] Combining .cof files finished successfully. Check your results at $($out_file)" -ForegroundColor Green
     }
     else
     {
         Write-Host "[#] Total to combine: $($total_to_combine_orders_cert)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .cof files in $($tmp_directory) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sC' first, then use '$($script_name) -eC', then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .cof files in $($tmp_directory) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sC' first, then use '$($script_name) -eC', then try again."
+        Write-Host "[!] No .cof files in $($cof_directory) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sC' first, then use '$($script_name) -eC', then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .cof files in $($cof_directory) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sC' first, then use '$($script_name) -eC', then try again."
     }
 }
 
-function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_parse_orders_main, $regex_order_number_parse_orders_main, $regex_uic_parse_orders_main, $regex_pertaining_to_parse_orders_main)
+function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_parse_orders_main, $regex_order_number_parse_orders_main, $regex_uic_parse_orders_main, $regex_pertaining_to_parse_orders_main)
 {
-    $total_to_create_orders_main = (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
+    $total_to_create_orders_main = (Get-ChildItem -Path "$($mof_directory)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
 
     if($($total_to_create_orders_main) -gt '0')
     {
         #$stop_watch = [system.diagnostics.stopwatch]::startNew()
         $orders_created_orders_main = 0
+        $orders_not_created_orders_main = 0
 
         Write-Host "[#] Total to create: $($total_to_create_orders_main)" -ForegroundColor Yellow
 
-        foreach($file in (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }))
+        foreach($file in (Get-ChildItem -Path "$($mof_directory)"| Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }))
             {
                 Process-DevCommands
 
                 # Check for different 700 forms.
                 $following_request = "Following Request is" # Disapproved || Approved
-                $following_request_exists = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($following_request) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $following_request_exists = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($following_request) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                 $following_order = "Following order is amended as indicated." # Amendment order. $($format.Length) -eq 4
-                $following_order_exists = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($following_order) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $following_order_exists = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($following_order) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
 
                 # Check for bad 282 forms.
                 $following_request = "Following Request is" # Disapproved || Approved
-                $following_request_exists = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($following_request) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $following_request_exists = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($following_request) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
 
                 # Check for "Memorandum for record" file that does not have format number, order number, period, basically nothing
                 $memorandum_for_record = "MEMORANDUM FOR RECORD"
-                $memorandum_for_record_exists = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($memorandum_for_record) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $memorandum_for_record_exists = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($memorandum_for_record) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
 
-                $format = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_format_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $format = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_format_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                 if($($format))
                 {
                     $format = $format.ToString()
@@ -590,6 +704,8 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
 
                     Write-Host "[+] Found file with no format in $($file)!" -ForegroundColor Cyan
                     Write-Host "[+] Specific format not existing not currently handled, skipping." -ForegroundColor Cyan
+                    
+                    $orders_not_created_orders_main++
             
                     continue
                 }
@@ -598,6 +714,8 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                 {
                     Write-Host "[+] Found format $($format) containing $($following_request) in $($file)!" -ForegroundColor Cyan
                     Write-Host "[+] Specific format $($format) not currently handled, skipping." -ForegroundColor Cyan
+
+                    $orders_not_created_orders_main++
             
                     continue
                 }
@@ -605,9 +723,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                 {
                     Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
 
-                    Read-Host -Prompt "Enter to continue"
-
-                    $order_number = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -617,7 +733,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $published_year = $($published_year[1]) # YYYY turned into YY
                     $order_number = $order_number[1]
 
-                    $anchor = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | Select -First 1)
+                    $anchor = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | Select -First 1)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
@@ -633,7 +749,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $middle_initial = $($anchor.MiddleInitial)
                     $ssn = $($anchor.SSN)
 
-                    $period_to = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern "Period of active duty: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $period_to = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "Period of active duty: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period_to = $period_to.ToString()
                     $period_to = $period_to.Split(' ')
                     $period_to_number = $period_to[-2]
@@ -649,20 +765,20 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $period_from[6]
 
-                    $uic = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
 
                     $uic_directory = "$($uics_directory)\$($uic)"
                     $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
                     $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___NTE$($period_to_number)$($period_to_time)___$($format).txt"
-                    $uic_soldier_order_file_content = (Get-Content "$($tmp_directory)\$($file)" -Raw)
+                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
                     Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
                     $orders_created_orders_main ++
 
-                    Write-Host "[#] Created: $($orders_created_orders_main)/$($total_to_create_orders_main)." -ForegroundColor Yellow
+                    Write-Host "[#] Created: ($($orders_created_orders_main)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main)/$($total_to_create_orders_main))" -ForegroundColor Yellow
 
                     Read-Host -Prompt "Enter to continue"
 
@@ -679,7 +795,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                 {
                     Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
 
-                    $order_number = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -689,7 +805,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $published_year = $($published_year[1]) # YYYY turned into YY
                     $order_number = $order_number[1]
 
-                    $anchor = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | Select -First 1)
+                    $anchor = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | Select -First 1)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
@@ -705,7 +821,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $middle_initial = $($anchor.MiddleInitial)
                     $ssn = $($anchor.SSN)
         
-                    $period = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern "Active duty commitment: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $period = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "Active duty commitment: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period = $period.ToString()
                     $period = $period.Split(' ')
                     $period_from_day = $period[3]
@@ -730,20 +846,20 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $period[-1]
         
-                    $uic = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
 
                     $uic_directory = "$($uics_directory)\$($uic)"
                     $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
                     $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___$($period_to_year)$($period_to_month)$($period_to_day)___$($format).txt"
-                    $uic_soldier_order_file_content = (Get-Content "$($tmp_directory)\$($file)" -Raw)
+                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
                     Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
                     $orders_created_orders_main ++
 
-                    Write-Host "[#] Created: $($orders_created_orders_main)/$($total_to_create_orders_main)." -ForegroundColor Yellow
+                    Write-Host "[#] Created: ($($orders_created_orders_main)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main)/$($total_to_create_orders_main))" -ForegroundColor Yellow
 
                     <#
                     $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -758,7 +874,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                 {
                     Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
 
-                    $order_number = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -768,17 +884,17 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $published_year = $published_year[1]
                     $order_number = $order_number[1] # YYYY turned into YY
                         
-                    $uic = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
 
-                    $order_amended = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern "So much of:" -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_amended = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "So much of:" -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_amended = $order_amended.ToString()
                     $order_amended = $order_amended.Split(' ')
                     $order_amended = $order_amended[5]
                     $order_amended = $order_amended.Insert(3,"-")
 
-                    $pertaining_to = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_pertaining_to_parse_orders_main) -AllMatches -Context 0,3 | Select -First 1)
+                    $pertaining_to = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_pertaining_to_parse_orders_main) -AllMatches -Context 0,3 | Select -First 1)
                     $pertaining_to = $pertaining_to | ConvertFrom-String -PropertyNames GreaterThan, Pertaining, to, Colon_1, Colon_2, DutyCode, For, LastName, FirstName, MiddleInitial, SSN | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name. Currently untested for revoke section.
@@ -796,13 +912,13 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $uic_directory = "$($uics_directory)\$($uic)"
                     $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
                     $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($order_amended)___$($format).txt"
-                    $uic_soldier_order_file_content = (Get-Content "$($tmp_directory)\$($file)" -Raw)
+                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
                     Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
                     $orders_created_orders_main ++
 
-                    Write-Host "[#] Created: $($orders_created_orders_main)/$($total_to_create_orders_main)." -ForegroundColor Yellow
+                    Write-Host "[#] Created: ($($orders_created_orders_main)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main)/$($total_to_create_orders_main))" -ForegroundColor Yellow
 
                     <#
                     $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -817,7 +933,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                 {
                     Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
 
-                    $order_number = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -827,24 +943,24 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $published_year = $published_year[1]
                     $order_number = $order_number[1] # YYYY turned into YY
 
-                    $uic = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
 
-                    $order_revoke = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern "So much of:" -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_revoke = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "So much of:" -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_revoke = $order_revoke.ToString()
                     $order_revoke = $order_revoke.Split(' ')
                     $order_revoke = $order_revoke[5]
                     $order_revoke = $order_revoke.Insert(3,"-")
 
-                    $pertaining_to = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_pertaining_to_parse_orders_main) -AllMatches -Context 0,3 | Select -First 1)
+                    $pertaining_to = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_pertaining_to_parse_orders_main) -AllMatches -Context 0,3 | Select -First 1)
                     $pertaining_to = $pertaining_to | ConvertFrom-String -PropertyNames GreaterThan, Pertaining, to, Colon_1, Colon_2, DutyCode, For, LastName, FirstName, MiddleInitial, SSN | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name. Currently untested for revoke section.
                     if($($pertaining_to.MiddleInitial).Length -ne 1)
                     {
                         $pertaining_to.SSN = $pertaining_to.MiddleInitial
-                        $pertaining_to.MiddleInitial = 'X'
+                        $pertaining_to.MiddleInitial = 'NMI'
                     }
 
                     $last_name = $($pertaining_to.LastName)
@@ -855,13 +971,13 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $uic_directory = "$($uics_directory)\$($uic)"
                     $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
                     $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($order_revoke)___$($format).txt"
-                    $uic_soldier_order_file_content = (Get-Content "$($tmp_directory)\$($file)" -Raw)
+                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
                     Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
                     $orders_created_orders_main ++
 
-                    Write-Host "[#] Created: $($orders_created_orders_main)/$($total_to_create_orders_main)." -ForegroundColor Yellow
+                    Write-Host "[#] Created: ($($orders_created_orders_main)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main)/$($total_to_create_orders_main))" -ForegroundColor Yellow
 
                     <#
                     $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -876,7 +992,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                 {
                     Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
 
-                    $order_number = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -886,7 +1002,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $published_year = $published_year[1]
                     $order_number = $order_number[1] # YYYY turned into YY
 
-                    $anchor = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern "By order of the Secretary of the Army" -AllMatches -Context 5,0 -ErrorAction SilentlyContinue)
+                    $anchor = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "By order of the Secretary of the Army" -AllMatches -Context 5,0 -ErrorAction SilentlyContinue)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
@@ -902,7 +1018,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $middle_initial = $($anchor.MiddleInitial)
                     $ssn = $($anchor.SSN)
 
-                    $period = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue  | Select -First 1 | ConvertFrom-String -PropertyNames Period, Status, Colon, FromDay, FromMonth, FromYear, Dash, ToDay, ToMonth, ToYear | Select Status, FromDay, FromMonth, FromYear, ToDay, ToMonth, ToYear)
+                    $period = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue  | Select -First 1 | ConvertFrom-String -PropertyNames Period, Status, Colon, FromDay, FromMonth, FromYear, Dash, ToDay, ToMonth, ToYear | Select Status, FromDay, FromMonth, FromYear, ToDay, ToMonth, ToYear)
                     $period_status = $($period.Status)
                     $period_from_day = $($period.FromDay)
                     $period_from_day = $period_from_day.ToString()
@@ -924,20 +1040,20 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $($period.ToYear)
 
-                    $uic = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
 
                     $uic_directory = "$($uics_directory)\$($uic)"
                     $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
                     $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___$($period_to_year)$($period_to_month)$($period_to_day)___$($format).txt"
-                    $uic_soldier_order_file_content = (Get-Content "$($tmp_directory)\$($file)" -Raw)
+                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
                     Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
                     $orders_created_orders_main ++
 
-                    Write-Host "[#] Created: $($orders_created_orders_main)/$($total_to_create_orders_main)." -ForegroundColor Yellow
+                    Write-Host "[#] Created: ($($orders_created_orders_main)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main)/$($total_to_create_orders_main))" -ForegroundColor Yellow
 
                     <#
                     $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -952,7 +1068,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                 {
                     Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
 
-                    $order_number = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -963,7 +1079,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $published_year = $($published_year[1]) # YYYY turned into YY
                     $order_number = $order_number[1]
 
-                    $anchor = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | Select -First 1)
+                    $anchor = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | Select -First 1)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
@@ -979,7 +1095,7 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $middle_initial = $($anchor.MiddleInitial)
                     $ssn = $($anchor.SSN)
         
-                    $period = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue  | Select -First 1 | ConvertFrom-String -PropertyNames Period, Status, Colon, FromDay, FromMonth, FromYear, Dash, ToDay, ToMonth, ToYear | Select Status, FromDay, FromMonth, FromYear, ToDay, ToMonth, ToYear)
+                    $period = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue  | Select -First 1 | ConvertFrom-String -PropertyNames Period, Status, Colon, FromDay, FromMonth, FromYear, Dash, ToDay, ToMonth, ToYear | Select Status, FromDay, FromMonth, FromYear, ToDay, ToMonth, ToYear)
                     $period_status = $($period.Status)
                     $period_from_day = $($period.FromDay)
                     $period_from_day = $period_from_day.ToString()
@@ -1001,20 +1117,20 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $($period.ToYear)
         
-                    $uic = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
 
                     $uic_directory = "$($uics_directory)\$($uic)"
                     $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
                     $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___$($period_to_year)$($period_to_month)$($period_to_day)___$($format).txt"
-                    $uic_soldier_order_file_content = (Get-Content "$($tmp_directory)\$($file)" -Raw)
+                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
                     Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
                     $orders_created_orders_main ++
 
-                    Write-Host "[#] Created: $($orders_created_orders_main)/$($total_to_create_orders_main)." -ForegroundColor Yellow
+                    Write-Host "[#] Created: ($($orders_created_orders_main)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main)/$($total_to_create_orders_main))" -ForegroundColor Yellow
 
                     <#
                     $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -1037,14 +1153,14 @@ function Parse-OrdersMain($tmp_directory, $exclude_directories, $regex_format_pa
     else
     {
         Write-Host "[!] Total to create: $($total_to_create_orders_main)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .mof files in $($tmp_directory) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .mof files in $($tmp_directory) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again."
+        Write-Host "[!] No .mof files in $($mof_directory) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .mof files in $($mof_directory) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again."
     }
 }
 
-function Parse-OrdersCertificate($tmp_directory, $exclude_directories)
+function Parse-OrdersCertificate($cof_directory, $exclude_directories)
 {
-    $total_to_create_orders_cert = (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
+    $total_to_create_orders_cert = (Get-ChildItem -Path "$($cof_directory)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }).Length
     
     if($($total_to_create_orders_cert) -gt '0')
     {
@@ -1053,11 +1169,11 @@ function Parse-OrdersCertificate($tmp_directory, $exclude_directories)
 
         Write-Host "[#] Total to create: $($total_to_create_orders_cert)" -ForegroundColor Yellow
 
-        foreach($file in (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }))
+        foreach($file in (Get-ChildItem -Path "$($cof_directory)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }))
             {
                 Process-DevCommands
 
-                foreach($line in (Get-Content "$($tmp_directory)\$($file)"))
+                foreach($line in (Get-Content "$($cof_directory)\$($file)"))
                 {
                     if($line -eq '')
                     {
@@ -1073,27 +1189,36 @@ function Parse-OrdersCertificate($tmp_directory, $exclude_directories)
                     }
                 }
 
-                $name = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_name_parse_orders_cert) -AllMatches -List -ErrorAction SilentlyContinue  | Select -First 1 | ConvertFrom-String -PropertyNames SanSSN, LastName, FirstName, MiddleInitial | Select LastName, FirstName, MiddleInitial)
-                $last_name = $($name.LastName)
-                $first_name = $($name.FirstName)
-                $middle_initial = $($name.MiddleInitial)
+                $name = (Select-String -Path "$($cof_directory)\$($file)" -Pattern $($regex_name_parse_orders_cert) -AllMatches -List -ErrorAction SilentlyContinue  | Select -First 1)
+                $name = $name.ToString()
+                $name = $name.Split(' ')
+                $last_name = $name[5]
+                $first_name = $name[6]
+                $middle_initial = $name[7]
+                if($($middle_initial).Length -ne '1')
+                {
+                    $middle_initial = 'NMI'
+                }
+                else
+                {
+                    $middle_initial = $name[7]
+                }
 
-                $order_number = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_order_number_parse_orders_cert) -SimpleMatch -ErrorAction SilentlyContinue | Select -First 1)
+                $order_number = (Select-String -Path "$($cof_directory)\$($file)" -Pattern $($regex_order_number_parse_orders_cert) -SimpleMatch -ErrorAction SilentlyContinue | Select -First 1)
                 $order_number = $order_number.ToString()
                 $order_number = $order_number.Split(' ')
                 $order_number = $($order_number[2])
                 $order_number = $order_number.Insert(3,"-")
 
-                $period = (Select-String -Path "$($tmp_directory)\$($file)" -Pattern $($regex_period_parse_orders_cert) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
-                $period = $period | ConvertFrom-String -PropertyNames Period, of, duty:, PeriodFrom, To, PeriodTo | Select PeriodFrom, PeriodTo
-                $period_from = $period.PeriodFrom
-                $period_from = @($period_from -split '(.{2})' | ? {$_})
+                $period = (Select-String -Path "$($cof_directory)\$($file)" -Pattern $($regex_period_parse_orders_cert) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $period = $period[3]
+                $period_from = @($period_from -split '(.{2})' | ? { $_ })
                 $period_from_year = $period_from[0]
                 $period_from_month = $period_from[1]
                 $period_from_day = $period_from[2]
 
-                $period_to = $period.PeriodTo
-                $period_to = @($period_to -split '(.{2})' | ? {$_})
+                $period_to = $period[7]
+                $period_to = @($period_to -split '(.{2})' | ? { $_ })
                 $period_to_year = $period_to[0]
                 $period_to_month = $period_to[1]
                 $period_to_day = $period_to[2]
@@ -1104,13 +1229,13 @@ function Parse-OrdersCertificate($tmp_directory, $exclude_directories)
                 $uic_directory = "$($uics_directory)\$($uic)"
                 $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
                 $uic_soldier_order_file_name = "$($period_from_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___$($period_to_year)$($period_to_month)$($period_to_day)___cert.txt"
-                $uic_soldier_order_file_content = (Get-Content "$($tmp_directory)\$($file)" -Raw)
+                $uic_soldier_order_file_content = (Get-Content "$($cof_directory)\$($file)" -Raw)
         
                 Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
                 $orders_created_orders_cert ++
 
-                Write-Host "[#] Created: $($orders_created_orders_cert)/$($total_to_create_orders_cert)." -ForegroundColor Yellow
+                Write-Host "[#] Created: ($($orders_created_orders_cert)/$($total_to_create_orders_cert))." -ForegroundColor Yellow
 
                 <#
                 $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -1125,8 +1250,8 @@ function Parse-OrdersCertificate($tmp_directory, $exclude_directories)
     else
     {
         Write-Host "[!] Total to create: $($total_to_create_orders_cert)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .cof files in $($tmp_directory) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sC' first, then use '$($script_name) -eC', then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .cof files in $($tmp_directory) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -eC', then try again."
+        Write-Host "[!] No .cof files in $($cof_directory) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sC' first, then use '$($script_name) -eC', then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .cof files in $($cof_directory) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -eC', then try again."
     }
 }
 
@@ -1139,7 +1264,7 @@ function Work-Magic($uic_directory, $soldier_directory, $uic_soldier_order_file_
     else
     {
         Write-Host "[#] $($uic_directory) not created. Creating now." -ForegroundColor Yellow
-        New-Item -ItemType Directory -Path "$($uics_directory)\$($uic)" -ErrorAction SilentlyContinue > $null
+        New-Item -ItemType Directory -Path "$($uics_directory)\$($uic)" > $null
 
         if($?)
         {
@@ -1160,7 +1285,7 @@ function Work-Magic($uic_directory, $soldier_directory, $uic_soldier_order_file_
     else
     {
         Write-Host "[#] $($soldier_directory) not created. Creating now." -ForegroundColor Yellow
-        New-Item -ItemType Directory -Path "$($soldier_directory)" -ErrorAction SilentlyContinue > $null
+        New-Item -ItemType Directory -Path "$($soldier_directory)" > $null
 
         if($?)
         {
@@ -1181,7 +1306,7 @@ function Work-Magic($uic_directory, $soldier_directory, $uic_soldier_order_file_
     else
     {
         Write-Host "[#] $($soldier_directory)\$($uic_soldier_order_file_name) not created. Creating now." -ForegroundColor Yellow
-        New-Item -ItemType File -Path $($soldier_directory) -Name $($uic_soldier_order_file_name) -Value $($uic_soldier_order_file_content) -ErrorAction SilentlyContinue > $null
+        New-Item -ItemType File -Path $($soldier_directory) -Name $($uic_soldier_order_file_name) -Value $($uic_soldier_order_file_content) > $null
 
         if($?)
         {
@@ -1196,80 +1321,87 @@ function Work-Magic($uic_directory, $soldier_directory, $uic_soldier_order_file_
     }
 }
 
-function Start-CleanUpOrdersMain($tmp_directory, $exclude_directories)
+function Clean-OrdersMain($mof_directory, $exclude_directories)
 {
-    $total_to_clean_orders_main = (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
+    $total_to_clean_main_files = (Get-ChildItem -Path "$($mof_directory)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
 
-    if($($total_to_clean_orders_main) -gt '0')
+    if($($total_to_clean_main_files) -gt '0')
     {
-        $orders_clean_orders_main = 0
+        Write-Host "[#] Total .mof files to clean in $($mof_directory): $($total_to_clean_main_files)" -ForegroundColor Yellow
+        Remove-Item -Path "$($mof_directory)" -Recurse -Force
 
-        Write-Host "[#] Total .mof files to clean: $($total_to_clean_orders_main)" -ForegroundColor Yellow
-        foreach($file in (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories }) | ? { ($_.Extension) -eq '.mof' })
+        if($?)
         {
-            Process-DevCommands
-
-            Write-Host "[#] Removing $($file)." -ForegroundColor Yellow
-            Remove-Item "$($tmp_directory)\$($file)"
-
-            if($?)
-            {
-                Write-Host "[*] $($file) removed successfully." -ForegroundColor Green
-                $total_to_clean_orders_main ++
-            }
-            else
-            {
-                Write-Host "[!] Failed to remove $($file)." ([char]7) -ForegroundColor Red
-                throw "[!] Failed to remove $($file)."
-            }
-
-            Write-Host "[#] Cleaned: $($total_to_clean_orders_main)/$($total_to_clean_orders_main) .mof files." -ForegroundColor Yellow
+            Write-Host "[*] $($mof_directory) removed successfully. Cleaned: $($total_to_clean_main_files) .mof files from $($mof_directory)." -ForegroundColor Green
+            New-Item -ItemType Directory -Path "$($mof_directory)" -Force > $null
+        }
+        else
+        {
+            Write-Host "[!] Failed to remove $($mof_directory)." ([char]7) -ForegroundColor Red
+            throw "[!] Failed to remove $($mof_directory)."
         }
     }
     else
     {
-        Write-Host "[!] Total .mof files to clean: $($total_to_clean_orders_main)" -ForegroundColor Red
-        Write-Host "[!] No .mof files in $($tmp_directory) to clean up." ([char]7) -ForegroundColor Red
-        throw "[!] No .mof files in $($tmp_directory) to clean up."
+        Write-Host "[!] Total .mof files to clean: $($total_to_clean_main_files)" -ForegroundColor Red
+        Write-Host "[!] No .mof files in $($mof_directory) to clean up." ([char]7) -ForegroundColor Red
+        throw "[!] No .mof files in $($mof_directory) to clean up."
     }
 }
 
-function Start-CleanUpOrdersCertificate($tmp_directory, $exclude_directories)
+function Clean-OrdersCertificate($cof_directory, $exclude_directories)
 {
-    $total_to_clean_orders_cert = (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
+    $total_to_clean_cert_files = (Get-ChildItem -Path "$($cof_directory)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
 
-    if($($total_to_clean_orders_cert) -gt '0')
+    if($($total_to_clean_cert_files) -gt '0')
     {
-        $orders_clean_orders_cert = 0
+        Write-Host "[#] Total .cof files to clean in $($cof_directory): $($total_to_clean_cert_files)" -ForegroundColor Yellow
+        Remove-Item -Path "$($cof_directory)" -Recurse -Force
 
-        Write-Host "[#] Total .cof files to clean: $($total_to_clean_orders_cert)" -ForegroundColor Yellow
-
-        foreach($file in (Get-ChildItem -Path $tmp_directory | Where { $_.FullName -notmatch $exclude_directories }) | ? { $_.Extension -eq '.cof' })
-            {
-                Process-DevCommands
-
-                Write-Host "[#] Removing $($file)." -ForegroundColor Yellow
-                Remove-Item "$($tmp_directory)\$($file)"
-
-                if($?)
-                {
-                    Write-Host "[*] $($file) removed successfully." -ForegroundColor Green
-                    $orders_clean_orders_cert ++
-                }
-                else
-                {
-                    Write-Host "[!] Failed to remove $($file)." ([char]7) -ForegroundColor Red
-                    throw "[!] Failed to remove $($file)."
-                }
-
-                Write-Host "[#] Cleaned: $($orders_clean_orders_cert)/$($total_to_clean_orders_cert) .cof files." -ForegroundColor Yellow
-            }
+        if($?)
+        {
+            Write-Host "[*] $($cof_directory) removed successfully. Cleaned: $($total_to_clean_cert_files) .cof files from $($cof_directory)." -ForegroundColor Green
+            New-Item -ItemType Directory -Path "$($cof_directory)" -Force > $null
+        }
+        else
+        {
+            Write-Host "[!] Failed to remove $($cof_directory)." ([char]7) -ForegroundColor Red
+            throw "[!] Failed to remove $($cof_directory)."
+        }
     }
     else
     {
-        Write-Host "[!] Total .cof files to clean: $($total_to_clean_orders_cert)" -ForegroundColor Red
-        Write-Host "[!] No .cof files in $($tmp_directory) to clean up." ([char]7) -ForegroundColor Red
-        throw "[!] No .cof files in $($tmp_directory) to clean up."
+        Write-Host "[!] Total .cof files to clean: $($total_to_clean_cert_files)" -ForegroundColor Red
+        Write-Host "[!] No .cof files in $($cof_directory) to clean up." ([char]7) -ForegroundColor Red
+        throw "[!] No .cof files in $($cof_directory) to clean up."
+    }
+}
+
+function Clean-UICS($uics_directory)
+{
+    $total_to_clean_uics_directories = (Get-ChildItem -Path "$($uics_directory)").Length
+
+    if($($total_to_clean_uics_directories) -gt '0')
+    {
+        Write-Host "[#] Total UICS directories to clean in $($uics_directory): $($total_to_clean_uics_directories)" -ForegroundColor Yellow
+        Remove-Item -Path "$($uics_directory)" -Recurse -Force
+
+        if($?)
+        {
+            Write-Host "[*] $($uics_directory) removed successfully. Cleaned: $($total_to_clean_uics_directories) directories from $($uics_directory)." -ForegroundColor Green
+            New-Item -ItemType Directory -Path "$($uics_directory)" -Force > $null
+        }
+        else
+        {
+            Write-Host "[!] Failed to remove $($uics_directory)." ([char]7) -ForegroundColor Red
+            throw "[!] Failed to remove $($uics_directory)."
+        }
+    }
+    else
+    {
+        Write-Host "[!] Total directories to clean: $($total_to_clean_uics_directories)" -ForegroundColor Red
+        Write-Host "[!] No directories in $($uics_directory) to clean up." ([char]7) -ForegroundColor Red
+        throw "[!] No directories in $($uics_directory) to clean up."
     }
 }
 
@@ -1297,11 +1429,11 @@ function Process-DevCommands()
         }
         elseif(($key.modifiers -band [consolemodifiers]"control") -and ($key.key -eq "Q" ))
         {
-            $response = Read-Host -Prompt "Are you sure you want to exit? [Y|y / N|n]"
+            $response = Read-Host -Prompt "Are you sure you want to exit? [ (Y|y) / (N|n) ]"
             
             switch($response)
             {
-                { @("y", "Y") -contains $_ } { "Terminating at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."; exit 0 }
+                { @("y", "Y") -contains $_ } { "Terminating at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd) by user."; exit 0 }
                 { @("n", "N") -contains $_ } { continue }
                 default { "Response not determined." }
             }
@@ -1318,11 +1450,17 @@ if($h)
     Write-Host "[^] Help parameter specified. Presenting full help now." -ForegroundColor Cyan
     Get-Help .\$($script_name) -Full
 }
+elseif($v)
+{
+    Write-Host "Running version $($version)."
+}
 elseif($dir_create)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=dir_create.log"
+    $error_path = "$($log_directory)\$($run_date)_M=dir_create_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Directory creation parameter specified. Creating required directories now." -ForegroundColor Cyan
 
     try{
@@ -1337,9 +1475,7 @@ elseif($dir_create)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Directory creation failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Directory creation failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1347,9 +1483,11 @@ elseif($dir_create)
 }
 elseif($backups)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=backups.log"
+    $error_path = "$($log_directory)\$($run_date)_M=backups_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Backup parameter specified. Creating backups now." -ForegroundColor Cyan
 
     try {
@@ -1364,9 +1502,7 @@ elseif($backups)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Backing up original orders failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Backing up original orders failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1374,15 +1510,17 @@ elseif($backups)
 }
 elseif($split_main)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=split_main.log"
+    $error_path = "$($log_directory)\$($run_date)_M=split_main_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Split main order file parameter specified. Splitting main order files now." -ForegroundColor Cyan
 
     try {
         Write-Host "[-] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor White
 
-        Split-OrdersMain -tmp_directory $($tmp_directory) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
+        Split-OrdersMain -current_directory $($current_directory) -mof_directory $($mof_directory) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
     
         if($?)
         {
@@ -1391,9 +1529,7 @@ elseif($split_main)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Splitting '*m.prt' order file(s) into individual order files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Splitting '*m.prt' order file(s) into individual order files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1401,15 +1537,17 @@ elseif($split_main)
 }
 elseif($split_cert)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=split_cert.log"
+    $error_path = "$($log_directory)\$($run_date)_M=split_cert_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Split certificate file parameter specified. Splitting '*c.prt' files now." -ForegroundColor Cyan
 
     try {
         Write-Host "[-] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor White
 
-        Split-OrdersCertificate -tmp_directory $($tmp_directory) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
+        Split-OrdersCertificate -current_directory $($current_directory) -cof_directory $($cof_directory) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
     
         if($?)
         {
@@ -1418,9 +1556,7 @@ elseif($split_cert)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1428,15 +1564,17 @@ elseif($split_cert)
 }
 elseif($edit_main)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=edit_main.log"
+    $error_path = "$($log_directory)\$($run_date)_M=edit_main_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Edit orders '*m.prt' parameter specified. Editing orders now." -ForegroundColor Cyan
 
     try {
         Write-Host "[-] Editing orders '*m.prt' files." -ForegroundColor White
 
-        Edit-OrdersMain -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main)
+        Edit-OrdersMain -mof_directory $($mof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits $($mof_directory_original_splits)
 
         if($?)
         {
@@ -1445,9 +1583,7 @@ elseif($edit_main)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1455,15 +1591,17 @@ elseif($edit_main)
 }
 elseif($edit_cert)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=edit_cert.log"
+    $error_path = "$($log_directory)\$($run_date)_M=edit_cert_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Edit orders '*c.prt' parameter specified. Editing orders now." -ForegroundColor Cyan
 
     try {
         Write-Host "[-] Editing orders '*c.prt' files." -ForegroundColor White
 
-        Edit-OrdersCertificate -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert)
+        Edit-OrdersCertificate -cof_directory $($cof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits $($cof_directory_original_splits)
 
         if($?)
         {
@@ -1472,9 +1610,7 @@ elseif($edit_cert)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1482,15 +1618,17 @@ elseif($edit_cert)
 }
 elseif($combine_main)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=combine_main.log"
+    $error_path = "$($log_directory)\$($run_date)_M=combine_main_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Combine .mof orders parameter specified. Combining .mof orders now." -ForegroundColor Cyan
 
     try {
         Write-Host "[-] Combining .mof orders files." -ForegroundColor White
 
-        Combine-OrdersMain -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories) -run_date $($run_date)
+        Combine-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories) -run_date $($run_date)
 
         if($?)
         {
@@ -1499,9 +1637,7 @@ elseif($combine_main)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1509,15 +1645,17 @@ elseif($combine_main)
 }
 elseif($combine_cert)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=combine_cert.log"
+    $error_path = "$($log_directory)\$($run_date)_M=combine_cert_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Combine .cof orders parameter specified. Combining .cof orders now." -ForegroundColor Cyan
 
     try {
         Write-Host "[-] Combining .cof orders files." -ForegroundColor White
 
-        Combine-OrdersCertificate -tmp_directory $($tmp_directory) -run_date $($run_date)
+        Combine-OrdersCertificate -cof_directory $($cof_directory) -run_date $($run_date)
 
         if($?)
         {
@@ -1526,9 +1664,7 @@ elseif($combine_cert)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1536,15 +1672,17 @@ elseif($combine_cert)
 }
 elseif($magic_main)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=magic_main.log"
+    $error_path = "$($log_directory)\$($run_date)_M=magic_main_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Magic parameter specified. Working magic on .mof files now." -ForegroundColor Cyan
 
     try {
         Write-Host "[-] Working magic on .mof files now." -ForegroundColor White
 
-        Parse-OrdersMain -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
+        Parse-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
 
         if($?)
         {
@@ -1553,9 +1691,7 @@ elseif($magic_main)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Magic on .mof failed?! Impossible. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Magic on .mof failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1563,15 +1699,17 @@ elseif($magic_main)
 }
 elseif($magic_cert)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=magic_cert.log"
+    $error_path = "$($log_directory)\$($run_date)_M=magic_cert_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Magic parameter specified. Working magic on .cof files now." -ForegroundColor Cyan
 
     try {
         Write-Host "[-] Working magic on .cof files." -ForegroundColor White
 
-        Parse-OrdersCertificate -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories)
+        Parse-OrdersCertificate -cof_directory $($cof_directory) -exclude_directories $($exclude_directories)
 
         if($?)
         {
@@ -1580,9 +1718,7 @@ elseif($magic_cert)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1590,15 +1726,17 @@ elseif($magic_cert)
 }
 elseif($clean_main)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=clean_main.log"
+    $error_path = "$($log_directory)\$($run_date)_M=clean_main_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Clean up parameter specified. Cleaning up .mof files now." -ForegroundColor Cyan
 
     try {
         Write-Host "[-] Cleaning up .mof files." -ForegroundColor White
 
-        Start-CleanUpOrdersMain -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories)
+        Clean-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories)
 
         if($?)
         {
@@ -1607,9 +1745,7 @@ elseif($clean_main)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1617,15 +1753,17 @@ elseif($clean_main)
 }
 elseif($clean_cert)
 {
-    Start-Transcript -Path $($log_path)
+    $log_path = "$($log_directory)\$($run_date)_M=clean_cert.log"
+    $error_path = "$($log_directory)\$($run_date)_M=clean_cert_errors.log"
 
     cls
+    Start-Transcript -Path $($log_path)
     Write-Host "[^] Clean up parameter specified. Cleaning up .cof files now." -ForegroundColor Cyan
 
     try {
         Write-Host "[-] Cleaning up .cof files." -ForegroundColor White
 
-        Start-CleanUpOrdersCertificate -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories)
+        Clean-OrdersCertificate -cof_directory $($cof_directory) -exclude_directories $($exclude_directories)
 
         if($?)
         {
@@ -1634,9 +1772,34 @@ elseif($clean_cert)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
+        exit 1
+    }
+
+    Stop-Transcript
+}
+elseif($clean_uics)
+{
+    $log_path = "$($log_directory)\$($run_date)_M=clean_uics.log"
+    $error_path = "$($log_directory)\$($run_date)_M=clean_uics.log"
+
+    cls
+    Start-Transcript -Path $($log_path)
+    Write-Host "[^] Clean up parameter specified. Cleaning up UICS folder now." -ForegroundColor Cyan
+
+    try {
+        Write-Host "[-] Cleaning up UICS folder." -ForegroundColor White
+
+        Clean-UICS -uics_directory $($uics_directory)
+
+        if($?)
+        {
+            Write-Host "[^] Cleaning up UICS folder finished successfully." -ForegroundColor Cyan
+        }
+    }
+    catch {
+        $_ | Out-File -Append $($error_path)
+        Write-Host "[!] Cleaning up UICS folder failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
@@ -1644,10 +1807,12 @@ elseif($clean_cert)
 }
 elseif($all)
 {
-    cls
-    Write-Host "[^] Run all parameter specified. Running .\$($script_name) with all required parameters now." -ForegroundColor Cyan
+    $log_path = "$($log_directory)\$($run_date)_M=all.log"
+    $error_path = "$($log_directory)\$($run_date)_M=all_errors.log"
 
+    cls
     Start-Transcript -Path $($log_path)
+    Write-Host "[^] Run all parameter specified. Running .\$($script_name) with all required parameters now." -ForegroundColor Cyan
 
     try{
         Write-Host "[-] Creating required directories." -ForegroundColor White
@@ -1661,16 +1826,14 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Directory creation failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Directory creation failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 	
     try {
         Write-Host "[-] Backing up original orders file." -ForegroundColor White
 
-        Move-OriginalToHistorical -current_directory $($current_directory) -files_orders_original $($files_orders_original) -master_history_edited $($master_history_edited) -master_history_unedited $($master_history_unedited)
+         Move-OriginalToHistorical -current_directory $($current_directory) -files_orders_original $($files_orders_original) -master_history_edited $($master_history_edited) -master_history_unedited $($master_history_unedited)
 
         if($?)
         {
@@ -1679,16 +1842,14 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Backing up original orders failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Backing up original orders failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 	
     try {
         Write-Host "[-] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor White
 
-        Split-OrdersMain -tmp_directory $($tmp_directory) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
+        Split-OrdersMain -current_directory $($current_directory) -mof_directory $($mof_directory) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
     
         if($?)
         {
@@ -1697,16 +1858,14 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Splitting '*m.prt' order file(s) into individual order files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Splitting '*m.prt' order file(s) into individual order files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 	
     try {
         Write-Host "[-] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor White
 
-        Split-OrdersCertificate -tmp_directory $($tmp_directory) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
+        Split-OrdersCertificate -current_directory $($current_directory) -cof_directory $($cof_directory) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
     
         if($?)
         {
@@ -1715,16 +1874,14 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 	
     try {
         Write-Host "[-] Editing orders '*m.prt' files." -ForegroundColor White
 
-        Edit-OrdersMain -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main)
+        Edit-OrdersMain -mof_directory $($mof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits $($mof_directory_original_splits)
 
         if($?)
         {
@@ -1733,16 +1890,14 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 	
     try {
         Write-Host "[-] Editing orders '*c.prt' files." -ForegroundColor White
 
-        Edit-OrdersCertificate -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert)
+        Edit-OrdersCertificate -cof_directory $($cof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits $($cof_directory_original_splits)
 
         if($?)
         {
@@ -1751,16 +1906,14 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 	
     try {
         Write-Host "[-] Combining .mof orders files." -ForegroundColor White
 
-        Combine-OrdersMain -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories) -run_date $($run_date)
+        Combine-OrdersMain -mof_directory $($mof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories)
 
         if($?)
         {
@@ -1769,16 +1922,14 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 	
     try {
         Write-Host "[-] Combining .cof orders files." -ForegroundColor White
 
-        Combine-OrdersCertificate -tmp_directory $($tmp_directory) -run_date $($run_date)
+        Combine-OrdersCertificate -cof_directory $($cof_directory) -run_date $($run_date)
 
         if($?)
         {
@@ -1787,16 +1938,14 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 	
     try {
         Write-Host "[-] Working magic on .mof files now." -ForegroundColor White
 
-        Parse-OrdersMain -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_order_amdend_revoke_parse_orders_main $($regex_order_number_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
+        Parse-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_order_amdend_revoke_parse_orders_main $($regex_order_number_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
 
         if($?)
         {
@@ -1805,16 +1954,14 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Magic on .mof failed?! Impossible. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Magic on .mof failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 	
     try {
         Write-Host "[-] Working magic on .cof files." -ForegroundColor White
 
-        Parse-OrdersCertificate -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories)
+        Parse-OrdersCertificate -cof_directory $($cof_directory) -exclude_directories $($exclude_directories)
 
         if($?)
         {
@@ -1823,16 +1970,14 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 	
     try {
         Write-Host "[-] Cleaning up .mof files." -ForegroundColor White
 
-        Start-CleanUpOrdersMain -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories)
+        Clean-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories)
 
         if($?)
         {
@@ -1841,16 +1986,14 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 	
     try {
         Write-Host "[-] Cleaning up .cof files." -ForegroundColor White
 
-        Start-CleanUpOrdersCertificate -tmp_directory $($tmp_directory) -exclude_directories $($exclude_directories)
+        Clean-OrdersCertificate -cof_directory $($cof_directory) -exclude_directories $($exclude_directories)
 
         if($?)
         {
@@ -1859,9 +2002,7 @@ elseif($all)
     }
     catch {
         $_ | Out-File -Append $($error_path)
-        Write-Host ""
-        Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($tmp_directory)\$($run_date)_errors.log." ([char]7)  -ForegroundColor Red
-        Write-Host ""
+        Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
