@@ -1,6 +1,18 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+version: 0.4
+date: 10/12/2017
+CHANGES
+- added parameter alias's
+- updated help menu output
+- added required sanity checks to each function testing for required files, folders, etc. before continuing
+- refined main order file editing removing multiple unnecessary regex variables and calls
+- fixed each functions counting tracking
+- continued to refine main order file format detection and handling
+- added support for format 165 files
+- replaced multpile uses of ConvertFrom-String with substring and splitting to hopefully improve performance and accurracy of variable capturing
+------------------------------------
 version: 0.3
 date: 10/11/2017
 CHANGES
