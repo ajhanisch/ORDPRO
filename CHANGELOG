@@ -9,7 +9,11 @@ CHANGES
 version: 0.5
 date: 10/13/2017
 CHANGES
--
+- modified main and cert order files combination function to count properly
+- fixed the problem with cert orders where people with no middle initial were having MI variable captured as rank
+- added splitting progress display for .mof and .cof files
+- added the module named to the log file every time script is ran for easier log location and more granular descriptions
+- add "_edited" to .cof and .mof files after they are edited, and only edited files that do not contain same string to avoid duplicating editing efforts
 ------------------------------------
 version: 0.4
 date: 10/12/2017
