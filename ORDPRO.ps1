@@ -763,7 +763,7 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $period_to_time = $period_to_time.ToUpper()
                     $period_to_time = $period_to_time.Substring(0, 1)
 
-                    $period_from = (Select-String -Path "C:\temp\Ord\TMP\2632.mof" -Pattern "REPORT TO " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $period_from = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "REPORT TO " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period_from = $period_from.ToString()
                     $period_from = $period_from.Split(' ')
                     $period_from_day = $period_from[4]
