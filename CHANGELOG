@@ -6,7 +6,8 @@ date: 10/16/2017
 CHANGES
 - fixed editing of .cof and .mof files to include a move of the original file to directory containing original splits of files
 - reworked parameter handling from if's to foreach param array switch statement. saves code, looks better, can pass multiple switches at once rather than one at a time
-- fixed 165 variable capturing. was not capturing properly
+- fixed format 165 variable capturing. was not capturing properly
+- removed all non-context required uses of ConvertFrom-String
 ------------------------------------
 version: 0.6
 date: 10/15/2017
