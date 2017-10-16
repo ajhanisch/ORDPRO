@@ -12,27 +12,27 @@
 .PARAMETER backups
    Backup original order files. Alias: 'b'. This parameter tells the script to create backups of all files in current directory. Backups all files with ".prt" extension in current directory to ".\MASTER-HISTORY\NONEDITED" directory.
 .PARAMETER split_main
-   Split main order files with "*m.prt" name. Alias: 'sM'. This parameter tells the script to split the main "*m.prt" file into individual orders. Individual order files are split to ".\TMP\__MOF\{run_date}_{n}.mof" files for editing.
+   Split main order files with "*m.prt" name. Alias: 'sm'. This parameter tells the script to split the main "*m.prt" file into individual orders. Individual order files are split to ".\TMP\__MOF\{run_date}_{n}.mof" files for editing.
 .PARAMETER split_cert
-   Split certificate order files with "*c.prt" name. Alias: 'sC'. This parameter tells the script to split the main "*c.prt" file into individual certificate orders. Individual certificate orders files are split to ".\TMP\__COF\{run_date}_{n}.cof" files for editing.
+   Split certificate order files with "*c.prt" name. Alias: 'sc'. This parameter tells the script to split the main "*c.prt" file into individual certificate orders. Individual certificate orders files are split to ".\TMP\__COF\{run_date}_{n}.cof" files for editing.
 .PARAMETER edit_main
-   Edit main order files. Alias: 'eM'. This parameter tells the script to edit the individual ".\TMP\__MOF\{run_date}_{n}.mof" files to be ready to be combined.
+   Edit main order files. Alias: 'em'. This parameter tells the script to edit the individual ".\TMP\__MOF\{run_date}_{n}.mof" files to be ready to be combined.
 .PARAMETER edit_cert
-   Edit certificate order files. Alias: 'eC'. This parameter tells the script to edit the individual ".\TMP\__COF\{run_date}_{n}.cof" files to be ready to be combined.
+   Edit certificate order files. Alias: 'ec'. This parameter tells the script to edit the individual ".\TMP\__COF\{run_date}_{n}.cof" files to be ready to be combined.
 .PARAMETER combine_main
-   Combine main order files. Alias: 'cM'. This parameter tells the script to combine the edited main order files into a single document to be used at a later date.
+   Combine main order files. Alias: 'cm'. This parameter tells the script to combine the edited main order files into a single document to be used at a later date.
 .PARAMETER combine_cert
-   Combine certificate order files. Alias: 'cC'. This parameter tells the script to combine the edited certificate order files into a single document to be used at a later date.
+   Combine certificate order files. Alias: 'cc'. This parameter tells the script to combine the edited certificate order files into a single document to be used at a later date.
 .PARAMETER magic_main
-   Magic work on main orders. TAlias: 'mM'. his parameter tells the script to parse the split main order files, create directory structure based on parsed data, and put orders in appropriate ".\UICS\UIC\SSN" folders.
+   Magic work on main orders. TAlias: 'mm'. his parameter tells the script to parse the split main order files, create directory structure based on parsed data, and put orders in appropriate ".\UICS\UIC\SSN" folders.
 .PARAMETER magic_cert
-   Magic work on certificate orders. Alias: 'mC'. This parameter tells the script to parse the split certificate order files, create directory structure based on parsed data, and put orders in appropriate ".\UICS\UIC\SSN" folders. If you are not using the 'all' parameter, make sure to run 'magic_main' or 'mM' before this parameter.
+   Magic work on certificate orders. Alias: 'mc'. This parameter tells the script to parse the split certificate order files, create directory structure based on parsed data, and put orders in appropriate ".\UICS\UIC\SSN" folders. If you are not using the 'all' parameter, make sure to run 'magic_main' or 'mm' before this parameter.
 .PARAMETER clean_main
-   Cleanup main order files. Alias: 'xM'. This parameter tells the script to cleanup the ".\TMP\__MOF" directory of all "\TMP\__MOF\{run_date}_{n}.mof" files.
+   Cleanup main order files. Alias: 'xm'. This parameter tells the script to cleanup the ".\TMP\__MOF" directory of all "\TMP\__MOF\{run_date}_{n}.mof" files.
 .PARAMETER clean_cert
-   Cleanup certificate order files. Alias: 'xC'. This parameter tells the script to cleanup the ".\TMP" directory of all "\TMP\__COF\{run_date}_{n}.cof" files.
+   Cleanup certificate order files. Alias: 'xc'. This parameter tells the script to cleanup the ".\TMP" directory of all "\TMP\__COF\{run_date}_{n}.cof" files.
 .PARAMETER clean_uics
-   Cleanup UICS folder. Alias: 'xU'. This parameter tells the script to cleanup the ".\UICS" directory of all UIC folders. This parameter is NOT used when 'all' is used. This is typically only for development and administrative use.
+   Cleanup UICS folder. Alias: 'xu'. This parameter tells the script to cleanup the ".\UICS" directory of all UIC folders. This parameter is NOT used when 'all' is used. This is typically only for development and administrative use.
 .PARAMETER permissions
    Get permissions of ".\UICS" folder contents. Alias: 'p'. This parameter tells the script to recursively get the permissions of each file and folder in the UICS directory. Output includes a .csv file, .html report, and a .txt file.
 .PARAMETER all
@@ -86,37 +86,37 @@ param(
     [alias('b')]
     [switch]$backups
     ,
-    [alias('sM')]
+    [alias('sm')]
     [switch]$split_main
     ,
-    [alias('sC')]
+    [alias('sc')]
     [switch]$split_cert
     ,
-    [alias('eM')]
+    [alias('em')]
     [switch]$edit_main
     ,
-    [alias('eC')]
+    [alias('ec')]
     [switch]$edit_cert
     ,
-    [alias('cM')]
+    [alias('cm')]
     [switch]$combine_main
     ,
-    [alias('cC')]
+    [alias('cc')]
     [switch]$combine_cert
     ,
-    [alias('mM')]
+    [alias('mm')]
     [switch]$magic_main
     ,
-    [alias('mC')]
+    [alias('mc')]
     [switch]$magic_cert
     ,
-    [alias('xM')]
+    [alias('xm')]
     [switch]$clean_main
     ,
-    [alias('xC')]
+    [alias('xc')]
     [switch]$clean_cert
     ,
-    [alias('xU')]
+    [alias('xu')]
     [switch]$clean_uics
     ,
     [alias('p')]
@@ -497,8 +497,8 @@ $old_spacing_2 = @"
     else
     {
         Write-Host "[!] Total to edit: $($total_to_edit_orders_main)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .mof files in $($mof_directory). Make sure to split *m.prt files first. Use '$($script_name) -sM' first, then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .mof files in $($mof_directory). Make sure to split *m.prt files first. Use '$($script_name) -sM' first, then try again."
+        Write-Host "[!] No .mof files in $($mof_directory). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .mof files in $($mof_directory). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
     }
 }
 
@@ -567,8 +567,8 @@ function Edit-OrdersCertificate($cof_directory, $exclude_directories, $regex_end
     else
     {
         Write-Host "[!] Total to edit: $($total_to_edit_orders_cert)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .cof files in $($cof_directory). Make sure to split *c.prt files first. Use '$($script_name) -sC' first, then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .cof files in $($cof_directory). Make sure to split *c.prt files first. Use '$($script_name) -sC' first, then try again."
+        Write-Host "[!] No .cof files in $($cof_directory). Make sure to split *c.prt files first. Use '$($script_name) -sc' first, then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .cof files in $($cof_directory). Make sure to split *c.prt files first. Use '$($script_name) -sc' first, then try again."
     }
 }
 
@@ -606,8 +606,8 @@ function Combine-OrdersMain($mof_directory, $run_date, $exclude_directories)
     else
     {
         Write-Host "[!] Total to combine: $($total_to_combine_orders_main)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .mof files in $($mof_directory) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .mof files in $($mof_directory) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again."
+        Write-Host "[!] No .mof files in $($mof_directory) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .mof files in $($mof_directory) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
     }
 }
 
@@ -645,8 +645,8 @@ function Combine-OrdersCertificate($cof_directory, $run_date)
     else
     {
         Write-Host "[#] Total to combine: $($total_to_combine_orders_cert)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .cof files in $($cof_directory) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sC' first, then use '$($script_name) -eC', then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .cof files in $($cof_directory) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sC' first, then use '$($script_name) -eC', then try again."
+        Write-Host "[!] No .cof files in $($cof_directory) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .cof files in $($cof_directory) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
     }
 }
 
@@ -723,21 +723,26 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $published_year = $($published_year[1]) # YYYY turned into YY
                     $order_number = $order_number[1]
 
-                    $anchor = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | Select -First 1)
-                    $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
+                    $anchor = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "You are ordered to" -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | 
+                    Select -First 1 | 
+                    ConvertFrom-String | 
+                    Select P3, P4, P5, P6 ) # MI (3 = last, 4 = first, 5 = MI, 6 = SSN) // NO MI ( 3 = last, 4 = first, 5 = ssn 6 = rank )
 
-                    # Code to fix people that have no middle name.
-                    if($($anchor.MiddleInitial).Length -ne 1)
-                    {
-                        $anchor.SSN = $anchor.MiddleInitial
-                        $anchor.MiddleInitial = 'NMI'
-                    }
-
-                    $last_name = $($anchor.LastName)
+                    $last_name = $anchor.P3
                     $last_name = $last_name.Split(':')[-1]
-                    $first_name = $($anchor.FirstName)
-                    $middle_initial = $($anchor.MiddleInitial)
-                    $ssn = $($anchor.SSN)
+                    $first_name = $anchor.P4
+                    $middle_initial = $anchor.P5
+
+                    if($($middle_initial).Length -gt '1')
+                    {
+                        $middle_initial = 'NMI'
+                        $ssn = $anchor.P5
+                    }
+                    else
+                    {
+                        $middle_initial = $anchor.P5
+                        $ssn = $anchor.P6
+                    }
 
                     $period_to = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "Period of active duty: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period_to = $period_to.ToString()
@@ -769,8 +774,6 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $orders_created_orders_main ++
 
                     Write-Host "[#] Created: ($($orders_created_orders_main)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main)/$($total_to_create_orders_main))" -ForegroundColor Yellow
-
-                    Read-Host -Prompt "Enter to continue"
 
                     <#
                     $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
@@ -1008,31 +1011,37 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $middle_initial = $($anchor.MiddleInitial)
                     $ssn = $($anchor.SSN)
 
-                    $period = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue  | Select -First 1 | ConvertFrom-String -PropertyNames Period, Status, Colon, FromDay, FromMonth, FromYear, Dash, ToDay, ToMonth, ToYear | Select Status, FromDay, FromMonth, FromYear, ToDay, ToMonth, ToYear)
-                    $period_status = $($period.Status)
-                    $period_from_day = $($period.FromDay)
-                    $period_from_day = $period_from_day.ToString()
+                    $period = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $period = $period.ToString()
+                    $period = $period.Split(' ')        
+                    $period_status = $($period[1])
+                    $period_from_day = $($period[3])
                     if($($period_from_day).Length -ne 2)
                     {
                         $period_from_day = "0$($period_from_day)"
                     }
-                    $period_from_month = $($period.FromMonth)
+                    $period_from_month = $($period[4])
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
-                    $period_from_year = $($period.FromYear)
-                    $period_to_day = $($period.ToDay)
-                    $period_to_day = $period_to_day.ToString()
+                    $period_from_year = $($period[5])
+
+                    $period_to_day = $($period[-3])
                     if($($period_to_day).Length -ne 2)
                     {
                         $period_to_day = "0$($period_to_day)"
                     }
-
-                    $period_to_month = $($period.ToMonth)
+                    $period_to_month = $($period[-2])
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
-                    $period_to_year = $($period.ToYear)
+                    $period_to_year = $($period[-1])
 
-                    $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
-                    $uic = $uic.Split("-")
-                    $uic = $($uic[0])
+                    $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $uic = $uic.ToString()
+                    $uic = $uic.Split(' ')
+                    $uic = $uic[0]
+                    $uic = $uic.Split(":")
+                    $uic = $uic[-1]
+                    $uic = $uic -replace "[:\(\)./]",""
+                    $uic = $uic.Split('-')
+                    $uic = $uic[0]
 
                     $uic_directory = "$($uics_directory)\$($uic)"
                     $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
@@ -1079,37 +1088,37 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                         $anchor.MiddleInitial = 'NMI'
                     }
 
-                    $last_name = $($anchor.LastName)
-                    $last_name = $last_name.Split(':')[-1]
-                    $first_name = $($anchor.FirstName)
-                    $middle_initial = $($anchor.MiddleInitial)
-                    $ssn = $($anchor.SSN)
-        
-                    $period = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue  | Select -First 1 | ConvertFrom-String -PropertyNames Period, Status, Colon, FromDay, FromMonth, FromYear, Dash, ToDay, ToMonth, ToYear | Select Status, FromDay, FromMonth, FromYear, ToDay, ToMonth, ToYear)
-                    $period_status = $($period.Status)
-                    $period_from_day = $($period.FromDay)
-                    $period_from_day = $period_from_day.ToString()
+                    $period = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $period = $period.ToString()
+                    $period = $period.Split(' ')        
+                    $period_status = $($period[1])
+                    $period_from_day = $($period[3])
                     if($($period_from_day).Length -ne 2)
                     {
                         $period_from_day = "0$($period_from_day)"
                     }
-                    $period_from_month = $($period.FromMonth)
+                    $period_from_month = $($period[4])
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
-                    $period_from_year = $($period.FromYear)
-                    $period_to_day = $($period.ToDay)
-                    $period_to_day = $period_to_day.ToString()
+                    $period_from_year = $($period[5])
+
+                    $period_to_day = $($period[-3])
                     if($($period_to_day).Length -ne 2)
                     {
                         $period_to_day = "0$($period_to_day)"
                     }
-
-                    $period_to_month = $($period.ToMonth)
+                    $period_to_month = $($period[-2])
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
-                    $period_to_year = $($period.ToYear)
+                    $period_to_year = $($period[-1])
         
-                    $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
-                    $uic = $uic.Split("-")
-                    $uic = $($uic[0])
+                    $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $uic = $uic.ToString()
+                    $uic = $uic.Split(' ')
+                    $uic = $uic[0]
+                    $uic = $uic.Split(":")
+                    $uic = $uic[-1]
+                    $uic = $uic -replace "[:\(\)./]",""
+                    $uic = $uic.Split('-')
+                    $uic = $uic[0]
 
                     $uic_directory = "$($uics_directory)\$($uic)"
                     $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
@@ -1143,8 +1152,8 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
     else
     {
         Write-Host "[!] Total to create: $($total_to_create_orders_main)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .mof files in $($mof_directory) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .mof files in $($mof_directory) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sM' first, then use '$($script_name) -eM', then try again."
+        Write-Host "[!] No .mof files in $($mof_directory) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .mof files in $($mof_directory) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
     }
 }
 
@@ -1242,8 +1251,8 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
     else
     {
         Write-Host "[!] Total to create: $($total_to_create_orders_cert)" ([char]7) -ForegroundColor Red
-        Write-Host "[!] No .cof files in $($cof_directory) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sC' first, then use '$($script_name) -eC', then try again." ([char]7) -ForegroundColor Red
-        throw "[!] No .cof files in $($cof_directory) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -eC', then try again."
+        Write-Host "[!] No .cof files in $($cof_directory) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again." ([char]7) -ForegroundColor Red
+        throw "[!] No .cof files in $($cof_directory) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
     }
 }
 
