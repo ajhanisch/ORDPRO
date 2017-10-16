@@ -1159,7 +1159,7 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
 
 function Parse-OrdersCertificate($cof_directory, $exclude_directories)
 {
-    $total_to_create_orders_cert = (Get-ChildItem -Path "$($cof_directory)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }).Length
+    $total_to_create_orders_cert = (Get-ChildItem -Path "$($cof_directory)" -Filter "*.cof" -Include "*_edited.cof" -Exclude $($exclude_directories) -Recurse).Length
     
     if($($total_to_create_orders_cert) -gt '0')
     {
@@ -1168,11 +1168,11 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
 
         Write-Host "[#] Total to create: $($total_to_create_orders_cert)" -ForegroundColor Yellow
 
-        foreach($file in (Get-ChildItem -Path "$($cof_directory)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }))
+        foreach($file in (Get-ChildItem -Path "$($cof_directory)" -Filter "*.cof" -Include "*_edited.cof" -Exclude $($exclude_directories) -Recurse))
             {
                 Process-DevCommands
 
-                foreach($line in (Get-Content "$($cof_directory)\$($file)"))
+                foreach($line in (Get-Content "$($file)"))
                 {
                     if($line -eq '')
                     {
@@ -1188,7 +1188,7 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
                     }
                 }
 
-                $name = (Select-String -Path "$($cof_directory)\$($file)" -Pattern $($regex_name_parse_orders_cert) -AllMatches -List -ErrorAction SilentlyContinue  | Select -First 1)
+                $name = (Select-String -Path "$($file)" -Pattern $($regex_name_parse_orders_cert) -ErrorAction SilentlyContinue  | Select -First 1)
                 $name = $name.ToString()
                 $name = $name.Split(' ')
                 $last_name = $name[5]
@@ -1203,13 +1203,13 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
                     $middle_initial = $name[7]
                 }
 
-                $order_number = (Select-String -Path "$($cof_directory)\$($file)" -Pattern $($regex_order_number_parse_orders_cert) -SimpleMatch -ErrorAction SilentlyContinue | Select -First 1)
+                $order_number = (Select-String -Path "$($file)" -Pattern $($regex_order_number_parse_orders_cert) -ErrorAction SilentlyContinue | Select -First 1)
                 $order_number = $order_number.ToString()
                 $order_number = $order_number.Split(' ')
                 $order_number = $($order_number[2])
                 $order_number = $order_number.Insert(3,"-")
 
-                $period = (Select-String -Path "$($cof_directory)\$($file)" -Pattern $($regex_period_parse_orders_cert) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $period = (Select-String -Path "$($file)" -Pattern $($regex_period_parse_orders_cert) -ErrorAction SilentlyContinue | Select -First 1)
                 $period = $period.ToString()
                 $period = $period.Split(' ')
                 $period = $period[3]
@@ -1224,13 +1224,13 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
                 $period_to_month = $period_to[1]
                 $period_to_day = $period_to[2]
         
-                $ssn = (Get-ChildItem -Path $($uics_directory) -Recurse | Where { $_.Name -like "*___$($order_number)___*$($period_from_year)$($period_from_month)$($period_from_day)___*$($period_to_year)$($period_to_month)$($period_to_day)___*.txt" } | ConvertFrom-String -Delimiter "___" | Select -First 1)
+                $ssn = (Get-ChildItem -Path $($uics_directory) -Filter "*___$($order_number)___*$($period_from_year)$($period_from_month)$($period_from_day)___*$($period_to_year)$($period_to_month)$($period_to_day)___*.txt" -Recurse -Force | ConvertFrom-String -Delimiter "___" | Select -First 1)
                 $ssn = $($ssn.P2)
         
                 $uic_directory = "$($uics_directory)\$($uic)"
                 $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
                 $uic_soldier_order_file_name = "$($period_from_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___$($period_to_year)$($period_to_month)$($period_to_day)___cert.txt"
-                $uic_soldier_order_file_content = (Get-Content "$($cof_directory)\$($file)" -Raw)
+                $uic_soldier_order_file_content = (Get-Content "$($file)" -Raw)
         
                 Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
