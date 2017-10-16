@@ -3,10 +3,10 @@
    Script to help automate order management.
 .DESCRIPTION
    Script designed to assist in management and processing of orders given in the format of a single file containing numerous orders. The script begins by splitting each order into individual orders. It determines what folders need to be created based on UIC and SSN information parsed from each order. It creates folders for each UIC and SSN and places orders in appropriate SSN folder. During this time it also creates historical backups of each order parsed for back and redundancy. After this it will assign permissions to appropiate groups on each UIC and SSN folder. When it has finished this and cleaned up, it will notify appropriate users and groups of newly published orders.
-.PARAMETER h
-   Help page. Alias: 'help'. This parameter tells the script you want to learn more about it. It will display this page after running the command 'Get-Help .\ORDPRO.ps1 -Full' for you.
-.PARAMETER v
-   Version information. Alias: 'version'. This parameter tells the script you want to check its version number.
+.PARAMETER help
+   Help page. Alias: 'h'. This parameter tells the script you want to learn more about it. It will display this page after running the command 'Get-Help .\ORDPRO.ps1 -Full' for you.
+.PARAMETER version
+   Version information. Alias: 'v'. This parameter tells the script you want to check its version number.
 .PARAMETER dir_create
    Directory creation. Alias: 'd'. This parameter tells the script to create the required directories for the script to run. Directories created are ".\MASTER-HISTORY\{EDITED}{NONEDITED}" ".\UICS" ".\TMP\{___LOGS}{__MOF}{__COF}".
 .PARAMETER backups
@@ -33,6 +33,8 @@
    Cleanup certificate order files. Alias: 'xC'. This parameter tells the script to cleanup the ".\TMP" directory of all "\TMP\__COF\{run_date}_{n}.cof" files.
 .PARAMETER clean_uics
    Cleanup UICS folder. Alias: 'xU'. This parameter tells the script to cleanup the ".\UICS" directory of all UIC folders. This parameter is NOT used when 'all' is used. This is typically only for development and administrative use.
+.PARAMETER permissions
+   Get permissions of ".\UICS" folder contents. Alias: 'p'. This parameter tells the script to recursively get the permissions of each file and folder in the UICS directory. Output includes a .csv file, .html report, and a .txt file.
 .PARAMETER all
    All parameters. Alias: 'a'. This parameter tells the script to run all required parameters needed to be successful. Most common parameter to those new to using this script.
 .INPUTS
@@ -73,12 +75,12 @@ param(
     [cmdletbinding()]
 
     [parameter()]
-    [alias('help')]
-    [switch]$h,
+    [alias('h')]
+    [switch]$help,
 
     [parameter()]
-    [alias('version')]
-    [switch]$v,
+    [alias('v')]
+    [switch]$version,
 
     [parameter()]
     [alias('d')]
@@ -133,6 +135,10 @@ param(
     [switch]$clean_uics,
 
     [parameter()]
+    [alias('p')]
+    [switch]$permissions,
+
+    [parameter()]
     [alias('a')]
     [switch]$all
 )
@@ -142,6 +148,7 @@ DIRECTORIES
 #>
 $current_directory = (Get-Item -Path ".\" -Verbose).FullName
 $uics_directory = "$($current_directory)\UICS"
+$permissions_directory = "$($uics_directory)\__PERMISSIONS"
 $tmp_directory = "$($current_directory)\TMP"
 $master_history_edited = "$($current_directory)\MASTER-HISTORY\EDITED"
 $master_history_unedited = "$($current_directory)\MASTER-HISTORY\UNEDITED"
@@ -154,7 +161,7 @@ $log_directory = "$($tmp_directory)\___LOGS"
 <#
 ARRAYS
 #>
-$directories = @("$($uics_directory)","$($tmp_directory)", "$($master_history_edited)","$($master_history_unedited)", "$($mof_directory)", "$($cof_directory)", "$($log_directory)", "$($mof_directory_original_splits)", "$($cof_directory_original_splits)")
+$directories = @("$($uics_directory)","$($tmp_directory)", "$($master_history_edited)","$($master_history_unedited)", "$($mof_directory)", "$($cof_directory)", "$($log_directory)", "$($mof_directory_original_splits)", "$($cof_directory_original_splits)", $($permissions_directory))
 
 <#
 HASH TABLES
@@ -185,7 +192,7 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
-$version = '0.5'
+$version = '0.6'
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $script_name = $($MyInvocation.MyCommand.Name)
 $year_prefix = (Get-Date -Format yyyy).Substring(0,2)
@@ -412,7 +419,6 @@ function Split-OrdersCertificate($current_directory, $cof_directory, $run_date, 
     }
 }
 
-# WOrking properly now. Use same code in Edit-OrdersCertificate
 function Edit-OrdersMain($mof_directory, $exclude_directories, $regex_old_fouo_3_edit_orders_main, $mof_directory_original_splits)
 {
     $total_to_edit_orders_main = (Get-ChildItem -Path "$($mof_directory)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
@@ -485,7 +491,7 @@ $old_spacing_2 = @"
                         }
                         else
                         {
-                            Write-Host "[!] $($file) move to $($mof_directory_original_splits) failed." -ForegroundColor Red
+                            Write-Host "[!] $($file) move to $($mof_directory_original_splits) failed." ([char]7) -ForegroundColor Red
                             throw "[!] $($file) move to $($mof_directory_original_splits) failed."
                         }
                     }
@@ -514,14 +520,14 @@ $old_spacing_2 = @"
 
 function Edit-OrdersCertificate($cof_directory, $exclude_directories, $regex_end_cert, $cof_directory_original_splits)
 {
-    $total_to_edit_orders_cert = (Get-ChildItem -Path "$($cof_directory)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
+    $total_to_edit_orders_cert = (Get-ChildItem -Path "$($cof_directory)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
 
     if($($total_to_edit_orders_cert) -gt '0')
     {
         Write-Host "[#] Total to edit: $($total_to_edit_orders_cert)" -ForegroundColor Yellow
         $total_edited_orders_cert = 0
 
-        foreach($file in (Get-ChildItem -Path "$($cof_directory)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof'}))
+        foreach($file in (Get-ChildItem -Path "$($cof_directory)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof'}))
         {
             Process-DevCommands
 
@@ -555,7 +561,7 @@ function Edit-OrdersCertificate($cof_directory, $exclude_directories, $regex_end
                         }
                         else
                         {
-                            Write-Host "[!] $($file) move to $($cof_directory_original_splits) failed." -ForegroundColor Red
+                            Write-Host "[!] $($file) move to $($cof_directory_original_splits) failed." ([char]7) -ForegroundColor Red
                             throw "[!] $($file) move to $($cof_directory_original_splits) failed."
                         }
                     }
@@ -1343,7 +1349,7 @@ function Clean-OrdersMain($mof_directory, $exclude_directories)
     }
     else
     {
-        Write-Host "[!] Total .mof files to clean: $($total_to_clean_main_files)" -ForegroundColor Red
+        Write-Host "[!] Total .mof files to clean: $($total_to_clean_main_files)" ([char]7) -ForegroundColor Red
         Write-Host "[!] No .mof files in $($mof_directory) to clean up." ([char]7) -ForegroundColor Red
         throw "[!] No .mof files in $($mof_directory) to clean up."
     }
@@ -1371,7 +1377,7 @@ function Clean-OrdersCertificate($cof_directory, $exclude_directories)
     }
     else
     {
-        Write-Host "[!] Total .cof files to clean: $($total_to_clean_cert_files)" -ForegroundColor Red
+        Write-Host "[!] Total .cof files to clean: $($total_to_clean_cert_files)" ([char]7) -ForegroundColor Red
         Write-Host "[!] No .cof files in $($cof_directory) to clean up." ([char]7) -ForegroundColor Red
         throw "[!] No .cof files in $($cof_directory) to clean up."
     }
@@ -1399,7 +1405,7 @@ function Clean-UICS($uics_directory)
     }
     else
     {
-        Write-Host "[!] Total directories to clean: $($total_to_clean_uics_directories)" -ForegroundColor Red
+        Write-Host "[!] Total directories to clean: $($total_to_clean_uics_directories)" ([char]7) -ForegroundColor Red
         Write-Host "[!] No directories in $($uics_directory) to clean up." ([char]7) -ForegroundColor Red
         throw "[!] No directories in $($uics_directory) to clean up."
     }
@@ -1438,6 +1444,72 @@ function Process-DevCommands()
                 default { "Response not determined." }
             }
         }
+    }
+}
+
+function Get-Permissions()
+{
+    $directory = (Get-Item -Path ".\" -Verbose).FullName
+    $uics_directory = "$($directory)\UICS"
+    $permissions_reports_directory = "$($uics_directory)\__PERMISSIONS"
+    $uics_directory = $uics_directory.Split('\')
+    $uics_directory = $uics_directory[-1]
+
+    $html_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.html"
+    $csv_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.csv"
+    $txt_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.txt"
+
+    if(!(Test-Path "$($permissions_reports_directory)\$($run_date)"))
+    {
+        New-Item -ItemType Directory -Path "$($permissions_reports_directory)\$($run_date)" > $null
+    }
+
+    Write-Host "[#] Writing permissions of $($uics_directory) to .csv file now." -ForegroundColor Yellow
+    Get-ChildItem -Recurse -Path $($uics_directory) | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Export-Csv -Force -NoTypeInformation $($csv_report)
+    if($?)
+    {
+        Write-Host "[*] $($uics_directory) permissions writing to .csv finished successfully." -ForegroundColor Green
+    }
+    else
+    {
+        Write-Host "[!] $($uics_directory) permissions writing to .csv failed." ([char]7) -ForegroundColor Red
+        throw "[!] $($uics_directory) permissions writing to .csv failed."
+    }
+
+    Write-Host "[#] Writing permissions of $($uics_directory) to .html file now." -ForegroundColor Yellow
+$css = 
+@"
+<style>
+h1, h5, th { text-align: center; font-family: Segoe UI; }
+table { margin: auto; font-family: Segoe UI; box-shadow: 10px 10px 5px #888; border: thin ridge grey; }
+th { font-size: 17px; background: #0046c3; color: #fff; max-width: 400px; padding: 5px 10px; }
+td { font-size: 12px; padding: 5px 20px; color: #000; }
+tr { background: #b8d1f3; }
+tr:nth-child(even) { background: #dae5f4; }
+tr:nth-child(odd) { background: #b8d1f3; }
+</style>
+"@
+    Get-ChildItem -Recurse -Path $($uics_directory) | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | ConvertTo-Html -Title "$($uics_directory) Permissions Report" -Head $($css) -Body "<h1>$($uics_directory) Permissions Report</h1> <h5> Generated on $(Get-Date -UFormat "%Y-%m-%d @ %H-%M-%S")" | Out-File $($html_report)
+    if($?)
+    {
+        Write-Host "[*] $($uics_directory) permissions writing to .html finished successfully." -ForegroundColor Green
+    }
+    else
+    {
+        Write-Host "[!] $($uics_directory) permissions writing to .html failed." ([char]7) -ForegroundColor Red
+        throw "[!] $($uics_directory) permissions writing to .html failed."
+    }
+
+    Write-Host "[#] Writing permissions of $($uics_directory) to .txt file now." -ForegroundColor Yellow
+    Get-ChildItem -Recurse -Path $($uics_directory) | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Format-Table -AutoSize -Wrap | Out-File $($txt_report)
+    if($?)
+    {
+        Write-Host "[*] $($uics_directory) permissions writing to .txt finished successfully." -ForegroundColor Green
+    }
+    else
+    {
+        Write-Host "[!] $($uics_directory) permissions writing to .txt failed." ([char]7) -ForegroundColor Red
+        throw "[!] $($uics_directory) permissions writing to .txt failed."
     }
 }
 
@@ -1805,6 +1877,33 @@ elseif($clean_uics)
 
     Stop-Transcript
 }
+elseif($permissions)
+{
+    $log_path = "$($log_directory)\$($run_date)_M=permissions.log"
+    $error_path = "$($log_directory)\$($run_date)_M=permissions_errors.log"
+
+    cls
+    Start-Transcript -Path $($log_path)
+    Write-Host "[^] Get permissions parameter specified. Getting permissions now." -ForegroundColor Cyan
+
+    try {
+        Write-Host "[-] Getting permissions." -ForegroundColor White
+            
+        Get-Permissions
+
+        if($?)
+        {
+            Write-Host "[^] Getting permissions of UICS folder finished successfully." -ForegroundColor Cyan
+        }
+    }
+    catch {
+        $_ | Out-File -Append $($error_path)
+        Write-Host "[!] Getting permissions failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
+        exit 1
+    }
+
+    Stop-Transcript
+}
 elseif($all)
 {
     $log_path = "$($log_directory)\$($run_date)_M=all.log"
@@ -2003,6 +2102,22 @@ elseif($all)
     catch {
         $_ | Out-File -Append $($error_path)
         Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
+        exit 1
+    }
+
+    try {
+        Write-Host "[-] Getting permissions." -ForegroundColor White
+            
+        Get-Permissions
+
+        if($?)
+        {
+            Write-Host "[^] Getting permissions of UICS folder finished successfully." -ForegroundColor Cyan
+        }
+    }
+    catch {
+        $_ | Out-File -Append $($error_path)
+        Write-Host "[!] Getting permissions failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
         exit 1
     }
 
