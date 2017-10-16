@@ -74,71 +74,54 @@ PARAMETERS
 param(
     [cmdletbinding()]
 
-    [parameter()]
     [alias('h')]
-    [switch]$help,
-
-    [parameter()]
+    [switch]$help
+    ,
     [alias('v')]
-    [switch]$version,
-
-    [parameter()]
+    [switch]$version
+    ,
     [alias('d')]
-    [switch]$dir_create,
-
-    [parameter()]
+    [switch]$dir_create
+    ,
     [alias('b')]
-    [switch]$backups,
-
-    [parameter()]
+    [switch]$backups
+    ,
     [alias('sM')]
-    [switch]$split_main,
-
-    [parameter()]
+    [switch]$split_main
+    ,
     [alias('sC')]
-    [switch]$split_cert,
-
-    [parameter()]
+    [switch]$split_cert
+    ,
     [alias('eM')]
-    [switch]$edit_main,
-
-    [parameter()]
+    [switch]$edit_main
+    ,
     [alias('eC')]
-    [switch]$edit_cert,
-
-    [parameter()]
+    [switch]$edit_cert
+    ,
     [alias('cM')]
-    [switch]$combine_main,
-
-    [parameter()]
+    [switch]$combine_main
+    ,
     [alias('cC')]
-    [switch]$combine_cert,
-
-    [parameter()]
+    [switch]$combine_cert
+    ,
     [alias('mM')]
-    [switch]$magic_main,
-
-    [parameter()]
+    [switch]$magic_main
+    ,
     [alias('mC')]
-    [switch]$magic_cert,
-
-    [parameter()]
+    [switch]$magic_cert
+    ,
     [alias('xM')]
-    [switch]$clean_main,
-
-    [parameter()]
+    [switch]$clean_main
+    ,
     [alias('xC')]
-    [switch]$clean_cert,
-
-    [parameter()]
+    [switch]$clean_cert
+    ,
     [alias('xU')]
-    [switch]$clean_uics,
-
-    [parameter()]
+    [switch]$clean_uics
+    ,
     [alias('p')]
-    [switch]$permissions,
-
-    [parameter()]
+    [switch]$permissions
+    ,
     [alias('a')]
     [switch]$all
 )
@@ -192,7 +175,7 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
-$version = '0.6'
+$version_info = "0.6"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $script_name = $($MyInvocation.MyCommand.Name)
 $year_prefix = (Get-Date -Format yyyy).Substring(0,2)
@@ -429,6 +412,7 @@ function Edit-OrdersMain($mof_directory, $exclude_directories, $regex_old_fouo_3
         $total_edited_orders_main = 0
 
 $old_header = @"
+
                                DEPARTMENT OF MILITARY
                            OFFICE OF THE ADJUTANT GENERAL
                   2823 West Main Street, Rapid City, SD 57702-8186
@@ -483,7 +467,7 @@ $old_spacing_2 = @"
                     if($($file.Name) -cnotcontains "*_edited.mof")
                     {
                         Write-Host "[#] Moving $($file.Name) to $($mof_directory_original_splits)" -ForegroundColor Yellow
-                        Move-Item "$($file)" -Destination "$($mof_directory_original_splits)" -Force
+                        Move-Item "$($file)" -Destination "$($mof_directory_original_splits)\$($file.Name)" -Force
 
                         if($?)
                         {
@@ -531,7 +515,7 @@ function Edit-OrdersCertificate($cof_directory, $exclude_directories, $regex_end
         {
             Process-DevCommands
 
-            $file_content = (Get-Content "$($cof_directory)\$($file)" -Raw -ErrorAction SilentlyContinue)
+            $file_content = (Get-Content "$($file)" -Raw -ErrorAction SilentlyContinue)
             $file_content = $file_content -replace "`f",''
             $file_content = $file_content -replace "                          FOR OFFICIAL USE ONLY - PRIVACY ACT",''
             $file_content = $file_content -replace "                          FOR OFFICIAL USE ONLY - PRIVACY ACT",''
@@ -542,8 +526,8 @@ function Edit-OrdersCertificate($cof_directory, $exclude_directories, $regex_end
 
                 Write-Host "[#] Editing $($file.Name) now." -ForegroundColor Yellow
 
-                Set-Content -Path "$($out_file_name)" $file_content
-				Add-Content -Path "$($out_file_name)" -Value $($regex_end_cert)
+                Set-Content -Path "$($cof_directory)\$($out_file_name)" $file_content
+				Add-Content -Path "$($cof_directory)\$($out_file_name)" -Value $($regex_end_cert)
             
                 if($?)
                 {
@@ -553,7 +537,7 @@ function Edit-OrdersCertificate($cof_directory, $exclude_directories, $regex_end
                     if($($file.Name) -cnotcontains "*_edited.cof")
                     {
                         Write-Host "[#] Moving $($file.Name) to $($cof_directory_original_splits)" -ForegroundColor Yellow
-                        Move-Item -Path "$($file)" -Destination "$($cof_directory_original_splits)" -Force
+                        Move-Item -Path "$($file)" -Destination "$($cof_directory_original_splits)\$($file.Name)" -Force
 
                         if($?)
                         {
@@ -1217,8 +1201,10 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
                 $order_number = $order_number.Insert(3,"-")
 
                 $period = (Select-String -Path "$($cof_directory)\$($file)" -Pattern $($regex_period_parse_orders_cert) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $period = $period.ToString()
+                $period = $period.Split(' ')
                 $period = $period[3]
-                $period_from = @($period_from -split '(.{2})' | ? { $_ })
+                $period_from = @($period -split '(.{2})' | ? { $_ })
                 $period_from_year = $period_from[0]
                 $period_from_month = $period_from[1]
                 $period_from_day = $period_from[2]
@@ -1340,6 +1326,7 @@ function Clean-OrdersMain($mof_directory, $exclude_directories)
         {
             Write-Host "[*] $($mof_directory) removed successfully. Cleaned: $($total_to_clean_main_files) .mof files from $($mof_directory)." -ForegroundColor Green
             New-Item -ItemType Directory -Path "$($mof_directory)" -Force > $null
+            New-Item -ItemType Directory -Path "$($mof_directory_original_splits)" -Force > $null
         }
         else
         {
@@ -1368,6 +1355,7 @@ function Clean-OrdersCertificate($cof_directory, $exclude_directories)
         {
             Write-Host "[*] $($cof_directory) removed successfully. Cleaned: $($total_to_clean_cert_files) .cof files from $($cof_directory)." -ForegroundColor Green
             New-Item -ItemType Directory -Path "$($cof_directory)" -Force > $null
+            New-Item -ItemType Directory -Path "$($cof_directory_original_splits)" -Force > $null
         }
         else
         {
@@ -1516,616 +1504,52 @@ tr:nth-child(odd) { background: #b8d1f3; }
 <#
 ENTRY POINT
 #>
-if($h)
+$Parameters = (Get-Command -Name $MyInvocation.InvocationName).Parameters | Select -ExpandProperty Keys | Where-Object { $_ -NotIn ('Verbose', 'ErrorAction', 'WarningAction', 'PipelineVariable', 'OutBuffer', 'Debug', 'ErrorAction','WarningAction', 'ErrorVariable', 'WarningVariable', 'OutVariable') }
+$TotalParameters = $parameters.count
+$ParametersPassed = $PSBoundParameters.Count
+
+If ($ParametersPassed -eq $TotalParameters) { Write-Output "All $totalParameters parameters are being used" }
+ElseIf ($ParametersPassed -eq 1) { Write-Output "1 parameter is being used" }
+Else { Write-Output "$parametersPassed parameters are being used" }
+
+if($($ParametersPassed) -gt '0')
 {
-    cls
-    Write-Host "[^] Help parameter specified. Presenting full help now." -ForegroundColor Cyan
-    Get-Help .\$($script_name) -Full
-}
-elseif($v)
-{
-    Write-Host "Running version $($version)."
-}
-elseif($dir_create)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=dir_create.log"
-    $error_path = "$($log_directory)\$($run_date)_M=dir_create_errors.log"
+    $params = @($psBoundParameters.Keys)
 
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Directory creation parameter specified. Creating required directories now." -ForegroundColor Cyan
+    foreach($p in $params)
+    {
+        $log_path = "$($log_directory)\$($run_date)\$($run_date)_M=$($p).log"
+        $error_path = "$($log_directory)\$($run_date)\$($run_date)_M=$($p)_errors.log"
 
-    try{
-        Write-Host "[-] Creating required directories." -ForegroundColor White
+        Start-Transcript -Path $($log_path)
+        Write-Host "[^] $($p) parameter specified. Running $($p) function now." -ForegroundColor Cyan
 
-        Create-RequiredDirectories -directories $($directories)
-    
-        if($?)
+        switch($p)
         {
-            Write-Host "[^] Creating directories finished successfully." -ForegroundColor Cyan
+            "help" { Write-Host "[^] Help parameter specified. Presenting full help now." -ForegroundColor Cyan; Get-Help .\$($script_name) -Full }
+            "version" { Write-Host "[^] Version parameter specified. Presenting version information now." -ForegroundColor Cyan; Write-Host "Running version $($version_info)." }
+            "dir_create" { Write-Host "[-] Creating required directories." -ForegroundColor White;  Create-RequiredDirectories -directories $($directories); if($?) {Write-Host "[^] Creating directories finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Directory creation failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 }  }
+            "backups" { Write-Host "[-] Backing up original orders file." -ForegroundColor White; Move-OriginalToHistorical -current_directory $($current_directory) -files_orders_original $($files_orders_original) -master_history_edited $($master_history_edited) -master_history_unedited $($master_history_unedited); if($?) { Write-Host "[^] Backing up original orders file finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Backing up original orders failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "split_main" { Write-Host "[-] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor White; Split-OrdersMain -current_directory $($current_directory) -mof_directory $($mof_directory) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main);  }
+            "split_cert" { Write-Host "[-] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor White; Split-OrdersCertificate -current_directory $($current_directory) -cof_directory $($cof_directory) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert); if($?) { Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "edit_main" { Write-Host "[-] Editing orders '*m.prt' files." -ForegroundColor White; Edit-OrdersMain -mof_directory $($mof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits $($mof_directory_original_splits); if($?) { Write-Host "[^] Editing orders '*m.prt' files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "edit_cert" { Write-Host "[-] Editing orders '*c.prt' files." -ForegroundColor White; Edit-OrdersCertificate -cof_directory $($cof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits $($cof_directory_original_splits); if($?) { Write-Host "[^] Editing orders '*c.prt' files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "combine_main" { Write-Host "[-] Combining .mof orders files." -ForegroundColor White; Combine-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories) -run_date $($run_date); if($?) { Write-Host "[^] Combining .mof orders files finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red ; exit 1 } }
+            "combine_cert" { Write-Host "[-] Combining .cof orders files." -ForegroundColor White; Combine-OrdersCertificate -cof_directory $($cof_directory) -run_date $($run_date); if($?) { Write-Host "[^] Combining .cof orders files finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "magic_main" { Write-Host "[-] Working magic on .mof files now." -ForegroundColor White; Parse-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main); if($?) { Write-Host "[^] Magic on .mof finished successfully. Did you expect anything less?" -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Magic on .mof failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "magic_cert" { Write-Host "[-] Working magic on .cof files." -ForegroundColor White; Parse-OrdersCertificate -cof_directory $($cof_directory) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Magic on .cof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "clean_main" { Write-Host "[-] Cleaning up .mof files." -ForegroundColor White; Clean-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Cleaning up .mof finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "clean_cert" { Write-Host "[-] Cleaning up .cof files." -ForegroundColor White; Clean-OrdersCertificate -cof_directory $($cof_directory) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Cleaning up .cof finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "clean_uics" { Write-Host "[-] Cleaning up UICS folder." -ForegroundColor White; Clean-UICS -uics_directory $($uics_directory); if($?) { Write-Host "[^] Cleaning up UICS folder finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up UICS folder failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "permissions" { Write-Host "[-] Getting permissions." -ForegroundColor White; Get-Permissions; if($?) { Write-Host "[^] Getting permissions of UICS folder finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Getting permissions failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "all" {  }
+            default { "Unrecognized parameter: $($p). Try again with proper parameter." }
         }
+
+        Stop-Transcript
     }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Directory creation failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($backups)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=backups.log"
-    $error_path = "$($log_directory)\$($run_date)_M=backups_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Backup parameter specified. Creating backups now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Backing up original orders file." -ForegroundColor White
-
-        Move-OriginalToHistorical -current_directory $($current_directory) -files_orders_original $($files_orders_original) -master_history_edited $($master_history_edited) -master_history_unedited $($master_history_unedited)
-
-        if($?)
-        {
-            Write-Host "[^] Backing up original ordres file finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Backing up original orders failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($split_main)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=split_main.log"
-    $error_path = "$($log_directory)\$($run_date)_M=split_main_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Split main order file parameter specified. Splitting main order files now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor White
-
-        Split-OrdersMain -current_directory $($current_directory) -mof_directory $($mof_directory) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
-    
-        if($?)
-        {
-            Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Splitting '*m.prt' order file(s) into individual order files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($split_cert)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=split_cert.log"
-    $error_path = "$($log_directory)\$($run_date)_M=split_cert_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Split certificate file parameter specified. Splitting '*c.prt' files now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor White
-
-        Split-OrdersCertificate -current_directory $($current_directory) -cof_directory $($cof_directory) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
-    
-        if($?)
-        {
-            Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($edit_main)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=edit_main.log"
-    $error_path = "$($log_directory)\$($run_date)_M=edit_main_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Edit orders '*m.prt' parameter specified. Editing orders now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Editing orders '*m.prt' files." -ForegroundColor White
-
-        Edit-OrdersMain -mof_directory $($mof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits $($mof_directory_original_splits)
-
-        if($?)
-        {
-            Write-Host "[^] Editing orders '*m.prt' files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($edit_cert)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=edit_cert.log"
-    $error_path = "$($log_directory)\$($run_date)_M=edit_cert_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Edit orders '*c.prt' parameter specified. Editing orders now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Editing orders '*c.prt' files." -ForegroundColor White
-
-        Edit-OrdersCertificate -cof_directory $($cof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits $($cof_directory_original_splits)
-
-        if($?)
-        {
-            Write-Host "[^] Editing orders '*c.prt' files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($combine_main)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=combine_main.log"
-    $error_path = "$($log_directory)\$($run_date)_M=combine_main_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Combine .mof orders parameter specified. Combining .mof orders now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Combining .mof orders files." -ForegroundColor White
-
-        Combine-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories) -run_date $($run_date)
-
-        if($?)
-        {
-            Write-Host "[^] Combining .mof orders files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($combine_cert)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=combine_cert.log"
-    $error_path = "$($log_directory)\$($run_date)_M=combine_cert_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Combine .cof orders parameter specified. Combining .cof orders now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Combining .cof orders files." -ForegroundColor White
-
-        Combine-OrdersCertificate -cof_directory $($cof_directory) -run_date $($run_date)
-
-        if($?)
-        {
-            Write-Host "[^] Combining .cof orders files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($magic_main)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=magic_main.log"
-    $error_path = "$($log_directory)\$($run_date)_M=magic_main_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Magic parameter specified. Working magic on .mof files now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Working magic on .mof files now." -ForegroundColor White
-
-        Parse-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
-
-        if($?)
-        {
-            Write-Host "[^] Magic on .mof finished successfully. Did you expect anything less?" -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Magic on .mof failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($magic_cert)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=magic_cert.log"
-    $error_path = "$($log_directory)\$($run_date)_M=magic_cert_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Magic parameter specified. Working magic on .cof files now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Working magic on .cof files." -ForegroundColor White
-
-        Parse-OrdersCertificate -cof_directory $($cof_directory) -exclude_directories $($exclude_directories)
-
-        if($?)
-        {
-            Write-Host "[^] Magic on .cof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($clean_main)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=clean_main.log"
-    $error_path = "$($log_directory)\$($run_date)_M=clean_main_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Clean up parameter specified. Cleaning up .mof files now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Cleaning up .mof files." -ForegroundColor White
-
-        Clean-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories)
-
-        if($?)
-        {
-            Write-Host "[^] Cleaning up .mof finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($clean_cert)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=clean_cert.log"
-    $error_path = "$($log_directory)\$($run_date)_M=clean_cert_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Clean up parameter specified. Cleaning up .cof files now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Cleaning up .cof files." -ForegroundColor White
-
-        Clean-OrdersCertificate -cof_directory $($cof_directory) -exclude_directories $($exclude_directories)
-
-        if($?)
-        {
-            Write-Host "[^] Cleaning up .cof finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($clean_uics)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=clean_uics.log"
-    $error_path = "$($log_directory)\$($run_date)_M=clean_uics.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Clean up parameter specified. Cleaning up UICS folder now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Cleaning up UICS folder." -ForegroundColor White
-
-        Clean-UICS -uics_directory $($uics_directory)
-
-        if($?)
-        {
-            Write-Host "[^] Cleaning up UICS folder finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Cleaning up UICS folder failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($permissions)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=permissions.log"
-    $error_path = "$($log_directory)\$($run_date)_M=permissions_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Get permissions parameter specified. Getting permissions now." -ForegroundColor Cyan
-
-    try {
-        Write-Host "[-] Getting permissions." -ForegroundColor White
-            
-        Get-Permissions
-
-        if($?)
-        {
-            Write-Host "[^] Getting permissions of UICS folder finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Getting permissions failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
-}
-elseif($all)
-{
-    $log_path = "$($log_directory)\$($run_date)_M=all.log"
-    $error_path = "$($log_directory)\$($run_date)_M=all_errors.log"
-
-    cls
-    Start-Transcript -Path $($log_path)
-    Write-Host "[^] Run all parameter specified. Running .\$($script_name) with all required parameters now." -ForegroundColor Cyan
-
-    try{
-        Write-Host "[-] Creating required directories." -ForegroundColor White
-
-        Create-RequiredDirectories -directories $($directories)
-    
-        if($?)
-        {
-            Write-Host "[^] Creating directories finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Directory creation failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-	
-    try {
-        Write-Host "[-] Backing up original orders file." -ForegroundColor White
-
-         Move-OriginalToHistorical -current_directory $($current_directory) -files_orders_original $($files_orders_original) -master_history_edited $($master_history_edited) -master_history_unedited $($master_history_unedited)
-
-        if($?)
-        {
-            Write-Host "[^] Backing up original ordres file finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Backing up original orders failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-	
-    try {
-        Write-Host "[-] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor White
-
-        Split-OrdersMain -current_directory $($current_directory) -mof_directory $($mof_directory) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
-    
-        if($?)
-        {
-            Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Splitting '*m.prt' order file(s) into individual order files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-	
-    try {
-        Write-Host "[-] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor White
-
-        Split-OrdersCertificate -current_directory $($current_directory) -cof_directory $($cof_directory) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
-    
-        if($?)
-        {
-            Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-	
-    try {
-        Write-Host "[-] Editing orders '*m.prt' files." -ForegroundColor White
-
-        Edit-OrdersMain -mof_directory $($mof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits $($mof_directory_original_splits)
-
-        if($?)
-        {
-            Write-Host "[^] Editing orders '*m.prt' files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-	
-    try {
-        Write-Host "[-] Editing orders '*c.prt' files." -ForegroundColor White
-
-        Edit-OrdersCertificate -cof_directory $($cof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits $($cof_directory_original_splits)
-
-        if($?)
-        {
-            Write-Host "[^] Editing orders '*c.prt' files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-	
-    try {
-        Write-Host "[-] Combining .mof orders files." -ForegroundColor White
-
-        Combine-OrdersMain -mof_directory $($mof_directory) -run_date $($run_date) -exclude_directories $($exclude_directories)
-
-        if($?)
-        {
-            Write-Host "[^] Combining .mof orders files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-	
-    try {
-        Write-Host "[-] Combining .cof orders files." -ForegroundColor White
-
-        Combine-OrdersCertificate -cof_directory $($cof_directory) -run_date $($run_date)
-
-        if($?)
-        {
-            Write-Host "[^] Combining .cof orders files finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-	
-    try {
-        Write-Host "[-] Working magic on .mof files now." -ForegroundColor White
-
-        Parse-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_order_amdend_revoke_parse_orders_main $($regex_order_number_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
-
-        if($?)
-        {
-            Write-Host "[^] Magic on .mof finished successfully. Did you expect anything less?" -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Magic on .mof failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-	
-    try {
-        Write-Host "[-] Working magic on .cof files." -ForegroundColor White
-
-        Parse-OrdersCertificate -cof_directory $($cof_directory) -exclude_directories $($exclude_directories)
-
-        if($?)
-        {
-            Write-Host "[^] Magic on .cof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-	
-    try {
-        Write-Host "[-] Cleaning up .mof files." -ForegroundColor White
-
-        Clean-OrdersMain -mof_directory $($mof_directory) -exclude_directories $($exclude_directories)
-
-        if($?)
-        {
-            Write-Host "[^] Cleaning up .mof finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-	
-    try {
-        Write-Host "[-] Cleaning up .cof files." -ForegroundColor White
-
-        Clean-OrdersCertificate -cof_directory $($cof_directory) -exclude_directories $($exclude_directories)
-
-        if($?)
-        {
-            Write-Host "[^] Cleaning up .cof finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    try {
-        Write-Host "[-] Getting permissions." -ForegroundColor White
-            
-        Get-Permissions
-
-        if($?)
-        {
-            Write-Host "[^] Getting permissions of UICS folder finished successfully." -ForegroundColor Cyan
-        }
-    }
-    catch {
-        $_ | Out-File -Append $($error_path)
-        Write-Host "[!] Getting permissions failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red
-        exit 1
-    }
-
-    Stop-Transcript
 }
 else
 {
-    cls
-    Write-Host "[!] Unknown or incorrect parameter specified." ([char]7) -ForegroundColor Red
-    Write-Host "[!] Run command: '.\$($script_name) -h' or 'Get-Help .\$($script_name) -Full' to get detailed help information." ([char]7) -ForegroundColor Red
+    Write-Host "[!] No parameters passed. Run 'Get-Help $($script_name) -Full' for detailed help information" ([char]7)  -ForegroundColor Red
 }
