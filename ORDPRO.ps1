@@ -175,7 +175,7 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
-$version_info = "0.6"
+$version_info = "0.7"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $script_name = $($MyInvocation.MyCommand.Name)
 $year_prefix = (Get-Date -Format yyyy).Substring(0,2)
