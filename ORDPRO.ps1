@@ -150,7 +150,6 @@ $directories = @("$($uics_directory)","$($tmp_directory)", "$($master_history_ed
 HASH TABLES
 #>
 $months = @{"January" = "01"; "February" = "02"; "March" = "03"; "April" = "04"; "May" = "05"; "June" = "06"; "July" = "07"; "August" = "08"; "September" = "09"; "October" = "10"; "November" = "11"; "December" = "12";}
-$name_ssn = @{}
 
 <#
 REGEX MAGIX
@@ -165,7 +164,7 @@ $regex_pertaining_to_parse_orders_main = "^Pertaining to:" # To find "Pertaining
 $regex_old_fouo_3_edit_orders_main = "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}"
 
 $regex_order_number_parse_orders_cert = "Order number:"
-$regex_period_parse_orders_cert = "^Period of duty: \d{6}"
+$regex_period_parse_orders_cert = "Period of duty:"
 $regex_uic_parse_orders_cert = "CERTIFICATE OF PERFORMANCE / STATEMENT OF ATTENDANCE"
 $regex_name_parse_orders_cert = "XXX-XX-XXXX"
 
@@ -734,7 +733,7 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $first_name = $anchor.P4
                     $middle_initial = $anchor.P5
 
-                    if($($middle_initial).Length -gt '1')
+                    if($($middle_initial).Length -ne 1)
                     {
                         $middle_initial = 'NMI'
                         $ssn = $anchor.P5
@@ -744,14 +743,7 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                         $middle_initial = $anchor.P5
                         $ssn = $anchor.P6
                     }
-
-                    $period_to = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "Period of active duty: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
-                    $period_to = $period_to.ToString()
-                    $period_to = $period_to.Split(' ')
-                    $period_to_number = $period_to[-2]
-                    $period_to_time = $period_to[-1]
-                    $period_to_time = $period_to_time.ToUpper()
-                    $period_to_time = $period_to_time.Substring(0, 1)
+                    $name = "$($last_name)_$($first_name)_$($middle_initial)"
 
                     $period_from = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "REPORT TO " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period_from = $period_from.ToString()
@@ -760,14 +752,24 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $period_from_month = $period_from[5]
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $period_from[6]
+                    $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
+
+                    $period_to = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "Period of active duty: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $period_to = $period_to.ToString()
+                    $period_to = $period_to.Split(' ')
+                    $period_to_number = $period_to[-2]
+                    $period_to_time = $period_to[-1]
+                    $period_to_time = $period_to_time.ToUpper()
+                    $period_to_time = $period_to_time.Substring(0, 1)
+                    $period_to = "NTE$($period_to_number)$($period_to_time)"
 
                     $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
 
                     $uic_directory = "$($uics_directory)\$($uic)"
-                    $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
-                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___NTE$($period_to_number)$($period_to_time)___$($format).txt"
+                    $soldier_directory = "$($uics_directory)\$($uic)\$($name)"
+                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
                     $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
                     Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
@@ -814,6 +816,7 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $first_name = $($anchor.FirstName)
                     $middle_initial = $($anchor.MiddleInitial)
                     $ssn = $($anchor.SSN)
+                    $name = "$($last_name)_$($first_name)_$($middle_initial)"
         
                     $period = (Select-String -Path "$($mof_directory)\$($file)" -Pattern "Active duty commitment: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period = $period.ToString()
@@ -827,6 +830,7 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $period_from_month = $period[4]
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $period[5]
+                    $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
 
 
                     $period_to_day = $period[-3]
@@ -839,14 +843,15 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $period_to_month = $period[-2]
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $period[-1]
+                    $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
         
                     $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
 
                     $uic_directory = "$($uics_directory)\$($uic)"
-                    $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
-                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___$($period_to_year)$($period_to_month)$($period_to_day)___$($format).txt"
+                    $soldier_directory = "$($uics_directory)\$($uic)\$($name)___$($ssn)"
+                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
                     $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
                     Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
@@ -895,16 +900,18 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     if($($pertaining_to.MiddleInitial).Length -ne 1)
                     {
                         $pertaining_to.SSN = $pertaining_to.MiddleInitial
-                        $pertaining_to.MiddleInitial = 'X'
+                        $pertaining_to.MiddleInitial = 'NMI'
                     }
 
                     $last_name = $($pertaining_to.LastName)
                     $first_name = $($pertaining_to.FirstName)
                     $middle_initial = $($pertaining_to.MiddleInitial)
                     $ssn = $($pertaining_to.SSN)
+
+                    $name = "$($last_name)_$($first_name)_$($middle_initial)"
             
                     $uic_directory = "$($uics_directory)\$($uic)"
-                    $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
+                    $soldier_directory = "$($uics_directory)\$($uic)\$($name)___$($ssn)"
                     $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($order_amended)___$($format).txt"
                     $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
@@ -961,9 +968,10 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $first_name = $($pertaining_to.FirstName)
                     $middle_initial = $($pertaining_to.MiddleInitial)
                     $ssn = $($pertaining_to.SSN)
+                    $name = "$($last_name)_$($first_name)_$($middle_initial)"
 
                     $uic_directory = "$($uics_directory)\$($uic)"
-                    $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
+                    $soldier_directory = "$($uics_directory)\$($uic)\$($name)___$($ssn)"
                     $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($order_revoke)___$($format).txt"
                     $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
@@ -1005,12 +1013,12 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                         $anchor.SSN = $anchor.MiddleInitial
                         $anchor.MiddleInitial = 'NMI'
                     }
-
                     $last_name = $($anchor.LastName)
                     $last_name = $last_name.Split(':')[-1]
                     $first_name = $($anchor.FirstName)
                     $middle_initial = $($anchor.MiddleInitial)
                     $ssn = $($anchor.SSN)
+                    $name = "$($last_name)_$($first_name)_$($middle_initial)"
 
                     $period = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period = $period.ToString()
@@ -1024,6 +1032,7 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $period_from_month = $($period[4])
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $($period[5])
+                    $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
 
                     $period_to_day = $($period[-3])
                     if($($period_to_day).Length -ne 2)
@@ -1033,6 +1042,7 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $period_to_month = $($period[-2])
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $($period[-1])
+                    $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
 
                     $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $uic = $uic.ToString()
@@ -1045,8 +1055,8 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $uic = $uic[0]
 
                     $uic_directory = "$($uics_directory)\$($uic)"
-                    $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
-                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___$($period_to_year)$($period_to_month)$($period_to_day)___$($format).txt"
+                    $soldier_directory = "$($uics_directory)\$($uic)\$($name)___$($ssn)"
+                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
                     $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
                     Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
@@ -1083,15 +1093,22 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
-                    if($($anchor.MiddleInitial).Length -ne 1)
+                    if($($anchor.MiddleInitial).Length -ne '1')
                     {
                         $anchor.SSN = $anchor.MiddleInitial
                         $anchor.MiddleInitial = 'NMI'
                     }
 
+                    $last_name = $($anchor.LastName)
+                    $last_name = $last_name.Split(':')[-1]
+                    $first_name = $($anchor.FirstName)
+                    $middle_initial = $($anchor.MiddleInitial)
+                    $ssn = $($anchor.SSN)
+                    $name = "$($last_name)_$($first_name)_$($middle_initial)"
+
                     $period = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period = $period.ToString()
-                    $period = $period.Split(' ')        
+                    $period = $period.Split(' ')
                     $period_status = $($period[1])
                     $period_from_day = $($period[3])
                     if($($period_from_day).Length -ne 2)
@@ -1101,6 +1118,7 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $period_from_month = $($period[4])
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $($period[5])
+                    $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
 
                     $period_to_day = $($period[-3])
                     if($($period_to_day).Length -ne 2)
@@ -1110,6 +1128,7 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $period_to_month = $($period[-2])
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $($period[-1])
+                    $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
         
                     $uic = (Select-String -Path "$($mof_directory)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $uic = $uic.ToString()
@@ -1122,8 +1141,8 @@ function Parse-OrdersMain($mof_directory, $exclude_directories, $regex_format_pa
                     $uic = $uic[0]
 
                     $uic_directory = "$($uics_directory)\$($uic)"
-                    $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
-                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___$($period_to_year)$($period_to_month)$($period_to_day)___$($format).txt"
+                    $soldier_directory = "$($uics_directory)\$($uic)\$($name)___$($ssn)"
+                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
                     $uic_soldier_order_file_content = (Get-Content "$($mof_directory)\$($file)" -Raw)
 
                     Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
@@ -1167,6 +1186,7 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
         #$stop_watch = [system.diagnostics.stopwatch]::startNew()
         $orders_created_orders_cert = 0
         $soldiers = @(Get-ChildItem -Path "$($uics_directory)" -Exclude "__PERMISSIONS" -Recurse -Include "*.txt" | % { Split-Path  -Path $_  -Parent })
+        $name_ssn = @{}
 
         Write-Host "[#] Total to create: $($total_to_create_orders_cert)" -ForegroundColor Yellow
 
@@ -1194,9 +1214,12 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
             }
             else
             {
-                Write-Host "[*] $($name) already in hash table? Probably not a good thing. Might want to check that out." -ForegroundColor Green
+                Write-Host "[*] $($name) already in hash table." -ForegroundColor Green
             }
         }
+
+        $name_ssn.GetEnumerator() | Sort-Object Name | Out-File "$($tmp_directory)\name_ssn_hashtable.txt"
+
         Write-Host "[*] Finished populating soldiers_ssn hash table." -ForegroundColor Green
 
         foreach($file in (Get-ChildItem -Path "$($cof_directory)" -Filter "*.cof" -Include "*_edited.cof" -Exclude $($exclude_directories) -Recurse))
@@ -1243,8 +1266,8 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
                 $period = (Select-String -Path "$($file)" -Pattern $($regex_period_parse_orders_cert) -ErrorAction SilentlyContinue | Select -First 1)
                 $period = $period.ToString()
                 $period = $period.Split(' ')
-                $period = $period[3]
-                $period_from = @($period -split '(.{2})' | ? { $_ })
+                $period_from = $period[3]
+                $period_from = @($period_from -split '(.{2})' | ? { $_ })
                 $period_from_year = $period_from[0]
                 $period_from_month = $period_from[1]
                 $period_from_day = $period_from[2]
@@ -1255,7 +1278,8 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
                 $period_to_month = $period_to[1]
                 $period_to_day = $period_to[2]
         
-                $ssn = ($name_ssn.Get_Item("$($last_name)_$($first_name)_$($middle_initial)")) # Retrieve ssn from soldiers_ssn hash table via key lookup.
+                $ssn = $name_ssn."$($last_name)_$($first_name)_$($middle_initial)" # Retrieve ssn from soldiers_ssn hash table via key lookup.      
+                Write-Host "[#] SSN for $($last_name)_$($first_name)_$($middle_initial) in $($file) is: $($ssn)" -ForegroundColor Green
         
                 $uic_directory = "$($uics_directory)\$($uic)"
                 $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
