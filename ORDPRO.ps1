@@ -150,6 +150,7 @@ $directories = @("$($uics_directory)","$($tmp_directory)", "$($master_history_ed
 HASH TABLES
 #>
 $months = @{"January" = "01"; "February" = "02"; "March" = "03"; "April" = "04"; "May" = "05"; "June" = "06"; "July" = "07"; "August" = "08"; "September" = "09"; "October" = "10"; "November" = "11"; "December" = "12";}
+$name_ssn = @{}
 
 <#
 REGEX MAGIX
@@ -175,7 +176,7 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
-$version_info = "0.7"
+$version_info = "0.8"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $script_name = $($MyInvocation.MyCommand.Name)
 $year_prefix = (Get-Date -Format yyyy).Substring(0,2)
@@ -1165,8 +1166,38 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
     {
         #$stop_watch = [system.diagnostics.stopwatch]::startNew()
         $orders_created_orders_cert = 0
+        $soldiers = @(Get-ChildItem -Path "$($uics_directory)" -Exclude "__PERMISSIONS" -Recurse -Include "*.txt" | % { Split-Path  -Path $_  -Parent })
 
         Write-Host "[#] Total to create: $($total_to_create_orders_cert)" -ForegroundColor Yellow
+
+        Write-Host "[#] Populating name_ssn hash table now." -ForegroundColor Yellow
+        foreach($s in $soldiers)
+        {
+            $s = $s -split "\\" -split "___"
+            $name = $s[-2]
+            $ssn = $s[-1]
+
+            if(!($name_ssn.ContainsKey($name)))
+            {
+                Write-Host "[#] $($name) not in hash table. Adding $($name) to hash table now." -ForegroundColor Yellow
+
+                $name_ssn.Add($name, $ssn)
+
+                if($?)
+                {
+                    Write-Host "[*] $($name) added to hash table succcessfully." -ForegroundColor Green
+                }
+                else
+                {
+                    Write-Host "[!] $($name) failed to add to hash table." -ForegroundColor Red
+                }
+            }
+            else
+            {
+                Write-Host "[*] $($name) already in hash table? Probably not a good thing. Might want to check that out." -ForegroundColor Green
+            }
+        }
+        Write-Host "[*] Finished populating soldiers_ssn hash table." -ForegroundColor Green
 
         foreach($file in (Get-ChildItem -Path "$($cof_directory)" -Filter "*.cof" -Include "*_edited.cof" -Exclude $($exclude_directories) -Recurse))
             {
@@ -1224,8 +1255,7 @@ function Parse-OrdersCertificate($cof_directory, $exclude_directories)
                 $period_to_month = $period_to[1]
                 $period_to_day = $period_to[2]
         
-                $ssn = (Get-ChildItem -Path $($uics_directory) -Filter "*___$($order_number)___*$($period_from_year)$($period_from_month)$($period_from_day)___*$($period_to_year)$($period_to_month)$($period_to_day)___*.txt" -Recurse -Force | ConvertFrom-String -Delimiter "___" | Select -First 1)
-                $ssn = $($ssn.P2)
+                $ssn = ($name_ssn.Get_Item("$($last_name)_$($first_name)_$($middle_initial)")) # Retrieve ssn from soldiers_ssn hash table via key lookup.
         
                 $uic_directory = "$($uics_directory)\$($uic)"
                 $soldier_directory = "$($uics_directory)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
