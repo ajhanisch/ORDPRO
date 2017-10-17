@@ -8,6 +8,7 @@ CHANGES
 - reworked parameter handling from if's to foreach param array switch statement. saves code, looks better, can pass multiple switches at once rather than one at a time
 - fixed format 165 variable capturing. was not capturing properly
 - removed all non-context required uses of ConvertFrom-String
+- fixed severely low performance during certificate order files parsing. created and populated hash table of current names and ssns to look up ssn from rather than searching directory each time ssn was needed.
 ------------------------------------
 version: 0.6
 date: 10/15/2017
