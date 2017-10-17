@@ -1,6 +1,13 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+version: 0.8
+date: 10/17/2017
+CHANGES
+- added output parameter
+- fixed no middle initial problem with certs and other formats
+- performance improvements
+------------------------------------
 version: 0.7
 date: 10/16/2017
 CHANGES
