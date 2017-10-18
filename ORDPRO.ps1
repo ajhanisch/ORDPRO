@@ -144,18 +144,29 @@ DIRECTORIES WORKING
 #>
 $current_directory_working = (Get-Item -Path ".\" -Verbose).FullName
 $tmp_directory_working = "$($current_directory_working)\TMP"
-$master_history_edited_working = "$($current_directory_working)\MASTER-HISTORY\EDITED"
-$master_history_unedited_working = "$($current_directory_working)\MASTER-HISTORY\UNEDITED"
+$archive_directory_working = "$($current_directory_working)\ARCHIVE"
 $mof_directory_working = "$($tmp_directory_working)\MOF"
-$mof_directory_original_splits_working = "$($mof_directory_working)\ORIGINALSPLITS"
+$mof_directory_original_splits_working = "$($mof_directory_working)\ORIGINAL_SPLITS"
 $cof_directory_working = "$($tmp_directory_working)\COF"
-$cof_directory_original_splits_working = "$($cof_directory_working)\ORIGINALSPLITS"
+$cof_directory_original_splits_working = "$($cof_directory_working)\ORIGINAL_SPLITS"
 $log_directory_working = "$($tmp_directory_working)\LOGS"
 
 <#
 ARRAYS
 #>
-$directories = @("$($ordmanagers_directory_output)", "$($ordmanagers_orders_by_ssn_output)", "$($ordregisters_output)", "$($uics_directory_output)", "$($tmp_directory_working)", "$($mof_directory_working)", "$($mof_directory_original_splits_working)", "$($cof_directory_working)", "$($cof_directory_original_splits_working)", "$($log_directory_working)")
+$directories = @(
+"$($ordmanagers_directory_output)", 
+"$($ordmanagers_orders_by_ssn_output)", 
+"$($ordregisters_output)", 
+"$($uics_directory_output)", 
+"$($tmp_directory_working)", 
+"$($archive_directory_working)",
+"$($mof_directory_working)", 
+"$($mof_directory_original_splits_working)", 
+"$($cof_directory_working)", 
+"$($cof_directory_original_splits_working)", 
+"$($log_directory_working)"
+)
 
 <#
 HASH TABLES
@@ -207,8 +218,12 @@ else
 <#
 FUNCTIONS
 #>
-function Create-RequiredDirectories($directories)
+function Create-RequiredDirectories()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $directories
+	  )
+
     foreach($directory in $directories)
     {
         Process-DevCommands
@@ -236,45 +251,22 @@ function Create-RequiredDirectories($directories)
 }
 
 <#
-function Move-OriginalToHistorical($current_directory_working, $files_orders_original, $master_history_edited_working, $master_history_unedited_working)
+function Move-OriginalToHistorical($current_directory_working, $files_orders_original, $master_history_edited_working)
 {
-    if(Get-ChildItem -Path $current_directory_working | Where { $_.Extension -eq '.prt' })
-    {
-        foreach($file in $files_orders_original)
-        {
-            Process-DevCommands
 
-            if(Test-Path "$($master_history_edited_working)\$($file)")
-            {
-                Write-Host "[*] $($file.BaseName) in $($master_history_unedited_working)." -ForegroundColor Green
-            }
-            else
-            {
-                Write-Host "[#] $($file.BaseName) not in $($master_history_unedited_working). Copying $($file.BaseName) to it now." -ForegroundColor Yellow
-                Copy-Item $($file) -Destination $($master_history_unedited_working) -ErrorAction SilentlyContinue > $null
-
-                if($?)
-                {
-                    Write-Host "[*] $($file.BaseName) moved to $($master_history_unedited_working) successfully." -ForegroundColor Green
-                }
-                else
-                {
-                    Write-Host "[!] $($file.BaseName) move to $($master_history_unedited_working) failed." ([char]7) -ForegroundColor Red
-                    throw "[!] $($file.BaseName) move to $($master_history_unedited_working) failed."
-                }
-            }
-        }
-    }
-    else
-    {
-        Write-Host "[!] No .prt files in $($current_directory_working). Come back with proper input next time." ([char]7) -ForegroundColor Red
-        throw "[!] No .prt files in $($current_directory_working). Come back with proper input next time."
-    }
 }
 #>
 
-function Split-OrdersMain($current_directory_working, $mof_directory_working, $run_date, $files_orders_m_prt, $regex_beginning_m_split_orders_main)
+function Split-OrdersMain()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $current_directory_working,
+	  [Parameter(mandatory = $true)] [String] $mof_directory_working,
+	  [Parameter(mandatory = $true)] [String] $run_date,
+	  [Parameter(mandatory = $true)] [String] $files_orders_m_prt,
+	  [Parameter(mandatory = $true)] [String] $regex_beginning_m_split_orders_main
+	  )
+	  
     $total_to_parse_orders_main_files = ($($files_orders_m_prt)).Length
 
     if($total_to_parse_orders_main_files -gt '0')
@@ -344,8 +336,16 @@ function Split-OrdersMain($current_directory_working, $mof_directory_working, $r
     }
 }
 
-function Split-OrdersCertificate($current_directory_working, $cof_directory_working, $run_date, $files_orders_c_prt, $regex_end_cert)
+function Split-OrdersCertificate()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $current_directory_working,
+	  [Parameter(mandatory = $true)] [String] $cof_directory_working,
+	  [Parameter(mandatory = $true)] [String] $run_date,
+	  [Parameter(mandatory = $true)] [String] $files_orders_c_prt,
+	  [Parameter(mandatory = $true)] [String] $regex_end_cert
+	  )
+	  
     $total_to_parse_orders_cert_files = ($($files_orders_c_prt)).Length
 
     if($total_to_parse_orders_cert_files -gt '0')
@@ -415,8 +415,15 @@ function Split-OrdersCertificate($current_directory_working, $cof_directory_work
     }
 }
 
-function Edit-OrdersMain($mof_directory_working, $exclude_directories, $regex_old_fouo_3_edit_orders_main, $mof_directory_original_splits_working)
+function Edit-OrdersMain()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $mof_directory_working,
+	  [Parameter(mandatory = $true)] [String] $exclude_directories,
+	  [Parameter(mandatory = $true)] [String] $regex_old_fouo_3_edit_orders_main,
+	  [Parameter(mandatory = $true)] [String] $mof_directory_original_splits_working
+	  )
+	  
     $total_to_edit_orders_main = (Get-ChildItem -Path "$($mof_directory_working)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
 
     if($($total_to_edit_orders_main) -gt '0')
@@ -515,8 +522,14 @@ $old_spacing_2 = @"
     }
 }
 
-function Edit-OrdersCertificate($cof_directory_working, $exclude_directories, $regex_end_cert, $cof_directory_original_splits_working)
+function Edit-OrdersCertificate()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $cof_directory_working,
+	  [Parameter(mandatory = $true)] [String] $exclude_directories,
+	  [Parameter(mandatory = $true)] [String] $regex_end_cert,
+	  [Parameter(mandatory = $true)] [String] $cof_directory_original_splits_working
+	  )
     $total_to_edit_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
 
     if($($total_to_edit_orders_cert) -gt '0')
@@ -585,8 +598,14 @@ function Edit-OrdersCertificate($cof_directory_working, $exclude_directories, $r
     }
 }
 
-function Combine-OrdersMain($mof_directory_working, $run_date, $exclude_directories)
+function Combine-OrdersMain()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $mof_directory_working,
+	  [Parameter(mandatory = $true)] [String] $run_date,
+	  [Parameter(mandatory = $true)] [String] $exclude_directories
+	  )
+	  
     $total_to_combine_orders_main = (Get-ChildItem -Path "$($mof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
 
     if($($total_to_combine_orders_main) -gt '0')
@@ -624,8 +643,13 @@ function Combine-OrdersMain($mof_directory_working, $run_date, $exclude_director
     }
 }
 
-function Combine-OrdersCertificate($cof_directory_working, $run_date)
+function Combine-OrdersCertificate()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $cof_directory_working,
+	  [Parameter(mandatory = $true)] [String] $run_date
+	  )
+	  
     $total_to_combine_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }).Length
 
     if($($total_to_combine_orders_cert) -gt '0')
@@ -663,8 +687,17 @@ function Combine-OrdersCertificate($cof_directory_working, $run_date)
     }
 }
 
-function Parse-OrdersMain($mof_directory_working, $exclude_directories, $regex_format_parse_orders_main, $regex_order_number_parse_orders_main, $regex_uic_parse_orders_main, $regex_pertaining_to_parse_orders_main)
+function Parse-OrdersMain()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $mof_directory_working,
+	  [Parameter(mandatory = $true)] [String] $exclude_directories,
+	  [Parameter(mandatory = $true)] [String] $regex_format_parse_orders_main,
+	  [Parameter(mandatory = $true)] [String] $regex_order_number_parse_orders_main,
+	  [Parameter(mandatory = $true)] [String] $regex_uic_parse_orders_main,
+	  [Parameter(mandatory = $true)] [String] $regex_pertaining_to_parse_orders_main
+	  )
+	  
     $total_to_create_orders_main = (Get-ChildItem -Path "$($mof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
 
     if($($total_to_create_orders_main) -gt '0')
@@ -675,7 +708,7 @@ function Parse-OrdersMain($mof_directory_working, $exclude_directories, $regex_f
 
         Write-Host "[#] Total to create: $($total_to_create_orders_main)" -ForegroundColor Yellow
 
-        foreach($file in (Get-ChildItem -Path "$($mof_directory_working)"| Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }))
+        foreach($file in (Get-ChildItem -Path "$($mof_directory_working)" -Filter "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories }))
             {
                 Process-DevCommands
 
@@ -731,17 +764,6 @@ function Parse-OrdersMain($mof_directory_working, $exclude_directories, $regex_f
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $order_number = $order_number[1]
-#####################################
-                    if($($order_number) -match "\d{3}-\d{3}")
-                    {
-                        Write-Host "[*] $($order_number) looks right. Order number in $($file) is $($order_number)." -ForegroundColor Green
-                    }
-                    else
-                    {
-                        Write-Host "[!] Order number doesn't look right. Order number in $($file) is $($order_number)" ([char]7) -ForegroundColor Red
-                        throw ""
-                    }
-#####################################
 
                     $published_day = $order_number[-3]
                     $published_month = $order_number[-2]
@@ -1109,7 +1131,7 @@ function Parse-OrdersMain($mof_directory_working, $exclude_directories, $regex_f
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
                     $published_month = $order_number[-2]
-                    $published_month = $months.Get_Item($($published_month)) # Retrieve month number value from hash table.
+                    $f = $months.Get_Item($($published_month)) # Retrieve month number value from hash table.
                     $published_year = $order_number[-1]
                     $published_year = @($published_year -split '(.{2})' | ? {$_})
                     $published_year = $($published_year[1]) # YYYY turned into YY
@@ -1203,8 +1225,13 @@ function Parse-OrdersMain($mof_directory_working, $exclude_directories, $regex_f
     }
 }
 
-function Parse-OrdersCertificate($cof_directory_working, $exclude_directories)
+function Parse-OrdersCertificate()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $cof_directory_working,
+	  [Parameter(mandatory = $true)] [String] $exclude_directories
+	  )
+	  
     $total_to_create_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" -Filter "*.cof" -Include "*_edited.cof" -Exclude $($exclude_directories) -Recurse).Length
     
     if($($total_to_create_orders_cert) -gt '0')
@@ -1333,8 +1360,20 @@ function Parse-OrdersCertificate($cof_directory_working, $exclude_directories)
     }
 }
 
-function Work-Magic($uic_directory, $soldier_directory, $uic_soldier_order_file_name, $uic_soldier_order_file_content, $uic, $last_name, $first_name, $middle_initial, $ssn)
+function Work-Magic()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $uic_directory,
+	  [Parameter(mandatory = $true)] [String] $soldier_directory,
+	  [Parameter(mandatory = $true)] [String] $uic_soldier_order_file_name,
+	  [Parameter(mandatory = $true)] [String] $uic_soldier_order_file_content,
+	  [Parameter(mandatory = $true)] [String] $uic,
+	  [Parameter(mandatory = $true)] [String] $last_name,
+	  [Parameter(mandatory = $true)] [String] $first_name,
+	  [Parameter(mandatory = $true)] [String] $middle_initial,
+	  [Parameter(mandatory = $true)] [String] $ssn
+	  )
+	  
     if(Test-Path $($uic_directory))
     {
         Write-Host "[*] $($uic_directory) already created, continuing." -ForegroundColor Green
@@ -1399,8 +1438,13 @@ function Work-Magic($uic_directory, $soldier_directory, $uic_soldier_order_file_
     }
 }
 
-function Clean-OrdersMain($mof_directory_working, $exclude_directories)
+function Clean-OrdersMain()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $mof_directory_working,
+	  [Parameter(mandatory = $true)] [String] $exclude_directories
+	  )
+	  
     $total_to_clean_main_files = (Get-ChildItem -Path "$($mof_directory_working)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
 
     if($($total_to_clean_main_files) -gt '0')
@@ -1428,8 +1472,13 @@ function Clean-OrdersMain($mof_directory_working, $exclude_directories)
     }
 }
 
-function Clean-OrdersCertificate($cof_directory_working, $exclude_directories)
+function Clean-OrdersCertificate()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $cof_directory_working,
+	  [Parameter(mandatory = $true)] [String] $exclude_directories
+	  )
+	  
     $total_to_clean_cert_files = (Get-ChildItem -Path "$($cof_directory_working)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
 
     if($($total_to_clean_cert_files) -gt '0')
@@ -1457,8 +1506,12 @@ function Clean-OrdersCertificate($cof_directory_working, $exclude_directories)
     }
 }
 
-function Clean-UICS($uics_directory)
+function Clean-UICS()
 {
+	Param(
+	  [Parameter(mandatory = $true)] [String] $uics_directory
+	  )
+
     $total_to_clean_uics_directories = (Get-ChildItem -Path "$($uics_directory_output)").Length
 
     if($($total_to_clean_uics_directories) -gt '0')
