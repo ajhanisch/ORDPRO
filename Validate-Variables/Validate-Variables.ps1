@@ -48,11 +48,7 @@
 
                         if(!($validation_results -contains "$($key)"))
                         {
-                            $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
-                            $validation_results += $validation_result
+
                         }
                     } 
                     else 
