@@ -12,6 +12,9 @@
       [Parameter(mandatory = $false)] [String] $period_from_year,
       [Parameter(mandatory = $false)] [String] $period_from_month,
       [Parameter(mandatory = $false)] [String] $period_from_day,
+      [Parameter(mandatory = $false)] [String] $period_to_year,
+      [Parameter(mandatory = $false)] [String] $period_to_month,
+      [Parameter(mandatory = $false)] [String] $period_to_day,
       [Parameter(mandatory = $false)] [String] $period_to_number,
       [Parameter(mandatory = $false)] [String] $period_to_time,
       [Parameter(mandatory = $false)] [String] $format,
@@ -401,6 +404,105 @@
                         }
                     }
                 }
+                elseif($key -eq 'period_to_year')
+                {
+                    if($value -match "^\d{2,4}$")
+                    { 
+	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+    
+                        $status = "pass"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+                    } 
+                    else 
+                    { 
+	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	
+                        $status = "fail"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+                    }
+                }
+                elseif($key -eq 'period_to_month')
+                {
+                    if($value -match "^\d{2}$")
+                    { 
+	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+    
+                        $status = "pass"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+                    } 
+                    else 
+                    { 
+	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	
+                        $status = "fail"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+                    }
+                }
+                elseif($key -eq 'period_to_day')
+                {
+                    if($value -match "^\d{2}$")
+                    { 
+	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+    
+                        $status = "pass"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+                    } 
+                    else 
+                    { 
+	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	
+                        $status = "fail"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+                    }
+                }
                 elseif($key -eq 'period_to_number')
                 {
                     if($value -match "^\d{1,4}$")
@@ -616,26 +718,24 @@
 }
 
 
-$validation_results = Validate-Variables -uic '8a7aa' -last_name 'HANISCH-brtna' -first_name '908' -middle_initial 'N' -published_year '17' -published_month '12' -published_day '01' -ssn '504-19-1997' -period_from_year '12' -period_from_month '05' -period_from_day '02' -period_to_number '588' -period_to_time 'DAYS' -format '292' -order_amended '123-098' -order_revoke '587-632'
+$validation_results = Validate-Variables -uic '8a7aa' -last_name 'HANISCH-brtna' -first_name '908' -middle_initial 'N' -published_year '17' -published_month '12' -published_day '01' -ssn '654-19-1997' -period_from_year '12' -period_from_month '05' -period_from_day '02' -period_to_number '588' -period_to_time 'DAYS' -format '292' -order_amended '123-098' -order_revoke '587-632'
 
 if(!($validation_results.Status -contains 'fail'))
 {
-    Write-Host "[*] All variables passed validation." -ForegroundColor Green
-    # Work-Magic goes here
+    Write-Host "[*] All variables for $($file) passed validation." -ForegroundColor Green
+    Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 }
 else
 {
     $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
     if($total_validation_fails -gt 1)
     {
-        Write-Host "[!] $($total_validation_fails) variables failed validation." ([char]7)  -ForegroundColor Red
-        #$validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }
+        Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7)  -ForegroundColor Red
         $validation_results | Sort-Object -Property Status
     }
     elseif($total_validation_fails -eq 1)
     {
-        Write-Host "[!] $($total_validation_fails) variable failed validation." ([char]7)  -ForegroundColor Red
-        #$validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }
+        Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7)  -ForegroundColor Red
         $validation_results | Sort-Object -Property Status
     }
 }
