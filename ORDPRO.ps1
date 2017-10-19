@@ -185,7 +185,7 @@ $files_orders_c_prt = (Get-ChildItem -Path $current_directory_working -Filter "*
 
 if(Test-Path variable:global:psISE)
 {
-    Write-Verbose "[#] Working in PowerShell ISE. Unable to use administrative commands while using PowerShell ISE." -ForegroundColor Yellow
+    Write-Host "[#] Working in PowerShell ISE. Unable to use administrative commands while using PowerShell ISE." -ForegroundColor Yellow
 }
 else
 {
@@ -217,13 +217,8 @@ function Create-RequiredDirectories()
             }
             else
             {
-                Write-Verbose "[!] $($directory) creation failed."
-                throw "[!] $($directory) creation failed."
+                Write-Verbose "[!] $($directory) creation failed. Check the error logs at $($error_path)."
             }
-        }
-        else
-        {
-            Write-Verbose "[*] $($directory) already created."
         }
     }
 }
@@ -1747,7 +1742,6 @@ function Clean-OrdersMain()
     else
     {
         Write-Verbose "[!] Total .mof files to clean: $($total_to_clean_main_files). No .mof files in $($mof_directory_working) to clean up."
-        throw "[!] Total .mof files to clean: $($total_to_clean_main_files). No .mof files in $($mof_directory_working) to clean up."
     }
 }
 
@@ -1781,7 +1775,6 @@ function Clean-OrdersCertificate()
     else
     {
         Write-Verbose "[!] Total .cof files to clean: $($total_to_clean_cert_files). No .cof files in $($cof_directory_working) to clean up."
-        throw "[!] Total .cof files to clean: $($total_to_clean_cert_files). No .cof files in $($cof_directory_working) to clean up."
     }
 }
 
@@ -1813,38 +1806,6 @@ function Clean-UICS()
     else
     {
         Write-Verbose "[!] Total directories to clean: $($total_to_clean_uics_directories). No directories in $($uics_directory_output) to clean up."
-        throw "[!] Total directories to clean: $($total_to_clean_uics_directories). No directories in $($uics_directory_output) to clean up."
-    }
-}
-
-function Process-DevCommands()
-{
-    if ([console]::KeyAvailable)
-    {
-        $key = [system.console]::readkey($true)
-
-        if(($key.modifiers -band [consolemodifiers]"control") -and ($key.key -eq "P"))
-        {
-            Write-Verbose "[-] Pausing at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
-            $sw.Stop()
-
-            Pause
-
-		    Write-Verbose "[-] Resuming at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
-            $sw.Start()
-        }
-        elseif(($key.modifiers -band [consolemodifiers]"control") -and ($key.key -eq "Q" ))
-        {
-            $sw.Stop()
-            $response = Read-Host -Prompt "Are you sure you want to exit? [ (Y|y) / (N|n) ]"
-            
-            switch($response)
-            {
-                { @("y", "Y") -contains $_ } { "Terminating at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd) by user."; exit 0 }
-                { @("n", "N") -contains $_ } { $sw.Start(); continue }
-                default { "Response not determined." }
-            }
-        }
     }
 }
 
@@ -2679,6 +2640,37 @@ function Validate-Variables()
     }
 }
 
+function Process-DevCommands()
+{
+    if ([console]::KeyAvailable)
+    {
+        $key = [system.console]::readkey($true)
+
+        if(($key.modifiers -band [consolemodifiers]"control") -and ($key.key -eq "P"))
+        {
+            Write-Verbose "[-] Pausing at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
+            $sw.Stop()
+
+            Pause
+
+		    Write-Verbose "[-] Resuming at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
+            $sw.Start()
+        }
+        elseif(($key.modifiers -band [consolemodifiers]"control") -and ($key.key -eq "Q" ))
+        {
+            $sw.Stop()
+            $response = Read-Host -Prompt "Are you sure you want to exit? [ (Y|y) / (N|n) ]"
+            
+            switch($response)
+            {
+                { @("y", "Y") -contains $_ } { "Terminating at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd) by user."; exit 0 }
+                { @("n", "N") -contains $_ } { $sw.Start(); continue }
+                default { "Response not determined." }
+            }
+        }
+    }
+}
+
 <#
 ENTRY POINT
 #>
@@ -2699,8 +2691,11 @@ if($($ParametersPassed) -gt '0')
         $log_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=$($p).log"
         $error_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=$($p)_errors.log"
 
-        Start-Transcript -Path $($log_path)
-        Write-Host "[^] $($p) parameter specified. Running $($p) function now." -ForegroundColor Cyan
+        if($p -ne 'Verbose' -or $p -ne 'help' -or $p -ne 'version')
+        {
+            Start-Transcript -Path $($log_path)
+            Write-Host "[^] $($p) parameter specified. Running $($p) function now." -ForegroundColor Cyan
+        }
 
         switch($p)
         {
@@ -2720,17 +2715,26 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
+                    if(!($($output_dir)))
+                    {
+                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Stop-Transcript
+                        exit 1
+                    }
+
 		            Write-Host "[-] Creating required directories." -ForegroundColor White
 		            Create-RequiredDirectories -directories $($directories)
 		            if($?) 
 		            {
 			            Write-Host "[^] Creating directories finished successfully." -ForegroundColor Cyan 
+                        Stop-Transcript
 		            } 
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Directory creation failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript
 		            exit 1	
 	            }
             }
@@ -2744,12 +2748,14 @@ if($($ParametersPassed) -gt '0')
 		            if($?) 
 		            { 
 			            Write-Host "[^] Backing up original orders file finished successfully." -ForegroundColor Cyan 
+                        Stop-Transcript
 		            }	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Backing up original orders failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript
 		            exit 1 
 	            }
             }
@@ -2763,12 +2769,14 @@ if($($ParametersPassed) -gt '0')
 		            if($?)
 		            {
 			            Write-Host "[^] Splitting '*m.prt' order file(s) finished successfully." -ForegroundColor Cyan 
+                        Stop-Transcript
 		            }
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Splitting '*m.prt' order file(s)  failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript
 		            exit 1 
 	            }
             }
@@ -2781,13 +2789,15 @@ if($($ParametersPassed) -gt '0')
 		            Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
 		            if($?) 
 		            {
-			            Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished successfully." -ForegroundColor Cyan
+                        Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript 
 		            exit 1 
 	            }
             }
@@ -2801,12 +2811,14 @@ if($($ParametersPassed) -gt '0')
 		            if($?) 
 		            { 
 			            Write-Host "[^] Editing orders '*m.prt' files finished successfully." -ForegroundColor Cyan 
+                        Stop-Transcript 
 		            }
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript 
 		            exit 1
 	            }
             }
@@ -2820,12 +2832,14 @@ if($($ParametersPassed) -gt '0')
 		            if($?)
 		            { 
 			            Write-Host "[^] Editing orders '*c.prt' files finished successfully." -ForegroundColor Cyan 
+                        Stop-Transcript 
 		            } 
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript 
 		            exit 1
 	            }
             }
@@ -2839,12 +2853,14 @@ if($($ParametersPassed) -gt '0')
 		            if($?) 
 		            { 
 			            Write-Host "[^] Combining .mof orders files finished successfully." -ForegroundColor Cyan 
+                        Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($error_path)." -ForegroundColor Red
+                    Stop-Transcript 
 		            exit 1 
 	            }
             }
@@ -2858,41 +2874,70 @@ if($($ParametersPassed) -gt '0')
 		            if($?) 
 		            { 
 			            Write-Host "[^] Combining .cof orders files finished successfully." -ForegroundColor Cyan 
+                        Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript 
 		            exit 1 	
 	            }
             }
 
             "magic_main" 
             { 
-                Write-Host "[-] Working magic on .mof files now." -ForegroundColor White
-                Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
-		        if($?) 
-		        { 
-			        Write-Host "[^] Magic on .cof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan 
-		        } 
+                try
+                {
+                    if(!($($output_dir)))
+                    {
+                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Stop-Transcript
+                        exit 1
+                    }
+
+                    Write-Host "[-] Working magic on .mof files now." -ForegroundColor White
+                    Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Magic on .mof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan 
+                        Stop-Transcript 
+		            }
+                }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Magic on .mof files failed?! Impossible. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript 
+		            exit 1 	
+	            }
             }
 
             "magic_cert" 
             { 
 	            try
 	            {
+                    if(!($($output_dir)))
+                    {
+                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Stop-Transcript
+                        exit 1
+                    }
+
 		            Write-Host "[-] Working magic on .cof files." -ForegroundColor White
 		            Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Magic on .cof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan 
+                        Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript 
 		            exit 1 	
 	            }
             }
@@ -2906,12 +2951,14 @@ if($($ParametersPassed) -gt '0')
 		            if($?) 
 		            { 
 			            Write-Host "[^] Cleaning up .mof finished successfully." -ForegroundColor Cyan 
+                        Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript 
 		            exit 1 	
 	            }
             }
@@ -2925,12 +2972,14 @@ if($($ParametersPassed) -gt '0')
 		            if($?) 
 		            { 
 			            Write-Host "[^] Cleaning up .cof finished successfully." -ForegroundColor Cyan 
+                        Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript 
 		            exit 1
 	            }
             }
@@ -2939,17 +2988,26 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
+                    if(!($($output_dir)))
+                    {
+                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Stop-Transcript
+                        exit 1
+                    }
+
 		            Write-Host "[-] Cleaning up UICS folder." -ForegroundColor White
 		            Clean-UICS -uics_directory_output $($uics_directory_output)
 		            if($?)
 		            { 
 			            Write-Host "[^] Cleaning up UICS folder finished successfully." -ForegroundColor Cyan 
+                        Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Cleaning up UICS folder failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript 
 		            exit 1
 	            }
             }
@@ -2957,17 +3015,26 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
+                    if(!($($output_dir)))
+                    {
+                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Stop-Transcript
+                        exit 1
+                    }
+
 		            Write-Host "[-] Getting permissions." -ForegroundColor White
 		            Get-Permissions -uics_directory_output $($uics_directory_output)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Getting permissions of UICS folder finished successfully." -ForegroundColor Cyan 
+                        Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
 		            Write-Host "[!] Getting permissions failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+                    Stop-Transcript 
 		            exit 1 
 	            }
             }
@@ -2987,7 +3054,8 @@ if($($ParametersPassed) -gt '0')
 
             "Verbose" 
             { 
-	            Write-Host "[^] Verbose parameter specified. Presenting verbose information now." -ForegroundColor Cyan
+                continue
+	            #Write-Host "[^] Verbose parameter specified. Presenting verbose information above." -ForegroundColor Cyan
             }
 
             default 
@@ -2995,8 +3063,6 @@ if($($ParametersPassed) -gt '0')
 	            Write-Host "[!] Unrecognized parameter: $($p). Try again with proper parameter." -ForegroundColor Red 
             }
         }
-
-        Stop-Transcript
     }
 }
 else
