@@ -4,17 +4,17 @@ CHANGELOG
 version: 0.9
 date: 10/18/2017
 CHANGES
-- created custom object of orders created and not created
-- created variable validation functionality
-- checking for and creating production directory structure
-- more verbose output of capturing variables
+- added custom object of orders created and not created
+- added variable validation functionality
+- added checking for and creating production directory structure
+- added more verbose output of capturing variables
 ------------------------------------
 version: 0.8
 date: 10/17/2017
 CHANGES
 - added output parameter
 - fixed no middle initial problem with certs and other formats
-- performance improvements
+- added performance improvements
 ------------------------------------
 version: 0.7
 date: 10/16/2017
