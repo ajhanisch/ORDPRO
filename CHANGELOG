@@ -1,29 +1,29 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
-version: 1.0
-date: 10/19/2017
+VERSION: 1.0
+DATE: 10/19/2017
 CHANGES
 - added .csv output containing detailed information about orders created and not created
 - reintroduced overall error handling for all function calls
 ------------------------------------
-version: 0.9
-date: 10/18/2017
+VERSION: 0.9
+DATE: 10/18/2017
 CHANGES
 - added custom object of orders created and not created
 - added variable validation functionality
 - added checking for and creating production directory structure
 - added more verbose output of capturing variables
 ------------------------------------
-version: 0.8
-date: 10/17/2017
+VERSION: 0.8
+DATE: 10/17/2017
 CHANGES
 - added output parameter
 - fixed no middle initial problem with certs and other formats
 - added performance improvements
 ------------------------------------
-version: 0.7
-date: 10/16/2017
+VERSION: 0.7
+DATE: 10/16/2017
 CHANGES
 - fixed editing of .cof and .mof files to include a move of the original file to directory containing original splits of files
 - reworked parameter handling from if's to foreach param array switch statement. saves code, looks better, can pass multiple switches at once rather than one at a time
@@ -31,13 +31,13 @@ CHANGES
 - removed all non-context required uses of ConvertFrom-String
 - fixed severely low performance during certificate order files parsing. created and populated hash table of current names and ssns to look up ssn from rather than searching directory each time ssn was needed.
 ------------------------------------
-version: 0.6
-date: 10/15/2017
+VERSION: 0.6
+DATE: 10/15/2017
 CHANGES
 - added permissions function to retrieve and output recursive permissions of UICS folder to .csv, .html, and .txt files
 ------------------------------------
-version: 0.5
-date: 10/13/2017
+VERSION: 0.5
+DATE: 10/13/2017
 CHANGES
 - modified main and cert order files combination function to count properly
 - fixed the problem with cert orders where people with no middle initial were having MI variable captured as rank
@@ -45,11 +45,11 @@ CHANGES
 - added the module named to the log file every time script is ran for easier log location and more granular descriptions
 - add "_edited" to .cof and .mof files after they are edited, and only edited files that do not contain same string to avoid duplicating editing efforts
 ------------------------------------
-version: 0.4
-date: 10/12/2017
+VERSION: 0.4
+DATE: 10/12/2017
 CHANGES
 - added parameter alias's
-- updated help menu output
+- upDATEd help menu output
 - added required sanity checks to each function testing for required files, folders, etc. before continuing
 - refined main order file editing removing multiple unnecessary regex variables and calls
 - fixed each functions counting tracking
@@ -57,15 +57,15 @@ CHANGES
 - added support for format 165 files
 - replaced multpile uses of ConvertFrom-String with substring and splitting to hopefully improve performance and accurracy of variable capturing
 ------------------------------------
-version: 0.3
-date: 10/11/2017
+VERSION: 0.3
+DATE: 10/11/2017
 CHANGES
 - refined multiple types of form handling
 - refined variable capturing for various form handling functions
 - added keyboard processing functionality to include ability to pause and resume script at anytime during processing
 ------------------------------------
-version: 0.2
-date: 10/10/2017
+VERSION: 0.2
+DATE: 10/10/2017
 CHANGES
 - added multiple parameter functionality for main order and cert file handing
 - added functions for each action of script
@@ -73,8 +73,8 @@ CHANGES
 - added progress bar display for main order and cert file handling
 - added cert file handling
 ------------------------------------
-version: 0.1
-date: 10/2/2017
+VERSION: 0.1
+DATE: 10/2/2017
 CHANGES
 - initial functionality created
 ------------------------------------
