@@ -6,6 +6,7 @@ DATE: 10/19/2017
 CHANGES
 - added .csv output containing detailed information about orders created and not created
 - reintroduced overall error handling for all function calls
+- added verbose output functionality to be used with -Verbose flag
 ------------------------------------
 VERSION: 0.9
 DATE: 10/18/2017
