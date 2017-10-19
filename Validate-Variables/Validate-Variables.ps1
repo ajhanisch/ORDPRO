@@ -1,16 +1,4 @@
-﻿function Populate-ValidationResults()
-{
-    Param(
-        [Parameter(mandatory = $true)] [String] $key,
-        [Parameter(mandatory = $true)] [String] $status,
-        [Parameter(mandatory = $true)] [String] $value,
-        [Parameter(mandatory = $true)] [String] $validation_results
-        )
-
-
-}
-
-function Validate-Variables()
+﻿function Validate-Variables()
 {
     Param(
       [Parameter(mandatory = $false)] [String] $uic,
