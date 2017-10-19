@@ -1,6 +1,12 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+version: 1.0
+date: 10/19/2017
+CHANGES
+- added .csv output containing detailed information about orders created and not created
+- reintroduced overall error handling for all function calls
+------------------------------------
 version: 0.9
 date: 10/18/2017
 CHANGES
