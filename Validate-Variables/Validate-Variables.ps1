@@ -1,4 +1,16 @@
-﻿function Validate-Variables()
+﻿function Populate-ValidationResults()
+{
+    Param(
+        [Parameter(mandatory = $true)] [String] $key,
+        [Parameter(mandatory = $true)] [String] $status,
+        [Parameter(mandatory = $true)] [String] $value,
+        [Parameter(mandatory = $true)] [String] $validation_results
+        )
+
+
+}
+
+function Validate-Variables()
 {
     Param(
       [Parameter(mandatory = $false)] [String] $uic,
@@ -33,7 +45,7 @@
             {
                 $parameters_processed ++
 
-                Write-Host "[#] Validating $($parameters_processed)/$($parameters_passed) parameters now." -ForegroundColor Yellow
+                Write-Host "[#] Validating ($($parameters_processed)/$($parameters_passed)) parameters now." -ForegroundColor Yellow
 
                 $key = $p.Key
                 $value = $p.Value
@@ -48,7 +60,11 @@
 
                         if(!($validation_results -contains "$($key)"))
                         {
-
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
                         }
                     } 
                     else 
@@ -600,7 +616,7 @@
                     Write-Host "[!] Incorrect or unknown parameter specified. Try again with proper input." ([char]7)  -ForegroundColor Red
                 }
 
-                Write-Host "[*] Finished validating $($parameters_processed)/$($parameters_passed) parameters." -ForegroundColor Green
+                Write-Host "[*] Finished validating ($($parameters_processed)/$($parameters_passed)) parameters." -ForegroundColor Green
             }
 
             return $validation_results
