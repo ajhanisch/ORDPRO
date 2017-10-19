@@ -711,7 +711,8 @@ function Parse-OrdersMain()
 
     if($($total_to_create_orders_main) -gt '0')
     {
-        #$stop_watch = [system.diagnostics.stopwatch]::startNew()
+        $stop_watch = [system.diagnostics.stopwatch]::startNew()
+
         $orders_created_orders_main = @()
         $orders_not_created_orders_main = @()
 
@@ -877,28 +878,19 @@ function Parse-OrdersMain()
 	                    $orders_created_orders_main += $order_info
 
                         Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
-
-                        <#
-                        $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
-                        $estimated_time = (($($total_to_create) - $($orders_created)) * 0.1 / 60)
-                        $formatted_estimated_time = [math]::Round($estimated_time,2)
-                        $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
-
-                        Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
-                        #>
                     }
                     else
                     {
                         $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
                         if($total_validation_fails -gt 1)
                         {
-                            Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7)  -ForegroundColor Red
+                            Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
                             $validation_results | Sort-Object -Property Status
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation."
                         }
                         elseif($total_validation_fails -eq 1)
                         {
-                            Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7)  -ForegroundColor Red
+                            Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
                             $validation_results | Sort-Object -Property Status
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation."
                         }
@@ -1007,28 +999,19 @@ function Parse-OrdersMain()
 	                    $orders_created_orders_main += $order_info
 
 	                    Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
-
-                        <#
-                        $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
-                        $estimated_time = (($($total_to_create) - $($orders_created)) * 0.1 / 60)
-                        $formatted_estimated_time = [math]::Round($estimated_time,2)
-                        $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
-
-                        Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
-                        #>
                     }
                     else
                     {
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
@@ -1110,28 +1093,19 @@ function Parse-OrdersMain()
 	                    $orders_created_orders_main += $order_info
 
 	                    Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
-
-                        <#
-                        $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
-                        $estimated_time = (($($total_to_create) - $($orders_created)) * 0.1 / 60)
-                        $formatted_estimated_time = [math]::Round($estimated_time,2)
-                        $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
-
-                        Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
-                        #>
                     }
                     else
                     {
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
@@ -1213,28 +1187,19 @@ function Parse-OrdersMain()
 	                    $orders_created_orders_main += $order_info
 
 	                    Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
-
-                        <#
-                        $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
-                        $estimated_time = (($($total_to_create) - $($orders_created)) * 0.5 / 60)
-                        $formatted_estimated_time = [math]::Round($estimated_time,2)
-                        $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
-
-                        Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
-                        #>
                     }
                     else
                     {
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
@@ -1347,28 +1312,19 @@ function Parse-OrdersMain()
 	                    $orders_created_orders_main += $order_info
 
 	                    Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
-
-                        <#
-                        $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
-                        $estimated_time = (($($total_to_create) - $($orders_created)) * 0.2 / 60)
-                        $formatted_estimated_time = [math]::Round($estimated_time,2)
-                        $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
-
-                        Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
-                        #>
                     }
                     else
                     {
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
@@ -1483,28 +1439,19 @@ function Parse-OrdersMain()
 	                    $orders_created_orders_main += $order_info
 
 	                    Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
-
-                        <#
-                        $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
-                        $estimated_time = (($($total_to_create) - $($orders_created)) * 0.1 / 60)
-                        $formatted_estimated_time = [math]::Round($estimated_time,2)
-                        $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
-
-                        Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
-                        #>
                     }
                     else
                     {
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
@@ -1524,6 +1471,16 @@ function Parse-OrdersMain()
                     $orders_not_created_orders_main += $order_info
 
                     continue
+                }
+
+                $percent_complete = ($($orders_created_orders_main_count)/$($total_to_create_orders_main)).ToString("P")
+                $estimated_time = (($($total_to_create_orders_main) - $($orders_created_orders_main_count)) * 0.1 / 60)
+                $formatted_estimated_time = [math]::Round($estimated_time,2)
+                $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
+
+                for($i = $orders_created_orders_main_count; $i -le $total_to_create_orders_main; $i++)
+                {
+	                Write-Progress -Activity "Creating orders ..." -Status "Creating $($uic_soldier_order_file_name)" -PercentComplete ($($orders_created_orders_main_count)/$($total_to_create_orders_main)*100) -CurrentOperation "$($percent_complete) complete          ~$($formatted_estimated_time) minute(s) left          $($orders_created_orders_main_count)/$($total_to_create_orders_main) created          $($elapsed_time) time elapsed"
                 }
             }
     }
@@ -1545,7 +1502,8 @@ function Parse-OrdersCertificate()
     
     if($($total_to_create_orders_cert) -gt '0')
     {
-        #$stop_watch = [system.diagnostics.stopwatch]::startNew()
+        $stop_watch = [system.diagnostics.stopwatch]::startNew()
+
         $orders_created_orders_cert = @()
         $orders_created_orders_cert_count = @($orders_created_orders_cert).Count
 
@@ -1679,31 +1637,32 @@ function Parse-OrdersCertificate()
 	                $orders_created_orders_cert += $order_info
 
 	                Write-Host "[#] Created: ($($orders_created_orders_cert_count)/$($total_to_create_orders_cert))." -ForegroundColor Yellow
-
-                    <#
-                    $percent_complete = ($($orders_created)/$($total_to_create)).ToString("P")
-                    $estimated_time = (($($total_to_create) - $($orders_created)) * 0.2 / 60)
-                    $formatted_estimated_time = [math]::Round($estimated_time,2)
-                    $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
-
-                    Display-ProgressBar -percent_complete $($percent_complete) -estimated_time $($estimated_time) -formatted_estimated_time $($formatted_estimated_time) -elapsed_time $($elapsed_time) -orders_created $($orders_created) -total_to_create $($total_to_create) -uic_soldier_order_file_name $($uic_soldier_order_file_name)
-                    #>
                 }
                 else
                 {
 	                $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                if($total_validation_fails -gt 1)
 	                {
-		                Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
                         $validation_results | Sort-Object -Property Status
 		                throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                }
 	                elseif($total_validation_fails -eq 1)
 	                {
-		                Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7)  -ForegroundColor Red
+		                Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
                         $validation_results | Sort-Object -Property Status
 		                throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                }
+                }
+
+                $percent_complete = ($($orders_created_orders_cert_count)/$($total_to_create_orders_cert)).ToString("P")
+                $estimated_time = (($($total_to_create_orders_cert) - $($orders_created_orders_cert_count)) * 0.1 / 60)
+                $formatted_estimated_time = [math]::Round($estimated_time,2)
+                $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
+
+                for($i = $orders_created_orders_cert_count; $i -le $total_to_create_orders_cert; $i++)
+                {
+	                Write-Progress -Activity "Creating orders ..." -Status "Creating $($uic_soldier_order_file_name)" -PercentComplete ($($orders_created_orders_cert_count)/$($total_to_create_orders_cert)*100) -CurrentOperation "$($percent_complete) complete          ~$($formatted_estimated_time) minute(s) left          $($orders_created_orders_cert_count)/$($total_to_create_orders_cert) created          $($elapsed_time) time elapsed"
                 }
             }
     }
@@ -2591,7 +2550,7 @@ function Validate-Variables()
                 }
                 else
                 {
-                    Write-Host "[!] Incorrect or unknown parameter specified. Try again with proper input." ([char]7)  -ForegroundColor Red
+                    Write-Host "[!] Incorrect or unknown parameter specified. Try again with proper input." ([char]7) -ForegroundColor Red
                 }
 
                 Write-Host "[*] Finished validating ($($parameters_processed)/$($parameters_passed)) parameters." -ForegroundColor Green
@@ -2601,7 +2560,7 @@ function Validate-Variables()
     }
     else
     {
-        Write-Host "[!] No parameters passed. Try again with proper input." ([char]7)  -ForegroundColor Red
+        Write-Host "[!] No parameters passed. Try again with proper input." ([char]7) -ForegroundColor Red
     }
 }
 
@@ -2630,24 +2589,24 @@ if($($ParametersPassed) -gt '0')
 
         switch($p)
         {
-            "help" { Write-Host "[^] Help parameter specified. Presenting full help now." -ForegroundColor Cyan; Get-Help .\$($script_name) -Full }
-            "version" { Write-Host "[^] Version parameter specified. Presenting version information now." -ForegroundColor Cyan; Write-Host "Running version $($version_info)." }
-            "dir_create" { Write-Host "[-] Creating required directories." -ForegroundColor White;  Create-RequiredDirectories -directories $($directories); if($?) {Write-Host "[^] Creating directories finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Directory creation failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 }  }
-            "backups" { Write-Host "[-] Backing up original orders file." -ForegroundColor White; Move-OriginalToHistorical -current_directory_working $($current_directory_working) -files_orders_original $($files_orders_original); if($?) { Write-Host "[^] Backing up original orders file finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Backing up original orders failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
-            "split_main" { Write-Host "[-] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor White; Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main);  }
-            "split_cert" { Write-Host "[-] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor White; Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert); if($?) { Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
-            "edit_main" { Write-Host "[-] Editing orders '*m.prt' files." -ForegroundColor White; Edit-OrdersMain -mof_directory_working $($mof_directory_working) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working); if($?) { Write-Host "[^] Editing orders '*m.prt' files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
-            "edit_cert" { Write-Host "[-] Editing orders '*c.prt' files." -ForegroundColor White; Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working); if($?) { Write-Host "[^] Editing orders '*c.prt' files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
-            "combine_main" { Write-Host "[-] Combining .mof orders files." -ForegroundColor White; Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -run_date $($run_date); if($?) { Write-Host "[^] Combining .mof orders files finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red ; exit 1 } }
-            "combine_cert" { Write-Host "[-] Combining .cof orders files." -ForegroundColor White; Combine-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date); if($?) { Write-Host "[^] Combining .cof orders files finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
-            "magic_main" { Write-Host "[-] Working magic on .mof files now." -ForegroundColor White; Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main); if($?) { Write-Host "[^] Magic on .mof finished successfully. Did you expect anything less?" -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Magic on .mof failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
-            "magic_cert" { Write-Host "[-] Working magic on .cof files." -ForegroundColor White; Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Magic on .cof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
-            "clean_main" { Write-Host "[-] Cleaning up .mof files." -ForegroundColor White; Clean-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Cleaning up .mof finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
-            "clean_cert" { Write-Host "[-] Cleaning up .cof files." -ForegroundColor White; Clean-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Cleaning up .cof finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
-            "clean_uics" { Write-Host "[-] Cleaning up UICS folder." -ForegroundColor White; Clean-UICS -uics_directory $($uics_directory_output); if($?) { Write-Host "[^] Cleaning up UICS folder finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up UICS folder failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
-            "permissions" { Write-Host "[-] Getting permissions." -ForegroundColor White; Get-Permissions; if($?) { Write-Host "[^] Getting permissions of UICS folder finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Getting permissions failed. Check the error logs at $($error_path)." ([char]7)  -ForegroundColor Red; exit 1 } }
+            "help" { Write-Host "[^] Help parameter specified. Presenting full help now." $($cyan); Get-Help .\$($script_name) -Full }
+            "version" { Write-Host "[^] Version parameter specified. Presenting version information now." $($cyan); Write-Host "Running version $($version_info)." }
+            "dir_create" { Write-Host "[-] Creating required directories." $($white);  Create-RequiredDirectories -directories $($directories); if($?) {Write-Host "[^] Creating directories finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Directory creation failed. Check the error logs at $($error_path)." $($red); exit 1 }  }
+            "backups" { Write-Host "[-] Backing up original orders file." $($white); Move-OriginalToHistorical -current_directory_working $($current_directory_working) -files_orders_original $($files_orders_original); if($?) { Write-Host "[^] Backing up original orders file finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Backing up original orders failed. Check the error logs at $($error_path)." $($red); exit 1 } }
+            "split_main" { Write-Host "[-] Splitting '*m.prt' order file(s) into individual order files." $($white); Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main);  }
+            "split_cert" { Write-Host "[-] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." $($white); Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert); if($?) { Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)." $($red); exit 1 } }
+            "edit_main" { Write-Host "[-] Editing orders '*m.prt' files." $($white); Edit-OrdersMain -mof_directory_working $($mof_directory_working) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working); if($?) { Write-Host "[^] Editing orders '*m.prt' files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)." $($red); exit 1 } }
+            "edit_cert" { Write-Host "[-] Editing orders '*c.prt' files." $($white); Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working); if($?) { Write-Host "[^] Editing orders '*c.prt' files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)." $($red); exit 1 } }
+            "combine_main" { Write-Host "[-] Combining .mof orders files." $($white); Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -run_date $($run_date); if($?) { Write-Host "[^] Combining .mof orders files finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($error_path)." ([char]7) -ForegroundColor Red ; exit 1 } }
+            "combine_cert" { Write-Host "[-] Combining .cof orders files." $($white); Combine-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date); if($?) { Write-Host "[^] Combining .cof orders files finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($error_path)." $($red); exit 1 } }
+            "magic_main" { Write-Host "[-] Working magic on .mof files now." $($white); Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main); if($?) { Write-Host "[^] Magic on .mof finished successfully. Did you expect anything less?" -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Magic on .mof failed?! Impossible. Check the error logs at $($error_path)." $($red); exit 1 } }
+            "magic_cert" { Write-Host "[-] Working magic on .cof files." $($white); Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Magic on .cof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)." $($red); exit 1 } }
+            "clean_main" { Write-Host "[-] Cleaning up .mof files." $($white); Clean-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Cleaning up .mof finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($error_path)." $($red); exit 1 } }
+            "clean_cert" { Write-Host "[-] Cleaning up .cof files." $($white); Clean-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Cleaning up .cof finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)." $($red); exit 1 } }
+            "clean_uics" { Write-Host "[-] Cleaning up UICS folder." $($white); Clean-UICS -uics_directory $($uics_directory_output); if($?) { Write-Host "[^] Cleaning up UICS folder finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up UICS folder failed. Check the error logs at $($error_path)." $($red); exit 1 } }
+            "permissions" { Write-Host "[-] Getting permissions." $($white); Get-Permissions; if($?) { Write-Host "[^] Getting permissions of UICS folder finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Getting permissions failed. Check the error logs at $($error_path)." $($red); exit 1 } }
             "all" {  }
-            default { "Unrecognized parameter: $($p). Try again with proper parameter." }
+            default { Write-Host "[!] Unrecognized parameter: $($p). Try again with proper parameter." ([char]7) -ForegroundColor Red }
         }
 
         Stop-Transcript
@@ -2655,5 +2614,5 @@ if($($ParametersPassed) -gt '0')
 }
 else
 {
-    Write-Host "[!] No parameters passed. Run 'Get-Help $($script_name) -Full' for detailed help information" ([char]7)  -ForegroundColor Red
+    Write-Host "[!] No parameters passed. Run 'Get-Help $($script_name) -Full' for detailed help information" ([char]7) -ForegroundColor Red
 }
