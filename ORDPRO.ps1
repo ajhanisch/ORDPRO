@@ -73,62 +73,26 @@
 <#
 PARAMETERS
 #>
+[CmdletBinding()]
 param(
-    [cmdletbinding()]
-
-    [alias('h')]
-    [switch]$help
-    ,
-    [alias('v')]
-    [switch]$version
-    ,
-    [alias('o')]
-    [string]$output_dir
-    ,
-    [alias('d')]
-    [switch]$dir_create
-    ,
-    [alias('b')]
-    [switch]$backups
-    ,
-    [alias('sm')]
-    [switch]$split_main
-    ,
-    [alias('sc')]
-    [switch]$split_cert
-    ,
-    [alias('em')]
-    [switch]$edit_main
-    ,
-    [alias('ec')]
-    [switch]$edit_cert
-    ,
-    [alias('cm')]
-    [switch]$combine_main
-    ,
-    [alias('cc')]
-    [switch]$combine_cert
-    ,
-    [alias('mm')]
-    [switch]$magic_main
-    ,
-    [alias('mc')]
-    [switch]$magic_cert
-    ,
-    [alias('xm')]
-    [switch]$clean_main
-    ,
-    [alias('xc')]
-    [switch]$clean_cert
-    ,
-    [alias('xu')]
-    [switch]$clean_uics
-    ,
-    [alias('p')]
-    [switch]$permissions
-    ,
-    [alias('a')]
-    [switch]$all
+    [alias('h')][switch]$help,
+    [alias('v')][switch]$version,
+    [alias('o')][string]$output_dir,
+    [alias('d')][switch]$dir_create,
+    [alias('b')][switch]$backups,
+    [alias('sm')][switch]$split_main,
+    [alias('sc')][switch]$split_cert,
+    [alias('em')][switch]$edit_main,
+    [alias('ec')][switch]$edit_cert,
+    [alias('cm')][switch]$combine_main,
+    [alias('cc')][switch]$combine_cert,
+    [alias('mm')][switch]$magic_main,
+    [alias('mc')][switch]$magic_cert,
+    [alias('xm')][switch]$clean_main,
+    [alias('xc')][switch]$clean_cert,
+    [alias('xu')][switch]$clean_uics,
+    [alias('p')][switch]$permissions,
+    [alias('a')][switch]$all
 )
 
 <#
@@ -210,7 +174,7 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
-$version_info = "0.9"
+$version_info = "1.0"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $script_name = $($MyInvocation.MyCommand.Name)
 $year_prefix = (Get-Date -Format yyyy).Substring(0,2)
@@ -221,7 +185,7 @@ $files_orders_c_prt = (Get-ChildItem -Path $current_directory_working -Filter "*
 
 if(Test-Path variable:global:psISE)
 {
-    Write-Host "[#] Working in PowerShell ISE. Unable to use administrative commands while using PowerShell ISE." -ForegroundColor Yellow
+    Write-Verbose "[#] Working in PowerShell ISE. Unable to use administrative commands while using PowerShell ISE." -ForegroundColor Yellow
 }
 else
 {
@@ -233,9 +197,10 @@ FUNCTIONS
 #>
 function Create-RequiredDirectories()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $directories
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $directories
+    )
 
     foreach($directory in $directories)
     {
@@ -243,22 +208,22 @@ function Create-RequiredDirectories()
 
         if(!(Test-Path $($directory)))
         {
-            Write-Host "[#] $($directory) not created. Creating now." -ForegroundColor Yellow
+            Write-Verbose "[#] $($directory) not created. Creating now."
             New-Item -ItemType Directory -Path $($directory) > $null
 
             if($?)
             {
-                Write-Host "[*] $($directory) created successfully." -ForegroundColor Green
+                Write-Verbose "[*] $($directory) created successfully."
             }
             else
             {
-                Write-Host "[!] $($directory) creation failed." ([char]7) -ForegroundColor Red
+                Write-Verbose "[!] $($directory) creation failed."
                 throw "[!] $($directory) creation failed."
             }
         }
         else
         {
-            Write-Host "[*] $($directory) already created." -ForegroundColor Green
+            Write-Verbose "[*] $($directory) already created."
         }
     }
 }
@@ -272,35 +237,36 @@ function Move-OriginalToHistorical($current_directory_working, $files_orders_ori
 
 function Split-OrdersMain()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $current_directory_working,
-	  [Parameter(mandatory = $true)] [String] $mof_directory_working,
-	  [Parameter(mandatory = $true)] [String] $run_date,
-	  [Parameter(mandatory = $true)] [String] $files_orders_m_prt,
-	  [Parameter(mandatory = $true)] [String] $regex_beginning_m_split_orders_main
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $current_directory_working,
+        [Parameter(mandatory = $true)] $mof_directory_working,
+        [Parameter(mandatory = $true)] $run_date,
+        [Parameter(mandatory = $true)] $files_orders_m_prt,
+        [Parameter(mandatory = $true)] $regex_beginning_m_split_orders_main
+    )
 	  
-    $total_to_parse_orders_main_files = ($($files_orders_m_prt)).Length
+    $total_to_parse_orders_main_files = $files_orders_m_prt.Length
 
     if($total_to_parse_orders_main_files -gt '0')
     {
         $count_files = 0
         $count_orders = 0
 
-        $out_directory = "$($mof_directory_working)"
+        $out_directory = $($mof_directory_working)
 
         if(!(Test-Path $($out_directory)))
         {
-            Write-Host "[#] $($out_directory) not created. Creating now." -ForegroundColor Yellow
+            Write-Verbose "[#] $($out_directory) not created. Creating now."
             New-Item -ItemType Directory -Path $($out_directory) > $null
 
             if($?)
             {
-                Write-Host "[*] $($out_directory) created successfully." -ForegroundColor Green
+                Write-Verbose "[*] $($out_directory) created successfully."
             }
             else
             {
-                Write-Host "[!] $($out_directory) creation failed." ([char]7) -ForegroundColor Red
+                Write-Verbose "[!] $($out_directory) creation failed."
                 throw "[!] $($out_directory) creation failed."
             }
         }
@@ -311,7 +277,7 @@ function Split-OrdersMain()
             $orders = [regex]::Match($content,'(?<=STATE OF SOUTH DAKOTA).+(?=The Adjutant General)',"singleline").Value -split "$($regex_beginning_m_split_orders_main)"
             $count_files ++
 
-            Write-Host "[#] Parsing $($file) ($($count_files)/$($total_to_parse_orders_main_files)) now." -ForegroundColor Yellow
+            Write-Verbose "[#] Parsing $($file) ( $($count_files)/$($total_to_parse_orders_main_files) ) now."
 
             foreach($order in $orders)
             {
@@ -323,41 +289,42 @@ function Split-OrdersMain()
 
                     $out_file = "$($run_date)_$($count_orders).mof"
 
-                    Write-Host "[#] Processing $($out_file) now." -ForegroundColor Yellow
+                    Write-Verbose "[#] Processing $($out_file) now."
 
                     New-Item -ItemType File -Path $($out_directory) -Name $($out_file) -Value $($order) > $null
 
                     if($?)
                     {
-                        Write-Host "[*] $($out_file) file created successfully." -ForegroundColor Green
+                        Write-Verbose "[*] $($out_file) file created successfully."
                     }
                     else
                     {
-                        Write-Host "[!] $($out_file) file creation failed." ([char]7) -ForegroundColor Red
+                        Write-Verbose "[!] $($out_file) file creation failed."
                         throw "[!] $($out_file) file creation failed."
                     }
                 }
             }
 
-            Write-Host "[*] $($file) ($($count_files)/$($total_to_parse_orders_main_files)) parsed successfully." -ForegroundColor Green
+            Write-Verbose "[*] $($file) ( $($count_files) / $($total_to_parse_orders_main_files) ) parsed successfully."
         }   
     }
     else
     {
-        Write-Host "[!] No *m.prt files in $($current_directory_working). Come back with proper input next time." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] No *m.prt files in $($current_directory_working). Come back with proper input next time."
         throw "[!] No *m.prt files in $($current_directory_working). Come back with proper input next time."
     }
 }
 
 function Split-OrdersCertificate()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $current_directory_working,
-	  [Parameter(mandatory = $true)] [String] $cof_directory_working,
-	  [Parameter(mandatory = $true)] [String] $run_date,
-	  [Parameter(mandatory = $true)] [String] $files_orders_c_prt,
-	  [Parameter(mandatory = $true)] [String] $regex_end_cert
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $current_directory_working,
+        [Parameter(mandatory = $true)] $cof_directory_working,
+        [Parameter(mandatory = $true)] $run_date,
+        [Parameter(mandatory = $true)] $files_orders_c_prt,
+        [Parameter(mandatory = $true)] $regex_end_cert
+    )
 	  
     $total_to_parse_orders_cert_files = ($($files_orders_c_prt)).Length
 
@@ -370,16 +337,16 @@ function Split-OrdersCertificate()
 
         if(!(Test-Path $($out_directory)))
         {
-            Write-Host "[#] $($out_directory) not created. Creating now." -ForegroundColor Yellow
+            Write-Verbose "[#] $($out_directory) not created. Creating now."
             New-Item -ItemType Directory -Path $($out_directory) > $null
 
             if($?)
             {
-                Write-Host "[*] $($out_directory) created successfully." -ForegroundColor Green
+                Write-Verbose "[*] $($out_directory) created successfully."
             }
             else
             {
-                Write-Host "[!] $($out_directory) creation failed." ([char]7) -ForegroundColor Red
+                Write-Verbose "[!] $($out_directory) creation failed."
                 throw "[!] $($out_directory) creation failed."
             }
         }
@@ -390,7 +357,7 @@ function Split-OrdersCertificate()
             $orders = [regex]::Match($content,'(?<=FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=Automated NGB Form 102-10A  dtd  12 AUG 96)',"singleline").Value -split "$($regex_end_cert)"
             $count_files ++
 
-            Write-Host "[#] Parsing $($file) ($($count_files)/$($total_to_parse_orders_cert_files)) now." -ForegroundColor Yellow
+            Write-Verbose "[#] Parsing $($file) ( $($count_files)/$($total_to_parse_orders_cert_files) ) now."
 
             foreach($order in $orders)
             {
@@ -402,46 +369,47 @@ function Split-OrdersCertificate()
 
                     $out_file = "$($run_date)_$($count_orders).cof"
 
-                    Write-Host "[#] Processing $($out_file) now." -ForegroundColor Yellow
+                    Write-Verbose "[#] Processing $($out_file) now."
 
                     New-Item -ItemType File -Path $($out_directory) -Name $($out_file) -Value $($order) > $null
 
                     if($?)
                     {
-                        Write-Host "[*] $($out_file) file created successfully." -ForegroundColor Green
+                        Write-Verbose "[*] $($out_file) file created successfully."
                     }
                     else
                     {
-                        Write-Host "[!] $($out_file) file creation failed." ([char]7) -ForegroundColor Red
+                        Write-Verbose "[!] $($out_file) file creation failed."
                         throw "[!] $($out_file) file creation failed." 
                     }
                 }
             }
 
-            Write-Host "[*] $($file) ($($count_files)/$($total_to_parse_orders_cert_files)) parsed successfully." -ForegroundColor Green
+            Write-Verbose "[*] $($file) ( $($count_files) / $($total_to_parse_orders_cert_files) ) parsed successfully."
         }
     }
     else
     {
-        Write-Host "[!] No *c.prt files in $($current_directory_working). Come back with proper input next time." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] No *c.prt files in $($current_directory_working). Come back with proper input next time."
         throw "[!] No *c.prt files in $($current_directory_working). Come back with proper input next time."
     }
 }
 
 function Edit-OrdersMain()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $mof_directory_working,
-	  [Parameter(mandatory = $true)] [String] $exclude_directories,
-	  [Parameter(mandatory = $true)] [String] $regex_old_fouo_3_edit_orders_main,
-	  [Parameter(mandatory = $true)] [String] $mof_directory_original_splits_working
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $mof_directory_working,
+        [Parameter(mandatory = $true)] $exclude_directories,
+        [Parameter(mandatory = $true)] $regex_old_fouo_3_edit_orders_main,
+        [Parameter(mandatory = $true)] $mof_directory_original_splits_working
+    )
 	  
     $total_to_edit_orders_main = (Get-ChildItem -Path "$($mof_directory_working)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
 
     if($($total_to_edit_orders_main) -gt '0')
     {
-        Write-Host "[#] Total to edit: $($total_to_edit_orders_main)" -ForegroundColor Yellow
+        Write-Verbose "[#] Total to edit: $($total_to_edit_orders_main)."
         $total_edited_orders_main = 0
 
 $old_header = @"
@@ -488,65 +456,66 @@ $old_spacing_2 = @"
             {
                 $out_file_name = "$($file.BaseName)_edited.mof"
 
-                Write-Host "[#] Editing $($file.Name) now." -ForegroundColor Yellow
+                Write-Verbose "[#] Editing $($file.Name) now."
 
                 Set-Content -Path "$($mof_directory_working)\$($out_file_name)" $file_content
             
                 if($?)
                 {
-                    Write-Host "[*] $($file.Name) edited successfully." -ForegroundColor Green                    
+                    Write-Verbose "[*] $($file.Name) edited successfully."                    
                     $total_edited_orders_main ++
 
                     if($($file.Name) -cnotcontains "*_edited.mof")
                     {
-                        Write-Host "[#] Moving $($file.Name) to $($mof_directory_original_splits_working)" -ForegroundColor Yellow
+                        Write-Verbose "[#] Moving $($file.Name) to $($mof_directory_original_splits_working)"
                         Move-Item "$($file)" -Destination "$($mof_directory_original_splits_working)\$($file.Name)" -Force
 
                         if($?)
                         {
-                            Write-Host "[*] $($file) moved to $($mof_directory_original_splits_working) successfully." -ForegroundColor Green
+                            Write-Verbose "[*] $($file) moved to $($mof_directory_original_splits_working) successfully."
                         }
                         else
                         {
-                            Write-Host "[!] $($file) move to $($mof_directory_original_splits_working) failed." ([char]7) -ForegroundColor Red
+                            Write-Verbose "[!] $($file) move to $($mof_directory_original_splits_working) failed."
                             throw "[!] $($file) move to $($mof_directory_original_splits_working) failed."
                         }
                     }
                 }
                 else
                 {
-                    Write-Host "[!] $($file.Name) editing failed." ([char]7) -ForegroundColor Red
+                    Write-Verbose "[!] $($file.Name) editing failed."
                     throw "[!] $($file.Name) editing failed."
                 }
             }
             else
             {
-                Write-Host "[#] $($file) is a directory. Skipping." -ForegroundColor Yellow
+                Write-Verbose "[#] $($file) is a directory. Skipping."
             }
 
-            Write-Host "[#] Edited: ($($total_edited_orders_main)/$($total_to_edit_orders_main))." -ForegroundColor Yellow
+            Write-Verbose "[#] Edited: ( $($total_edited_orders_main) / $($total_to_edit_orders_main) )."
         }
     }
     else
     {
-        Write-Host "[!] Total to edit: $($total_to_edit_orders_main). No .mof files in $($mof_directory_working). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] Total to edit: $($total_to_edit_orders_main). No .mof files in $($mof_directory_working). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
         throw "[!] No .mof files in $($mof_directory_working). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
     }
 }
 
 function Edit-OrdersCertificate()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $cof_directory_working,
-	  [Parameter(mandatory = $true)] [String] $exclude_directories,
-	  [Parameter(mandatory = $true)] [String] $regex_end_cert,
-	  [Parameter(mandatory = $true)] [String] $cof_directory_original_splits_working
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $cof_directory_working,
+        [Parameter(mandatory = $true)] $exclude_directories,
+        [Parameter(mandatory = $true)] $regex_end_cert,
+        [Parameter(mandatory = $true)] $cof_directory_original_splits_working
+    )
     $total_to_edit_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
 
     if($($total_to_edit_orders_cert) -gt '0')
     {
-        Write-Host "[#] Total to edit: $($total_to_edit_orders_cert)" -ForegroundColor Yellow
+        Write-Verbose "[#] Total to edit: $($total_to_edit_orders_cert)."
         $total_edited_orders_cert = 0
 
         foreach($file in (Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof'}))
@@ -562,60 +531,61 @@ function Edit-OrdersCertificate()
             {
                 $out_file_name = "$($file.BaseName)_edited.cof"
 
-                Write-Host "[#] Editing $($file.Name) now." -ForegroundColor Yellow
+                Write-Verbose "[#] Editing $($file.Name) now."
 
                 Set-Content -Path "$($cof_directory_working)\$($out_file_name)" $file_content
 				Add-Content -Path "$($cof_directory_working)\$($out_file_name)" -Value $($regex_end_cert)
             
                 if($?)
                 {
-                    Write-Host "[*] $($file.Name) edited successfully." -ForegroundColor Green                    
+                    Write-Verbose "[*] $($file.Name) edited successfully."                    
                     $total_edited_orders_cert ++
 
                     if($($file.Name) -cnotcontains "*_edited.cof")
                     {
-                        Write-Host "[#] Moving $($file.Name) to $($cof_directory_original_splits_working)" -ForegroundColor Yellow
+                        Write-Verbose "[#] Moving $($file.Name) to $($cof_directory_original_splits_working)"
                         Move-Item -Path "$($file)" -Destination "$($cof_directory_original_splits_working)\$($file.Name)" -Force
 
                         if($?)
                         {
-                            Write-Host "[*] $($file) moved to $($cof_directory_original_splits_working) successfully." -ForegroundColor Green
+                            Write-Verbose "[*] $($file) moved to $($cof_directory_original_splits_working) successfully."
                         }
                         else
                         {
-                            Write-Host "[!] $($file) move to $($cof_directory_original_splits_working) failed." ([char]7) -ForegroundColor Red
+                            Write-Verbose "[!] $($file) move to $($cof_directory_original_splits_working) failed."
                             throw "[!] $($file) move to $($cof_directory_original_splits_working) failed."
                         }
                     }
                 }
                 else
                 {
-                    Write-Host "[!] $($file.Name) editing failed." ([char]7) -ForegroundColor Red
+                    Write-Verbose "[!] $($file.Name) editing failed."
                     throw "[!] $($file.Name) editing failed."
                 }
             }
             else
             {
-                Write-Host "[#] $($file) is a directory. Skipping." -ForegroundColor Yellow
+                Write-Verbose "[#] $($file) is a directory. Skipping."
             }
 
-            Write-Host "[#] Edited: ($($total_edited_orders_cert)/$($total_to_edit_orders_cert))." -ForegroundColor Yellow
+            Write-Verbose "[#] Edited: ( $($total_edited_orders_cert) / $($total_to_edit_orders_cert) )."
         }
     }
     else
     {
-        Write-Host "[!] Total to edit: $($total_to_edit_orders_cert). No .cof files in $($cof_directory_working). Make sure to split *c.prt files first. Use '$($script_name) -sc' first, then try again." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] Total to edit: $($total_to_edit_orders_cert). No .cof files in $($cof_directory_working). Make sure to split *c.prt files first. Use '$($script_name) -sc' first, then try again."
         throw "[!] No .cof files in $($cof_directory_working). Make sure to split *c.prt files first. Use '$($script_name) -sc' first, then try again."
     }
 }
 
 function Combine-OrdersMain()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $mof_directory_working,
-	  [Parameter(mandatory = $true)] [String] $run_date,
-	  [Parameter(mandatory = $true)] [String] $exclude_directories
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $mof_directory_working,
+        [Parameter(mandatory = $true)] $run_date,
+        [Parameter(mandatory = $true)] $exclude_directories
+    )
 	  
     $total_to_combine_orders_main = (Get-ChildItem -Path "$($mof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
 
@@ -624,8 +594,8 @@ function Combine-OrdersMain()
         $orders_combined_orders_main = 0
         $out_file = "$($mof_directory_working)\$($run_date)_combined_orders_m.txt"
 
-        Write-Host "[#] Total to combine: $($total_to_combine_orders_main)" -ForegroundColor Yellow
-        Write-Host "[#] Combining .mof files now." -ForegroundColor Yellow
+        Write-Verbose "[#] Total to combine: $($total_to_combine_orders_main)."
+        Write-Verbose "[#] Combining .mof files now."
 
         Get-ChildItem -Path $($mof_directory_working) -Recurse | Where { ! $_.PSIsContainer } | Where { $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" } | 
             ForEach-Object {
@@ -635,30 +605,31 @@ function Combine-OrdersMain()
                 if($?)
                 {
                     $orders_combined_orders_main ++
-                    Write-Host "[#] Combined ($($orders_combined_orders_main)/$($total_to_combine_orders_main)) .mof files." -ForegroundColor Yellow
+                    Write-Verbose "[#] Combined ( $($orders_combined_orders_main) / $($total_to_combine_orders_main) ) .mof files."
                 }
                 else
                 {
-                    Write-Host "[!] Combining .mof files failed." ([char]7) -ForegroundColor Red
+                    Write-Verbose "[!] Combining .mof files failed."
                     throw "[!] Combining .mof files failed."
                 }
             }
 
-        Write-Host "[*] Combining .mof files finished successfully. Check your results at $($out_file)" -ForegroundColor Green
+        Write-Verbose "[*] Combining .mof files finished successfully. Check your results at $($out_file)"
     }
     else
     {
-        Write-Host "[!] Total to combine: $($total_to_combine_orders_main). No .mof files in $($mof_directory_working) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] Total to combine: $($total_to_combine_orders_main). No .mof files in $($mof_directory_working) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
         throw "[!] No .mof files in $($mof_directory_working) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
     }
 }
 
 function Combine-OrdersCertificate()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $cof_directory_working,
-	  [Parameter(mandatory = $true)] [String] $run_date
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $cof_directory_working,
+        [Parameter(mandatory = $true)] $run_date
+    )
 	  
     $total_to_combine_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }).Length
 
@@ -667,8 +638,8 @@ function Combine-OrdersCertificate()
         $orders_combined_orders_cert = 0
         $out_file = "$($cof_directory_working)\$($run_date)_combined_orders_c.txt"
 
-        Write-Host "[#] Total to combine: $($total_to_combine_orders_cert)" -ForegroundColor Yellow
-        Write-Host "[#] Combining .cof files now." -ForegroundColor Yellow
+        Write-Verbose "[#] Total to combine: $($total_to_combine_orders_cert)."
+        Write-Verbose "[#] Combining .cof files now."
 
         Get-ChildItem -Path $($cof_directory_working) -Recurse | Where { ! $_.PSIsContainer } | Where { $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" } | 
             ForEach-Object {
@@ -678,48 +649,50 @@ function Combine-OrdersCertificate()
                 if($?)
                 {
                     $orders_combined_orders_cert ++
-                    Write-Host "[#] Combined ($($orders_combined_orders_cert)/$($total_to_combine_orders_cert)) .cof files." -ForegroundColor Yellow
+                    Write-Verbose "[#] Combined ( $($orders_combined_orders_cert) / $($total_to_combine_orders_cert) ) .cof files."
                 }
                 else
                 {
-                    Write-Host "[!] Combining .cof files failed." ([char]7) -ForegroundColor Red
+                    Write-Verbose "[!] Combining .cof files failed."
                     throw "[!] Combining .cof files failed."
                 }
             }
 
-        Write-Host "[*] Combining .cof files finished successfully. Check your results at $($out_file)" -ForegroundColor Green
+        Write-Verbose "[*] Combining .cof files finished successfully. Check your results at $($out_file)"
     }
     else
     {
-        Write-Host "[!] Total to combine: $($total_to_combine_orders_cert). No .cof files in $($cof_directory_working) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] Total to combine: $($total_to_combine_orders_cert). No .cof files in $($cof_directory_working) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
         throw "[!] No .cof files in $($cof_directory_working) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
     }
 }
 
 function Parse-OrdersMain()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $mof_directory_working,
-	  [Parameter(mandatory = $true)] [String] $exclude_directories,
-	  [Parameter(mandatory = $true)] [String] $regex_format_parse_orders_main,
-	  [Parameter(mandatory = $true)] [String] $regex_order_number_parse_orders_main,
-	  [Parameter(mandatory = $true)] [String] $regex_uic_parse_orders_main,
-	  [Parameter(mandatory = $true)] [String] $regex_pertaining_to_parse_orders_main
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $mof_directory_working,
+        [Parameter(mandatory = $true)] $exclude_directories,
+        [Parameter(mandatory = $true)] $regex_format_parse_orders_main,
+        [Parameter(mandatory = $true)] $regex_order_number_parse_orders_main,
+        [Parameter(mandatory = $true)] $regex_uic_parse_orders_main,
+        [Parameter(mandatory = $true)] $regex_pertaining_to_parse_orders_main
+    )
 	  
-    $total_to_create_orders_main = (Get-ChildItem -Path "$($mof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
+    $total_to_create_orders_main = (Get-ChildItem -Path $($mof_directory_working) | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
 
     if($($total_to_create_orders_main) -gt '0')
     {
-        $stop_watch = [system.diagnostics.stopwatch]::startNew()
+        $sw = New-Object System.Diagnostics.Stopwatch
+        $sw.start()
 
         $orders_created_orders_main = @()
         $orders_not_created_orders_main = @()
+        
+        $orders_created_orders_main_csv = "$($mof_directory_working)\$($run_date)_orders_created_orders_main.csv"
+        $orders_not_created_orders_main_csv = "$($mof_directory_working)\$($run_date)_orders_not_created_orders_main.csv"
 
-        $orders_created_orders_main_count = @($orders_created_orders_main).Count
-        $orders_not_created_orders_main_count = @($orders_not_created_orders_main_count).Count
-
-        Write-Host "[#] Total to create: $($total_to_create_orders_main)" -ForegroundColor Yellow
+        Write-Verbose "[#] Total to create: $($total_to_create_orders_main)."
 
         foreach($file in (Get-ChildItem -Path "$($mof_directory_working)" -Filter "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories }))
             {
@@ -739,7 +712,7 @@ function Parse-OrdersMain()
                 $memorandum_for_record = "MEMORANDUM FOR RECORD"
                 $memorandum_for_record_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($memorandum_for_record) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
 
-                Write-Host "[#] Looking for 'format' in $($file)." -ForegroundColor Yellow
+                Write-Verbose "[#] Looking for 'format' in $($file)."
                 $format = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_format_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                 if($($format))
                 {
@@ -752,7 +725,7 @@ function Parse-OrdersMain()
                     $error_code = "0xNF"
                     $error_info = "File $($file) with no format. Error code $($error_code)."
 
-                    Write-Host "[+] $($error_info)" -ForegroundColor Cyan
+                    Write-Verbose "[+] $($error_info)"
                     
                     $order_info = New-Object -TypeName PSObject
                     $order_info | Add-Member -MemberType NoteProperty -Name File -Value $($file)
@@ -768,7 +741,7 @@ function Parse-OrdersMain()
                     $error_code = "0xFR"
                     $error_info = "File $($file) containing 'Following request is APPROVED || DISAPPROVED'. This is a known issue and guidance has been to disregard these files. Error code $($error_code)."
 
-                    Write-Host "[+] $($error_info)" -ForegroundColor Cyan
+                    Write-Verbose "[+] $($error_info)"
 
                     $order_info = New-Object -TypeName PSObject
                     $order_info | Add-Member -MemberType NoteProperty -Name File -Value $($file)
@@ -780,35 +753,35 @@ function Parse-OrdersMain()
                 }
                 elseif($($format) -eq '165' -and !($($following_request_exists)))
                 {
-                    Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
-                    Write-Host "[#] Looking for order number in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for order number in $($file)."
                     $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $order_number = $order_number[1]
-                    Write-Host "[*] Found 'order number' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'order number' in $($file)."
 
-                    Write-Host "[#] Looking for 'published year' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'published year' in $($file)."
                     $published_day = $order_number[-3]
                     $published_month = $order_number[-2]
                     $published_year = $order_number[-1]
                     $published_year = @($published_year -split '(.{2})' | ? {$_})
                     $published_year = $($published_year[1]) # YYYY turned into YY
-                    Write-Host "[*] Found 'published year' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'published year' in $($file)."
 
                     $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "You are ordered to" -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | 
                     Select -First 1 | 
                     ConvertFrom-String | 
                     Select P3, P4, P5, P6 ) # MI (3 = last, 4 = first, 5 = MI, 6 = SSN) // NO MI ( 3 = last, 4 = first, 5 = ssn, 6 = rank )
 
-                    Write-Host "[#] Looking for 'last, first, mi, ssn' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'last, first, mi, ssn' in $($file)."
                     $last_name = $anchor.P3
                     $last_name = $last_name.Split(':')[-1]
                     $first_name = $anchor.P4
                     $middle_initial = $anchor.P5
 
-                    if($($middle_initial).Length -ne 1)
+                    if($($middle_initial).Length -ne 1 -and $($middle_initial).Length -gt 2)
                     {
                         $middle_initial = 'NMI'
                         $ssn = $anchor.P5
@@ -819,9 +792,9 @@ function Parse-OrdersMain()
                         $ssn = $anchor.P6
                     }
                     $name = "$($last_name)_$($first_name)_$($middle_initial)"
-                    Write-Host "[*] Found 'last, first, mi, ssn' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'last, first, mi, ssn' in $($file)."
 
-                    Write-Host "[#] Looking for 'period from year, month, day' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'period from year, month, day' in $($file)."
                     $period_from = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "REPORT TO " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period_from = $period_from.ToString()
                     $period_from = $period_from.Split(' ')
@@ -830,9 +803,9 @@ function Parse-OrdersMain()
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $period_from[6]
                     $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
-                    Write-Host "[*] Found 'period from year, month, day' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'period from year, month, day' in $($file)."
 
-                    Write-Host "[#] Looking for 'period to year, month, day' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'period to year, month, day' in $($file)."
                     $period_to = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "Period of active duty: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period_to = $period_to.ToString()
                     $period_to = $period_to.Split(' ')
@@ -841,18 +814,18 @@ function Parse-OrdersMain()
                     $period_to_time = $period_to_time.ToUpper()
                     $period_to_time = $period_to_time.Substring(0, 1)
                     $period_to = "NTE$($period_to_number)$($period_to_time)"
-                    Write-Host "[*] Found 'period to year, month, day' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'period to year, month, day' in $($file)."
 
-                    Write-Host "[#] Looking for 'uic' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'uic' in $($file)."
                     $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
-                    Write-Host "[*] Found 'uic' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'uic' in $($file)."
 
                     $validation_results = Validate-Variables -order_number $($order_number) -published_year $($published_year) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_time $($period_to_time) -period_to_number $($period_to_number) -uic $($uic) -format $($format)
                     if(!($validation_results.Status -contains 'fail'))
                     {
-                        Write-Host "[*] All variables for $($file) passed validation." -ForegroundColor Green
+                        Write-Verbose "[*] All variables for $($file) passed validation."
 
                         $uic_directory = "$($uics_directory_output)\$($uic)"
                         $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)"
@@ -875,22 +848,20 @@ function Parse-OrdersMain()
 	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToNumber -Value $($period_to_number)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name Format -Value $($format)
-	                    $orders_created_orders_main += $order_info
-
-                        Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
+	                    $orders_created_orders_main += $order_info                        
                     }
                     else
                     {
                         $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
                         if($total_validation_fails -gt 1)
                         {
-                            Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
+                            Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
                             $validation_results | Sort-Object -Property Status
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation."
                         }
                         elseif($total_validation_fails -eq 1)
                         {
-                            Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
+                            Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
                             $validation_results | Sort-Object -Property Status
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation."
                         }
@@ -898,28 +869,28 @@ function Parse-OrdersMain()
                 }
                 elseif($($format) -eq '172' -and !($($following_request_exists)))
                 {
-                    Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
-                    Write-Host "[#] Looking for 'order number' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'order number' in $($file)."
                     $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
                     $published_month = $order_number[-2]
-                    Write-Host "[#] Looking for 'published year' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'published year' in $($file)."
                     $published_year = $order_number[-1]
                     $published_year = @($published_year -split '(.{2})' | ? {$_})
                     $published_year = $($published_year[1]) # YYYY turned into YY
-                    Write-Host "[*] Found 'published year' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'published year' in $($file)."
                     $order_number = $order_number[1]
-                    Write-Host "[*] Found 'order number' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'order number' in $($file)."
 
-                    Write-Host "[#] Looking for 'last, first, mi, ssn' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'last, first, mi, ssn' in $($file)."
                     $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | Select -First 1)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
-                    if($($anchor.MiddleInitial).Length -ne 1)
+                    if($($anchor.MiddleInitial).Length -ne 1 -and $($anchor.MiddleInitial).Length -gt 2)
                     {
                         $anchor.SSN = $anchor.MiddleInitial
                         $anchor.MiddleInitial = 'NMI'
@@ -931,9 +902,9 @@ function Parse-OrdersMain()
                     $middle_initial = $($anchor.MiddleInitial)
                     $ssn = $($anchor.SSN)
                     $name = "$($last_name)_$($first_name)_$($middle_initial)"
-                    Write-Host "[*] Found 'last, first, mi, ssn' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'last, first, mi, ssn' in $($file)."
                     
-                    Write-Host "[#] Looking for 'period from year, month, day' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'period from year, month, day' in $($file)."
                     $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "Active duty commitment: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period = $period.ToString()
                     $period = $period.Split(' ')
@@ -947,9 +918,9 @@ function Parse-OrdersMain()
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $period[5]
                     $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
-                    Write-Host "[*] Found 'period from year, month, day' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'period from year, month, day' in $($file)."
 
-                    Write-Host "[#] Looking for 'period to year, month, day' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'period to year, month, day' in $($file)."
                     $period_to_day = $period[-3]
                     $period_to_day = $period_to_day.ToString()
                     if($($period_to_day).Length -ne 2)
@@ -961,22 +932,22 @@ function Parse-OrdersMain()
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $period[-1]
                     $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
-                    Write-Host "[*] Found 'period to year, month, day' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'period to year, month, day' in $($file)."
                     
-                    Write-Host "[#] Looking for 'uic' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'uic' in $($file)."
                     $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
-                    Write-Host "[*] Found 'uic' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'uic' in $($file)."
 
-                    $validation_results = Validate-Variables -order_number $($order_number) -published_year $($published_year) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_ -uic $($uic) -format $($format)
+                    $validation_results = Validate-Variables -format $($format) -uic $($uic) -first_name $($first_name) -last_name $($last_name) -middle_initial $($middle_initial) -order_number $($order_number) -published_year $($published_year) -ssn $($ssn) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_year $($period_to_year) -period_to_month $($period_to_month) -period_to_day $($period_to_day)
 
                     if(!($validation_results.Status -contains 'fail'))
                     {
-	                    Write-Host "[*] All variables for $($file) passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] All variables for $($file) passed validation."
 
 	                    $uic_directory = "$($uics_directory_output)\$($uic)"
-	                    $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)"
+	                    $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
 	                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
 	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
 	
@@ -997,64 +968,62 @@ function Parse-OrdersMain()
 	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name Format -Value $($format)
 	                    $orders_created_orders_main += $order_info
-
-	                    Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
                     }
                     else
                     {
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                    Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                    Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
                     }
                 }
-                elseif($($format) -eq '700' -and $($following_order_exists) -and !($($following_request_exists))) # Amendment order for "700" and "700 *" formats
+                elseif($($format) -eq '700' -or $($format) -eq '700  *' -and $($following_order_exists) -and !($($following_request_exists))) # Amendment order for "700" and "700 *" formats
                 {
-                    Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
-                    Write-Host "[#] Looking for 'order number' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'order number' in $($file)."
                     $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
                     $published_month = $order_number[-2]
-                    Write-Host "[#] Looking for 'published year' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'published year' in $($file)."
                     $published_year = $order_number[-1]
                     $published_year = @($published_year -split '(.{2})' | ? { $_ })
                     $published_year = $published_year[1]
-                    Write-Host "[*] Found 'published year' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'published year' in $($file)."
                     $order_number = $order_number[1] # YYYY turned into YY
-                    Write-Host "[*] Found 'order number' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'order number' in $($file)."
                     
-                    Write-Host "[#] Looking for 'uic' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'uic' in $($file)."
                     $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
-                    Write-Host "[*] Found 'uic' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'uic' in $($file)."
 
-                    Write-Host "[#] Looking for 'order amended' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'order amended' in $($file)."
                     $order_amended = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "So much of:" -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_amended = $order_amended.ToString()
                     $order_amended = $order_amended.Split(' ')
                     $order_amended = $order_amended[5]
                     $order_amended = $order_amended.Insert(3,"-")
-                    Write-Host "[*] Found 'order amended' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'order amended' in $($file)."
 
                     $pertaining_to = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_pertaining_to_parse_orders_main) -AllMatches -Context 0,3 | Select -First 1)
                     $pertaining_to = $pertaining_to | ConvertFrom-String -PropertyNames GreaterThan, Pertaining, to, Colon_1, Colon_2, DutyCode, For, LastName, FirstName, MiddleInitial, SSN | Select LastName, FirstName, MiddleInitial, SSN
 
-                    Write-Host "[#] Looking for 'last, first, mi, ssn' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'last, first, mi, ssn' in $($file)."
                     # Code to fix people that have no middle name. Currently untested for revoke section.
-                    if($($pertaining_to.MiddleInitial).Length -ne 1)
+                    if($($pertaining_to.MiddleInitial).Length -ne 1 -and $($pertaining_to.MiddleInitial).Length -gt 2)
                     {
                         $pertaining_to.SSN = $pertaining_to.MiddleInitial
                         $pertaining_to.MiddleInitial = 'NMI'
@@ -1065,13 +1034,13 @@ function Parse-OrdersMain()
                     $middle_initial = $($pertaining_to.MiddleInitial)
                     $ssn = $($pertaining_to.SSN)
                     $name = "$($last_name)_$($first_name)_$($middle_initial)"
-                    Write-Host "[*] Found 'last, first, mi, ssn' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'last, first, mi, ssn' in $($file)."
 
                     $validation_results = Validate-Variables -order_number $($order_number) -published_year $($published_year) -uic $($uic) -order_amended $($order_amended) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -format $($format)
 
                     if(!($validation_results.Status -contains 'fail'))
                     {
-	                    Write-Host "[*] All variables for $($file) passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] All variables for $($file) passed validation."
 
                         $uic_directory = "$($uics_directory_output)\$($uic)"
                         $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
@@ -1091,21 +1060,19 @@ function Parse-OrdersMain()
 	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name Format -Value $($format)
 	                    $orders_created_orders_main += $order_info
-
-	                    Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
                     }
                     else
                     {
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                    Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                    Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
@@ -1113,42 +1080,42 @@ function Parse-OrdersMain()
                 }
                 elseif($($format) -eq '705' -and !($($following_request_exists))) # Revoke.
                 {
-                    Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
-                    Write-Host "[#] Looking for 'order number' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'order number' in $($file)."
                     $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
                     $published_month = $order_number[-2]
-                    Write-Host "[#] Looking for 'published year' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'published year' in $($file)."
                     $published_year = $order_number[-1]
                     $published_year = @($published_year -split '(.{2})' | ? { $_ })
                     $published_year = $published_year[1]
-                    Write-Host "[*] Found 'published year' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'published year' in $($file)."
                     $order_number = $order_number[1] # YYYY turned into YY
-                    Write-Host "[*] Found 'order number' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'order number' in $($file)."
 
-                    Write-Host "[#] Looking for 'uic' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'uic' in $($file)."
                     $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
-                    Write-Host "[*] Found 'uic' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'uic' in $($file)."
 
-                    Write-Host "[#] Looking for 'order revoke' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'order revoke' in $($file)."
                     $order_revoke = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "So much of:" -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_revoke = $order_revoke.ToString()
                     $order_revoke = $order_revoke.Split(' ')
                     $order_revoke = $order_revoke[5]
                     $order_revoke = $order_revoke.Insert(3,"-")
-                    Write-Host "[*] Found 'order revoke' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'order revoke' in $($file)."
 
-                    Write-Host "[#] Looking for 'last, first, mi, ssn' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'last, first, mi, ssn' in $($file)."
                     $pertaining_to = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_pertaining_to_parse_orders_main) -AllMatches -Context 0,3 | Select -First 1)
                     $pertaining_to = $pertaining_to | ConvertFrom-String -PropertyNames GreaterThan, Pertaining, to, Colon_1, Colon_2, DutyCode, For, LastName, FirstName, MiddleInitial, SSN | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name. Currently untested for revoke section.
-                    if($($pertaining_to.MiddleInitial).Length -ne 1)
+                    if($($pertaining_to.MiddleInitial).Length -ne 1 -and $($pertaining_to.MiddleInitial).Length -gt 2)
                     {
                         $pertaining_to.SSN = $pertaining_to.MiddleInitial
                         $pertaining_to.MiddleInitial = 'NMI'
@@ -1159,13 +1126,13 @@ function Parse-OrdersMain()
                     $middle_initial = $($pertaining_to.MiddleInitial)
                     $ssn = $($pertaining_to.SSN)
                     $name = "$($last_name)_$($first_name)_$($middle_initial)"
-                    Write-Host "[*] Found 'last, first, mi, ssn' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'last, first, mi, ssn' in $($file)."
 
                     $validation_results = Validate-Variables -order_number $($order_number) -published_year $($published_year) -uic $($uic) -order_revoke $($order_revoke) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -format $($format)
 
                     if(!($validation_results.Status -contains 'fail'))
                     {
-	                    Write-Host "[*] All variables for $($file) passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] All variables for $($file) passed validation."
 
 	                    $uic_directory = "$($uics_directory_output)\$($uic)"
 	                    $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
@@ -1185,21 +1152,19 @@ function Parse-OrdersMain()
 	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name Format -Value $($format)
 	                    $orders_created_orders_main += $order_info
-
-	                    Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
                     }
                     else
                     {
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                    Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                    Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
@@ -1207,28 +1172,28 @@ function Parse-OrdersMain()
                 }
                 elseif($($format) -eq '290' -and !($($following_request_exists))) # Pay order only.
                 {
-                    Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
-                    Write-Host "[#] Looking for 'order number' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'order number' in $($file)."
                     $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
                     $published_month = $order_number[-2]
-                    Write-Host "[#] Looking for 'published year' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'published year' in $($file)."
                     $published_year = $order_number[-1]
                     $published_year = @($published_year -split '(.{2})' | ? { $_ })
                     $published_year = $published_year[1]
-                    Write-Host "[*] Found 'published year' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'published year' in $($file)."
                     $order_number = $order_number[1] # YYYY turned into YY
-                    Write-Host "[*] Found 'order number' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'order number' in $($file)."
 
-                    Write-Host "[#] Looking for 'last, first, mi, ssn' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'last, first, mi, ssn' in $($file)."
                     $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "By order of the Secretary of the Army" -AllMatches -Context 5,0 -ErrorAction SilentlyContinue)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
-                    if($($anchor.MiddleInitial).Length -ne 1)
+                    if($($anchor.MiddleInitial).Length -ne 1 -and $($anchor.MiddleInitial).Length -gt 2)
                     {
                         $anchor.SSN = $anchor.MiddleInitial
                         $anchor.MiddleInitial = 'NMI'
@@ -1239,9 +1204,9 @@ function Parse-OrdersMain()
                     $middle_initial = $($anchor.MiddleInitial)
                     $ssn = $($anchor.SSN)
                     $name = "$($last_name)_$($first_name)_$($middle_initial)"
-                    Write-Host "[*] Found 'last, first, mi, ssn' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'last, first, mi, ssn' in $($file)."
 
-                    Write-Host "[#] Looking for 'period from year, month, day' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'period from year, month, day' in $($file)."
                     $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period = $period.ToString()
                     $period = $period.Split(' ')        
@@ -1255,9 +1220,9 @@ function Parse-OrdersMain()
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $($period[5])
                     $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
-                    Write-Host "[*] Found 'period from year, month, day' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'period from year, month, day' in $($file)."
 
-                    Write-Host "[#] Looking for 'period to year, month, day' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'period to year, month, day' in $($file)."
                     $period_to_day = $($period[-3])
                     if($($period_to_day).Length -ne 2)
                     {
@@ -1267,9 +1232,9 @@ function Parse-OrdersMain()
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $($period[-1])
                     $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
-                    Write-Host "[*] Found 'period to year, month, day' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'period to year, month, day' in $($file)."
 
-                    Write-Host "[#] Looking for 'uic' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'uic' in $($file)."
                     $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $uic = $uic.ToString()
                     $uic = $uic.Split(' ')
@@ -1279,13 +1244,13 @@ function Parse-OrdersMain()
                     $uic = $uic -replace "[:\(\)./]",""
                     $uic = $uic.Split('-')
                     $uic = $uic[0]
-                    Write-Host "[*] Found 'uic' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'uic' in $($file)."
 
                     $validation_results = Validate-Variables -format $($format) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -uic $($uic) -order_number $($order_number) -published_year $($published_year) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_year $($period_to_year) -period_to_month $($period_to_month) -period_to_day $($period_to_day)
 
                     if(!($validation_results.Status -contains 'fail'))
                     {
-	                    Write-Host "[*] All variables for $($file) passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] All variables for $($file) passed validation."
 
 	                    $uic_directory = "$($uics_directory_output)\$($uic)"
 	                    $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
@@ -1299,7 +1264,7 @@ function Parse-OrdersMain()
 	                    $order_info | Add-Member -MemberType NoteProperty -Name LastName -Value $($last_name)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name FirstName -Value $($first_name)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name MiddleInitial -Value $($middle_initial)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($middle_initial)
+	                    $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($ssn)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name PublishedYear -Value $($published_year)
@@ -1310,21 +1275,19 @@ function Parse-OrdersMain()
 	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToMonth -Value $($period_to_month)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToDay -Value $($period_to_day)
 	                    $orders_created_orders_main += $order_info
-
-	                    Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
                     }
                     else
                     {
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                    Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                    Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
@@ -1332,29 +1295,29 @@ function Parse-OrdersMain()
                 }
                 elseif($($format) -eq '296' -or $($format) -eq '282' -or $($format) -eq '294' -or $($format) -eq '284' -and !($($following_request_exists))) # 296 AT Orders // 282 Unknown // 294 Full Time National Guard Duty - Operational Support (FTNGD-OS) // 284 Unknown.
                 {
-                    Write-Host "[+] Found format $($format) in $($file)!" -ForegroundColor Cyan
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
-                    Write-Host "[#] Looking for 'order number' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'order number' in $($file)."
                     $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
                     $month = $order_number[-2]
                     $published_month = $months.Get_Item($($month)) # Retrieve month number value from hash table.
-                    Write-Host "[#] Looking for 'published year' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'published year' in $($file)."
                     $published_year = $order_number[-1]
                     $published_year = @($published_year -split '(.{2})' | ? {$_})
                     $published_year = $($published_year[1]) # YYYY turned into YY
-                    Write-Host "[*] Found 'published year' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'published year' in $($file)."
                     $order_number = $order_number[1]
-                    Write-Host "[*] Found 'order number' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'order number' in $($file)."
 
-                    Write-Host "[#] Looking for 'last, first, mi, ssn' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'last, first, mi, ssn' in $($file)."
                     $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | Select -First 1)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
-                    if($($anchor.MiddleInitial).Length -ne '1')
+                    if($($anchor.MiddleInitial).Length -ne 1 -and $($anchor.MiddleInitial).Length -gt 2)
                     {
                         $anchor.SSN = $anchor.MiddleInitial
                         $anchor.MiddleInitial = 'NMI'
@@ -1366,9 +1329,9 @@ function Parse-OrdersMain()
                     $middle_initial = $($anchor.MiddleInitial)
                     $ssn = $($anchor.SSN)
                     $name = "$($last_name)_$($first_name)_$($middle_initial)"
-                    Write-Host "[*] Found 'last, first, mi, ssn' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'last, first, mi, ssn' in $($file)."
 
-                    Write-Host "[#] Looking for 'period from year, month, day' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'period from year, month, day' in $($file)."
                     $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $period = $period.ToString()
                     $period = $period.Split(' ')
@@ -1382,9 +1345,9 @@ function Parse-OrdersMain()
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $($period[5])
                     $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
-                    Write-Host "[*] Found 'period from year, month, day' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'period from year, month, day' in $($file)."
 
-                    Write-Host "[#] Looking for 'period to year, month, day' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'period to year, month, day' in $($file)."
                     $period_to_day = $($period[-3])
                     if($($period_to_day).Length -ne 2)
                     {
@@ -1394,9 +1357,9 @@ function Parse-OrdersMain()
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $($period[-1])
                     $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
-                    Write-Host "[*] Found 'period to year, month, day' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'period to year, month, day' in $($file)."
                     
-                    Write-Host "[#] Looking for 'uic' in $($file)." -ForegroundColor Yellow
+                    Write-Verbose "[#] Looking for 'uic' in $($file)."
                     $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $uic = $uic.ToString()
                     $uic = $uic.Split(' ')
@@ -1406,13 +1369,13 @@ function Parse-OrdersMain()
                     $uic = $uic -replace "[:\(\)./]",""
                     $uic = $uic.Split('-')
                     $uic = $uic[0]
-                    Write-Host "[*] Found 'uic' in $($file)." -ForegroundColor Green
+                    Write-Verbose "[*] Found 'uic' in $($file)."
 
                     $validation_results = Validate-Variables -format $($format) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -uic $($uic) -order_number $($order_number) -published_year $($published_year) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_year $($period_to_year) -period_to_month $($period_to_month) -period_to_day $($period_to_day)
 
                     if(!($validation_results.Status -contains 'fail'))
                     {
-	                    Write-Host "[*] All variables for $($file) passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] All variables for $($file) passed validation."
 
 	                    $uic_directory = "$($uics_directory_output)\$($uic)"
 	                    $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
@@ -1426,7 +1389,7 @@ function Parse-OrdersMain()
 	                    $order_info | Add-Member -MemberType NoteProperty -Name LastName -Value $($last_name)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name FirstName -Value $($first_name)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name MiddleInitial -Value $($middle_initial)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($middle_initial)
+	                    $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($ssn)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name PublishedYear -Value $($published_year)
@@ -1437,21 +1400,19 @@ function Parse-OrdersMain()
 	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToMonth -Value $($period_to_month)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToDay -Value $($period_to_day)
 	                    $orders_created_orders_main += $order_info
-
-	                    Write-Host "[#] Created: ($($orders_created_orders_main_count)/$($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main_count)/$($total_to_create_orders_main))" -ForegroundColor Yellow
                     }
                     else
                     {
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                    Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                    Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
 		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
@@ -1460,9 +1421,9 @@ function Parse-OrdersMain()
                 else
                 {
                     $error_code = "0x00"
-                    $error_info = "File $($file) with format $($format). This is not currently a known and/or handled format. Notify support of this error ASAP. Error code $($error_code)."
+                    $error_info = "File $($file) with format $($format). This is not currently an unknown and/or handled format. Notify ORDPRO support of this error ASAP. Error code $($error_code)."
 
-                    Write-Host "[+] $($error_info)" -ForegroundColor Cyan
+                    Write-Verbose "[+] $($error_info)"
 
                     $order_info = New-Object -TypeName PSObject
                     $order_info | Add-Member -MemberType NoteProperty -Name File -Value $($file)
@@ -1473,73 +1434,79 @@ function Parse-OrdersMain()
                     continue
                 }
 
-                $percent_complete = ($($orders_created_orders_main_count)/$($total_to_create_orders_main)).ToString("P")
-                $estimated_time = (($($total_to_create_orders_main) - $($orders_created_orders_main_count)) * 0.1 / 60)
+                $activity = "Working magic on .mof files."
+                $status = "Processed $($uic_soldier_order_file_name)."
+                $percent_complete = (( $orders_created_orders_main.Length)/$($total_to_create_orders_main )).ToString("P")
+                $estimated_time = (($($total_to_create_orders_main) - ($orders_created_orders_main.Length)) * 0.8 / 60)
                 $formatted_estimated_time = [math]::Round($estimated_time,2)
-                $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
+                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
 
-                for($i = $orders_created_orders_main_count; $i -le $total_to_create_orders_main; $i++)
-                {
-	                Write-Progress -Activity "Creating orders ..." -Status "Creating $($uic_soldier_order_file_name)" -PercentComplete ($($orders_created_orders_main_count)/$($total_to_create_orders_main)*100) -CurrentOperation "$($percent_complete) complete          ~$($formatted_estimated_time) minute(s) left          $($orders_created_orders_main_count)/$($total_to_create_orders_main) created          $($elapsed_time) time elapsed"
-                }
+                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Created: ($($orders_created_orders_main.Length) / $($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main.Length) / $($total_to_create_orders_main)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
             }
+
+            $orders_created_orders_main | Export-Csv -NoTypeInformation -Path "$($orders_created_orders_main_csv)"
+            $orders_not_created_orders_main | Export-Csv -NoTypeInformation -Path "$($orders_not_created_orders_main_csv)"
     }
     else
     {
-        Write-Host "[!] Total to create: ($($total_to_create_orders_main)). No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] Total to create: ($($total_to_create_orders_main)). No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
         throw "[!] No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
     }
 }
 
 function Parse-OrdersCertificate()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $cof_directory_working,
-	  [Parameter(mandatory = $true)] [String] $exclude_directories
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $cof_directory_working,
+        [Parameter(mandatory = $true)] $exclude_directories
+    )
 	  
     $total_to_create_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" -Filter "*.cof" -Include "*_edited.cof" -Exclude $($exclude_directories) -Recurse).Length
     
     if($($total_to_create_orders_cert) -gt '0')
     {
-        $stop_watch = [system.diagnostics.stopwatch]::startNew()
+        $sw = New-Object System.Diagnostics.Stopwatch
+        $sw.start()
 
         $orders_created_orders_cert = @()
-        $orders_created_orders_cert_count = @($orders_created_orders_cert).Count
+        $orders_created_orders_cert_csv = "$($cof_directory_working)\$($run_date)_orders_created_orders_cert.csv"
 
         $soldiers = @(Get-ChildItem -Path "$($uics_directory_output)" -Exclude "__PERMISSIONS" -Recurse -Include "*.txt" | % { Split-Path  -Path $_  -Parent })
         $name_ssn = @{}
 
-        Write-Host "[#] Total to create: $($total_to_create_orders_cert)" -ForegroundColor Yellow
+        Write-Verbose "[#] Total to create: $($total_to_create_orders_cert)"
 
-        Write-Host "[#] Populating name_ssn hash table now." -ForegroundColor Yellow
+        Write-Verbose "[#] Populating name_ssn hash table now."
         foreach($s in $soldiers)
         {
+            Process-DevCommands
+
             $s = $s -split "\\" -split "___"
             $name = $s[-2]
             $ssn = $s[-1]
 
             if(!($name_ssn.ContainsKey($name)))
             {
-                Write-Host "[#] $($name) not in hash table. Adding $($name) to hash table now." -ForegroundColor Yellow
+                Write-Verbose "[#] $($name) not in hash table. Adding $($name) to hash table now."
 
                 $name_ssn.Add($name, $ssn)
 
                 if($?)
                 {
-                    Write-Host "[*] $($name) added to hash table succcessfully." -ForegroundColor Green
+                    Write-Verbose "[*] $($name) added to hash table succcessfully."
                 }
                 else
                 {
-                    Write-Host "[!] $($name) failed to add to hash table."  ([char]7) -ForegroundColor Red
+                    Write-Verbose "[!] $($name) failed to add to hash table."  ([char]7)
                 }
             }
             else
             {
-                Write-Host "[*] $($name) already in hash table." -ForegroundColor Green
+                Write-Verbose "[*] $($name) already in hash table."
             }
         }
-        Write-Host "[*] Finished populating soldiers_ssn hash table." -ForegroundColor Green
+        Write-Verbose "[*] Finished populating soldiers_ssn hash table."
 
         foreach($file in (Get-ChildItem -Path "$($cof_directory_working)" -Filter "*.cof" -Include "*_edited.cof" -Exclude $($exclude_directories) -Recurse))
             {
@@ -1561,14 +1528,14 @@ function Parse-OrdersCertificate()
                     }
                 }
 
-                Write-Host "[#] Looking for 'last, first, mi' in $($file)." -ForegroundColor Yellow
+                Write-Verbose "[#] Looking for 'last, first, mi' in $($file)."
                 $name = (Select-String -Path "$($file)" -Pattern $($regex_name_parse_orders_cert) -ErrorAction SilentlyContinue  | Select -First 1)
                 $name = $name.ToString()
                 $name = $name.Split(' ')
                 $last_name = $name[5]
                 $first_name = $name[6]
                 $middle_initial = $name[7]
-                if($($middle_initial).Length -ne '1')
+                if($($middle_initial).Length -ne 1 -and $($middle_initial).Length -gt '2' -or $($middle_initial) -eq '')
                 {
                     $middle_initial = 'NMI'
                 }
@@ -1576,17 +1543,17 @@ function Parse-OrdersCertificate()
                 {
                     $middle_initial = $name[7]
                 }
-                Write-Host "[*] Found 'last, first, mi' in $($file)." -ForegroundColor Green
+                Write-Verbose "[*] Found 'last, first, mi' in $($file)."
 
-                Write-Host "[#] Looking for 'order number' in $($file)." -ForegroundColor Yellow
+                Write-Verbose "[#] Looking for 'order number' in $($file)."
                 $order_number = (Select-String -Path "$($file)" -Pattern $($regex_order_number_parse_orders_cert) -ErrorAction SilentlyContinue | Select -First 1)
                 $order_number = $order_number.ToString()
                 $order_number = $order_number.Split(' ')
                 $order_number = $($order_number[2])
                 $order_number = $order_number.Insert(3,"-")
-                Write-Host "[*] Found 'order number' in $($file)." -ForegroundColor Green
+                Write-Verbose "[*] Found 'order number' in $($file)."
 
-                Write-Host "[#] Looking for 'period from year, month, day' in $($file)." -ForegroundColor Yellow
+                Write-Verbose "[#] Looking for 'period from year, month, day' in $($file)."
                 $period = (Select-String -Path "$($file)" -Pattern $($regex_period_parse_orders_cert) -ErrorAction SilentlyContinue | Select -First 1)
                 $period = $period.ToString()
                 $period = $period.Split(' ')
@@ -1601,17 +1568,17 @@ function Parse-OrdersCertificate()
                 $period_to_year = $period_to[0]
                 $period_to_month = $period_to[1]
                 $period_to_day = $period_to[2]
-                Write-Host "[*] Found 'period from year, month, day' in $($file)." -ForegroundColor Green
+                Write-Verbose "[*] Found 'period from year, month, day' in $($file)."
         
-                Write-Host "[#] Looking up 'ssn' in hash table for $($file)." -ForegroundColor Yellow
+                Write-Verbose "[#] Looking up 'ssn' in hash table for $($file)."
                 $ssn = $name_ssn."$($last_name)_$($first_name)_$($middle_initial)" # Retrieve ssn from soldiers_ssn hash table via key lookup.      
-                Write-Host "[*] FOund 'ssn' in hash table for $($file)." -ForegroundColor Green
+                Write-Verbose "[*] FOund 'ssn' in hash table for $($file)."
 
-                $validation_results = Validate-Variables -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -uic $($uic) -order_number $($order_number) -published_year $($published_year) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_year $($period_to_year) -period_to_month $($period_to_month) -period_to_day $($period_to_day)
+                $validation_results = Validate-Variables -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -uic $($uic) -order_number $($order_number) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_year $($period_to_year) -period_to_month $($period_to_month) -period_to_day $($period_to_day)
 
                 if(!($validation_results.Status -contains 'fail'))
                 {
-	                Write-Host "[*] All variables for $($file) passed validation." -ForegroundColor Green
+	                Write-Verbose "[*] All variables for $($file) passed validation."
 
 	                $uic_directory = "$($uics_directory_output)\$($uic)"
 	                $soldier_directory = "$($uics_directory_output)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
@@ -1624,7 +1591,7 @@ function Parse-OrdersCertificate()
 	                $order_info | Add-Member -MemberType NoteProperty -Name LastName -Value $($last_name)
 	                $order_info | Add-Member -MemberType NoteProperty -Name FirstName -Value $($first_name)
 	                $order_info | Add-Member -MemberType NoteProperty -Name MiddleInitial -Value $($middle_initial)
-	                $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($middle_initial)
+	                $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($ssn)
 	                $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
 	                $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
 	                $order_info | Add-Member -MemberType NoteProperty -Name PublishedYear -Value $($published_year)
@@ -1635,114 +1602,116 @@ function Parse-OrdersCertificate()
 	                $order_info | Add-Member -MemberType NoteProperty -Name PeriodToMonth -Value $($period_to_month)
 	                $order_info | Add-Member -MemberType NoteProperty -Name PeriodToDay -Value $($period_to_day)
 	                $orders_created_orders_cert += $order_info
-
-	                Write-Host "[#] Created: ($($orders_created_orders_cert_count)/$($total_to_create_orders_cert))." -ForegroundColor Yellow
                 }
                 else
                 {
 	                $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                if($total_validation_fails -gt 1)
 	                {
-		                Write-Host "[!] $($total_validation_fails) variables for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
                         $validation_results | Sort-Object -Property Status
 		                throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                }
 	                elseif($total_validation_fails -eq 1)
 	                {
-		                Write-Host "[!] $($total_validation_fails) variable for $($file) failed validation." ([char]7) -ForegroundColor Red
+		                Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
                         $validation_results | Sort-Object -Property Status
 		                throw "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                }
                 }
 
-                $percent_complete = ($($orders_created_orders_cert_count)/$($total_to_create_orders_cert)).ToString("P")
-                $estimated_time = (($($total_to_create_orders_cert) - $($orders_created_orders_cert_count)) * 0.1 / 60)
+                $activity = "Working magic on .cof files"
+                $status = "Processed $($uic_soldier_order_file_name)."
+                $percent_complete = (( $orders_created_orders_cert.Length)/$($total_to_create_orders_cert )).ToString("P")
+                $estimated_time = (($($total_to_create_orders_cert) - ($orders_created_orders_cert.Length)) * 0.8 / 60)
                 $formatted_estimated_time = [math]::Round($estimated_time,2)
-                $elapsed_time = $stop_watch.Elapsed.ToString('hh\:mm\:ss')
+                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
 
-                for($i = $orders_created_orders_cert_count; $i -le $total_to_create_orders_cert; $i++)
-                {
-	                Write-Progress -Activity "Creating orders ..." -Status "Creating $($uic_soldier_order_file_name)" -PercentComplete ($($orders_created_orders_cert_count)/$($total_to_create_orders_cert)*100) -CurrentOperation "$($percent_complete) complete          ~$($formatted_estimated_time) minute(s) left          $($orders_created_orders_cert_count)/$($total_to_create_orders_cert) created          $($elapsed_time) time elapsed"
-                }
+                Write-Verbose "[#]Activity: ($($activity)). Status: ($($status)). Created: ($($orders_created_orders_cert.Length) / $($total_to_create_orders_cert)). Not created ($($orders_not_created_orders_cert.Length) / $($total_to_create_orders_cert)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+
             }
+
+            Write-Verbose "[*] Writing $($orders_created_orders_cert_csv) file now."
+            $orders_created_orders_cert | Export-Csv -NoTypeInformation -Path "$($orders_created_orders_cert_csv)"
     }
     else
     {
-        Write-Host "[!] Total to create: $($total_to_create_orders_cert). No .cof files in $($cof_directory_working) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] Total to create: $($total_to_create_orders_cert). No .cof files in $($cof_directory_working) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
         throw "[!] No .cof files in $($cof_directory_working) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
     }
 }
 
 function Work-Magic()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $uic_directory,
-	  [Parameter(mandatory = $true)] [String] $soldier_directory,
-	  [Parameter(mandatory = $true)] [String] $uic_soldier_order_file_name,
-	  [Parameter(mandatory = $true)] [String] $uic_soldier_order_file_content,
-	  [Parameter(mandatory = $true)] [String] $uic,
-	  [Parameter(mandatory = $true)] [String] $last_name,
-	  [Parameter(mandatory = $true)] [String] $first_name,
-	  [Parameter(mandatory = $true)] [String] $middle_initial,
-	  [Parameter(mandatory = $true)] [String] $ssn
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $uic_directory,
+        [Parameter(mandatory = $true)] $soldier_directory,
+        [Parameter(mandatory = $true)] $uic_soldier_order_file_name,
+        [Parameter(mandatory = $true)] $uic_soldier_order_file_content,
+        [Parameter(mandatory = $true)] $uic,
+        [Parameter(mandatory = $true)] $last_name,
+        [Parameter(mandatory = $true)] $first_name,
+        [Parameter(mandatory = $true)] $middle_initial,
+        [Parameter(mandatory = $true)] $ssn
+    )
 	  
     if(Test-Path $($uic_directory))
     {
-        Write-Host "[*] $($uic_directory) already created, continuing." -ForegroundColor Green
+        Write-Verbose "[*] $($uic_directory) already created, continuing."
     }
     else
     {
-        Write-Host "[#] $($uic_directory) not created. Creating now." -ForegroundColor Yellow
+        Write-Verbose "[#] $($uic_directory) not created. Creating now."
         New-Item -ItemType Directory -Path "$($uics_directory_output)\$($uic)" > $null
 
         if($?)
         {
-            Write-Host "[*] $($uic_directory) created successfully." -ForegroundColor Green
+            Write-Verbose "[*] $($uic_directory) created successfully."
         }
         else
         {
-            Write-Host "[!] Failed to process for $($last_name) $($first_name) $($uic). $($uic_directory) creation failed." ([char]7) -ForegroundColor Red
+            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($uic_directory) creation failed."
             throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($uic_directory) creation failed."
         }
     }
 
     if(Test-Path $($soldier_directory))
     {
-        Write-Host "[*] $($soldier_directory) already created, continuing." -ForegroundColor Green
+        Write-Verbose "[*] $($soldier_directory) already created, continuing."
     }
     else
     {
-        Write-Host "[#] $($soldier_directory) not created. Creating now." -ForegroundColor Yellow
+        Write-Verbose "[#] $($soldier_directory) not created. Creating now."
         New-Item -ItemType Directory -Path "$($soldier_directory)" > $null
 
         if($?)
         {
-            Write-Host "[*] $($soldier_directory) created successfully." -ForegroundColor Green
+            Write-Verbose "[*] $($soldier_directory) created successfully."
         }
         else
         {
-            Write-Host "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory) creation failed." ([char]7) -ForegroundColor Red
+            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory) creation failed."
             throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory) creation failed."
         }
     }
 
     if(Test-Path "$($soldier_directory)\$($uic_soldier_order_file_name)")
     {
-        Write-Host "[*] $($soldier_directory)\$($uic_soldier_order_file_name) already created, continuing." -ForegroundColor Green
+        Write-Verbose "[*] $($soldier_directory)\$($uic_soldier_order_file_name) already created, continuing."
     }
     else
     {
-        Write-Host "[#] $($soldier_directory)\$($uic_soldier_order_file_name) not created. Creating now." -ForegroundColor Yellow
+        Write-Verbose "[#] $($soldier_directory)\$($uic_soldier_order_file_name) not created. Creating now."
         New-Item -ItemType File -Path $($soldier_directory) -Name $($uic_soldier_order_file_name) -Value $($uic_soldier_order_file_content) > $null
 
         if($?)
         {
-            Write-Host "[*] $($soldier_directory)\$($uic_soldier_order_file_name) created successfully." -ForegroundColor Green
+            Write-Verbose "[*] $($soldier_directory)\$($uic_soldier_order_file_name) created successfully."
         }
         else
         {
-            Write-Host "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory)\$($uic_soldier_order_file_name) creation failed." ([char]7) -ForegroundColor Red
+            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory)\$($uic_soldier_order_file_name) creation failed."
             throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory)\$($uic_soldier_order_file_name) creation failed."
         }
     }
@@ -1750,106 +1719,101 @@ function Work-Magic()
 
 function Clean-OrdersMain()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $mof_directory_working,
-	  [Parameter(mandatory = $true)] [String] $exclude_directories
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $mof_directory_working,
+        [Parameter(mandatory = $true)] $exclude_directories
+    )
 	  
     $total_to_clean_main_files = (Get-ChildItem -Path "$($mof_directory_working)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
 
     if($($total_to_clean_main_files) -gt '0')
     {
-        Write-Host "[#] Total .mof files to clean in $($mof_directory_working): $($total_to_clean_main_files)" -ForegroundColor Yellow
+        Write-Verbose "[#] Total .mof files to clean in $($mof_directory_working): $($total_to_clean_main_files)"
         Remove-Item -Path "$($mof_directory_working)" -Recurse -Force
 
         if($?)
         {
-            Write-Host "[*] $($mof_directory_working) removed successfully. Cleaned: $($total_to_clean_main_files) .mof files from $($mof_directory_working)." -ForegroundColor Green
+            Write-Verbose "[*] $($mof_directory_working) removed successfully. Cleaned: $($total_to_clean_main_files) .mof files from $($mof_directory_working)."
             New-Item -ItemType Directory -Path "$($mof_directory_working)" -Force > $null
             New-Item -ItemType Directory -Path "$($mof_directory_original_splits_working)" -Force > $null
         }
         else
         {
-            Write-Host "[!] Failed to remove $($mof_directory_working)." ([char]7) -ForegroundColor Red
+            Write-Verbose "[!] Failed to remove $($mof_directory_working)."
             throw "[!] Failed to remove $($mof_directory_working)."
         }
     }
     else
     {
-        Write-Host "[!] Total .mof files to clean: $($total_to_clean_main_files). No .mof files in $($mof_directory_working) to clean up." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] Total .mof files to clean: $($total_to_clean_main_files). No .mof files in $($mof_directory_working) to clean up."
         throw "[!] Total .mof files to clean: $($total_to_clean_main_files). No .mof files in $($mof_directory_working) to clean up."
     }
 }
 
 function Clean-OrdersCertificate()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $cof_directory_working,
-	  [Parameter(mandatory = $true)] [String] $exclude_directories
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $cof_directory_working,
+        [Parameter(mandatory = $true)] $exclude_directories
+    )
 	  
     $total_to_clean_cert_files = (Get-ChildItem -Path "$($cof_directory_working)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
 
     if($($total_to_clean_cert_files) -gt '0')
     {
-        Write-Host "[#] Total .cof files to clean in $($cof_directory_working): $($total_to_clean_cert_files)" -ForegroundColor Yellow
+        Write-Verbose "[#] Total .cof files to clean in $($cof_directory_working): $($total_to_clean_cert_files)"
         Remove-Item -Path "$($cof_directory_working)" -Recurse -Force
 
         if($?)
         {
-            Write-Host "[*] $($cof_directory_working) removed successfully. Cleaned: $($total_to_clean_cert_files) .cof files from $($cof_directory_working)." -ForegroundColor Green
+            Write-Verbose "[*] $($cof_directory_working) removed successfully. Cleaned: $($total_to_clean_cert_files) .cof files from $($cof_directory_working)."
             New-Item -ItemType Directory -Path "$($cof_directory_working)" -Force > $null
             New-Item -ItemType Directory -Path "$($cof_directory_original_splits_working)" -Force > $null
         }
         else
         {
-            Write-Host "[!] Failed to remove $($cof_directory_working)." ([char]7) -ForegroundColor Red
+            Write-Verbose "[!] Failed to remove $($cof_directory_working)."
             throw "[!] Failed to remove $($cof_directory_working)."
         }
     }
     else
     {
-        Write-Host "[!] Total .cof files to clean: $($total_to_clean_cert_files). No .cof files in $($cof_directory_working) to clean up." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] Total .cof files to clean: $($total_to_clean_cert_files). No .cof files in $($cof_directory_working) to clean up."
         throw "[!] Total .cof files to clean: $($total_to_clean_cert_files). No .cof files in $($cof_directory_working) to clean up."
     }
 }
 
 function Clean-UICS()
 {
-	Param(
-	  [Parameter(mandatory = $true)] [String] $uics_directory
-	  )
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $uics_directory_output
+    )
 
     $total_to_clean_uics_directories = (Get-ChildItem -Path "$($uics_directory_output)").Length
 
     if($($total_to_clean_uics_directories) -gt '0')
     {
-        Write-Host "[#] Total UICS directories to clean in $($uics_directory_output): $($total_to_clean_uics_directories)" -ForegroundColor Yellow
+        Write-Verbose "[#] Total UICS directories to clean in $($uics_directory_output): $($total_to_clean_uics_directories)"
         Remove-Item -Path "$($uics_directory_output)" -Recurse -Force
 
         if($?)
         {
-            Write-Host "[*] $($uics_directory_output) removed successfully. Cleaned: $($total_to_clean_uics_directories) directories from $($uics_directory_output)." -ForegroundColor Green
+            Write-Verbose "[*] $($uics_directory_output) removed successfully. Cleaned: $($total_to_clean_uics_directories) directories from $($uics_directory_output)."
             New-Item -ItemType Directory -Path "$($uics_directory_output)" -Force > $null
         }
         else
         {
-            Write-Host "[!] Failed to remove $($uics_directory_output)." ([char]7) -ForegroundColor Red
+            Write-Verbose "[!] Failed to remove $($uics_directory_output)."
             throw "[!] Failed to remove $($uics_directory_output)."
         }
     }
     else
     {
-        Write-Host "[!] Total directories to clean: $($total_to_clean_uics_directories). No directories in $($uics_directory_output) to clean up." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] Total directories to clean: $($total_to_clean_uics_directories). No directories in $($uics_directory_output) to clean up."
         throw "[!] Total directories to clean: $($total_to_clean_uics_directories). No directories in $($uics_directory_output) to clean up."
-    }
-}
-
-function Display-ProgressBar($percent_complete, $estimated_time, $formatted_estimated_time, $elapsed_time, $orders_created, $total_to_create, $uic_soldier_order_file_name)
-{
-    for($i = $orders_created; $i -le $total_to_create; $i++)
-    {
-	    Write-Progress -Activity "Creating orders ..." -Status "Creating $($uic_soldier_order_file_name)" -PercentComplete ($($orders_created)/$($total_to_create)*100) -CurrentOperation "$($percent_complete) complete          ~$($formatted_estimated_time) minute(s) left          $($orders_created)/$($total_to_create) created          $($elapsed_time) time elapsed"
     }
 }
 
@@ -1861,20 +1825,23 @@ function Process-DevCommands()
 
         if(($key.modifiers -band [consolemodifiers]"control") -and ($key.key -eq "P"))
         {
-            Write-Host "[-] Pausing at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)." -ForegroundColor White
+            Write-Verbose "[-] Pausing at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
+            $sw.Stop()
 
             Pause
 
-		    Write-Host "[-] Resuming at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)." -ForegroundColor White
+		    Write-Verbose "[-] Resuming at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
+            $sw.Start()
         }
         elseif(($key.modifiers -band [consolemodifiers]"control") -and ($key.key -eq "Q" ))
         {
+            $sw.Stop()
             $response = Read-Host -Prompt "Are you sure you want to exit? [ (Y|y) / (N|n) ]"
             
             switch($response)
             {
                 { @("y", "Y") -contains $_ } { "Terminating at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd) by user."; exit 0 }
-                { @("n", "N") -contains $_ } { continue }
+                { @("n", "N") -contains $_ } { $sw.Start(); continue }
                 default { "Response not determined." }
             }
         }
@@ -1883,8 +1850,12 @@ function Process-DevCommands()
 
 function Get-Permissions()
 {
-    $directory = (Get-Item -Path ".\" -Verbose).FullName
-    $uics_directory = "$($directory)\UICS"
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $uics_directory_output
+    )
+
+    $uics_directory = "$($uics_directory_output)\UICS"
     $permissions_reports_directory = "$($uics_directory_output)\__PERMISSIONS"
     $uics_directory = $uics_directory.Split('\')
     $uics_directory = $uics_directory[-1]
@@ -1898,19 +1869,19 @@ function Get-Permissions()
         New-Item -ItemType Directory -Path "$($permissions_reports_directory)\$($run_date)" > $null
     }
 
-    Write-Host "[#] Writing permissions of $($uics_directory_output) to .csv file now." -ForegroundColor Yellow
-    Get-ChildItem -Recurse -Path $($uics_directory_output) | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Export-Csv -Force -NoTypeInformation $($csv_report)
+    Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .csv file now."
+    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Export-Csv -Force -NoTypeInformation $($csv_report)
     if($?)
     {
-        Write-Host "[*] $($uics_directory_output) permissions writing to .csv finished successfully." -ForegroundColor Green
+        Write-Verbose "[*] $($uics_directory_output) permissions writing to .csv finished successfully."
     }
     else
     {
-        Write-Host "[!] $($uics_directory_output) permissions writing to .csv failed." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] $($uics_directory_output) permissions writing to .csv failed."
         throw "[!] $($uics_directory_output) permissions writing to .csv failed."
     }
 
-    Write-Host "[#] Writing permissions of $($uics_directory_output) to .html file now." -ForegroundColor Yellow
+    Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .html file now."
 $css = 
 @"
 <style>
@@ -1923,51 +1894,55 @@ tr:nth-child(even) { background: #dae5f4; }
 tr:nth-child(odd) { background: #b8d1f3; }
 </style>
 "@
-    Get-ChildItem -Recurse -Path $($uics_directory_output) | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | ConvertTo-Html -Title "$($uics_directory_output) Permissions Report" -Head $($css) -Body "<h1>$($uics_directory_output) Permissions Report</h1> <h5> Generated on $(Get-Date -UFormat "%Y-%m-%d @ %H-%M-%S")" | Out-File $($html_report)
+    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | ConvertTo-Html -Title "$($uics_directory_output) Permissions Report" -Head $($css) -Body "<h1>$($uics_directory_output) Permissions Report</h1> <h5> Generated on $(Get-Date -UFormat "%Y-%m-%d @ %H-%M-%S")" | Out-File $($html_report)
     if($?)
     {
-        Write-Host "[*] $($uics_directory_output) permissions writing to .html finished successfully." -ForegroundColor Green
+        Write-Verbose "[*] $($uics_directory_output) permissions writing to .html finished successfully."
     }
     else
     {
-        Write-Host "[!] $($uics_directory_output) permissions writing to .html failed." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] $($uics_directory_output) permissions writing to .html failed."
         throw "[!] $($uics_directory_output) permissions writing to .html failed."
     }
 
-    Write-Host "[#] Writing permissions of $($uics_directory_output) to .txt file now." -ForegroundColor Yellow
-    Get-ChildItem -Recurse -Path $($uics_directory_output) | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Format-Table -AutoSize -Wrap | Out-File $($txt_report)
+    Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .txt file now."
+    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Format-Table -AutoSize -Wrap | Out-File $($txt_report)
     if($?)
     {
-        Write-Host "[*] $($uics_directory_output) permissions writing to .txt finished successfully." -ForegroundColor Green
+        Write-Verbose "[*] $($uics_directory_output) permissions writing to .txt finished successfully."
     }
     else
     {
-        Write-Host "[!] $($uics_directory_output) permissions writing to .txt failed." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] $($uics_directory_output) permissions writing to .txt failed."
         throw "[!] $($uics_directory_output) permissions writing to .txt failed."
     }
 }
 
 function Validate-Variables()
 {
+    [cmdletbinding()]
     Param(
-      [Parameter(mandatory = $false)] [String] $uic,
-      [Parameter(mandatory = $false)] [String] $last_name,
-      [Parameter(mandatory = $false)] [String] $first_name,
-      [Parameter(mandatory = $false)] [String] $middle_initial,
-      [Parameter(mandatory = $false)] [String] $published_year,
-      [Parameter(mandatory = $false)] [String] $published_month,
-      [Parameter(mandatory = $false)] [String] $published_day,
-      [Parameter(mandatory = $false)] [String] $ssn,
-      [Parameter(mandatory = $false)] [String] $period_from_year,
-      [Parameter(mandatory = $false)] [String] $period_from_month,
-      [Parameter(mandatory = $false)] [String] $period_from_day,
-      [Parameter(mandatory = $false)] [String] $period_to_number,
-      [Parameter(mandatory = $false)] [String] $period_to_time,
-      [Parameter(mandatory = $false)] [String] $format,
-      [Parameter(mandatory = $false)] [String] $order_amended,
-      [Parameter(mandatory = $false)] [String] $order_revoke,
-      [Parameter(mandatory = $false)] [String] $order_number
-      )
+        [Parameter(mandatory = $false)] $uic,
+        [Parameter(mandatory = $false)] $last_name,
+        [Parameter(mandatory = $false)] $first_name,
+        [Parameter(mandatory = $false)] $middle_initial,
+        [Parameter(mandatory = $false)] $published_year,
+        [Parameter(mandatory = $false)] $published_month,
+        [Parameter(mandatory = $false)] $published_day,
+        [Parameter(mandatory = $false)] $ssn,
+        [Parameter(mandatory = $false)] $period_from_year,
+        [Parameter(mandatory = $false)] $period_from_month,
+        [Parameter(mandatory = $false)] $period_from_day,
+        [Parameter(mandatory = $false)] $period_to_year,
+        [Parameter(mandatory = $false)] $period_to_month,
+        [Parameter(mandatory = $false)] $period_to_day,
+        [Parameter(mandatory = $false)] $period_to_number,
+        [Parameter(mandatory = $false)] $period_to_time,
+        [Parameter(mandatory = $false)] $format,
+        [Parameter(mandatory = $false)] $order_amended,
+        [Parameter(mandatory = $false)] $order_revoke,
+        [Parameter(mandatory = $false)] $order_number
+    )
     
     $parameters = (Get-Command -Name $MyInvocation.InvocationName).Parameters | Select -ExpandProperty Keys | Where-Object { $_ -NotIn ('Verbose', 'ErrorAction', 'WarningAction', 'PipelineVariable', 'OutBuffer', 'Debug', 'ErrorAction','WarningAction', 'ErrorVariable', 'WarningVariable', 'OutVariable') }
     $total_parameters = $parameters.count
@@ -1982,7 +1957,7 @@ function Validate-Variables()
             {
                 $parameters_processed ++
 
-                Write-Host "[#] Validating ($($parameters_processed)/$($parameters_passed)) parameters now." -ForegroundColor Yellow
+                Write-Verbose "[#] Validating ( $($parameters_processed) / $($parameters_passed) ) parameters now."
 
                 $key = $p.Key
                 $value = $p.Value
@@ -1991,7 +1966,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\w{5}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2006,7 +1981,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2018,13 +1993,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'last_name')
                 {
                     if($value -match "^[a-zA-Z'-]{1,20}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2039,7 +2016,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2051,13 +2028,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'first_name')
                 {
                     if($value -match "^[a-zA-Z'-]{1,20}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2072,7 +2051,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2084,13 +2063,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'middle_initial')
                 {
                     if($value -match "^[A-Z]{1,3}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2105,7 +2086,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2117,13 +2098,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'published_year')
                 {
                     if($value -match "^\d{2,4}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2138,7 +2121,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2150,13 +2133,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'published_month')
                 {
                     if($value -match "^\d{2}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2171,7 +2156,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2183,13 +2168,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'published_day')
                 {
                     if($value -match "^\d{2}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2204,7 +2191,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2216,13 +2203,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'ssn')
                 {
                     if($value -match "^\d{3}-\d{2}-\d{4}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2237,7 +2226,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2249,13 +2238,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_from_year')
                 {
                     if($value -match "^\d{2,4}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2270,7 +2261,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2282,13 +2273,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_from_month')
                 {
                     if($value -match "^\d{2}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2303,7 +2296,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2315,13 +2308,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_from_day')
                 {
                     if($value -match "^\d{2}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2336,7 +2331,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2348,13 +2343,120 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                    }
+                }
+                elseif($key -eq 'period_to_year')
+                {
+                    if($value -match "^\d{2,4}$")
+                    { 
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+    
+                        $status = "pass"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+                    } 
+                    else 
+                    { 
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
+	
+                        $status = "fail"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                    }
+                }
+                elseif($key -eq 'period_to_month')
+                {
+                    if($value -match "^\d{2}$")
+                    { 
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+    
+                        $status = "pass"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+                    } 
+                    else 
+                    { 
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
+	
+                        $status = "fail"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                    }
+                }
+                elseif($key -eq 'period_to_day')
+                {
+                    if($value -match "^\d{2}$")
+                    { 
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+    
+                        $status = "pass"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+                    } 
+                    else 
+                    { 
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
+	
+                        $status = "fail"
+
+                        if(!($validation_results -contains "$($key)"))
+                        {
+                            $validation_result = New-Object -TypeName PSObject
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_results += $validation_result
+                        }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_to_number')
                 {
                     if($value -match "^\d{1,4}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2369,7 +2471,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2381,13 +2483,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_to_time')
                 {
                     if($value -match "^[A-Z]{4,6}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2402,7 +2506,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2414,13 +2518,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'format')
                 {
                     if($value -match "^\d{3}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2435,7 +2541,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2447,13 +2553,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'order_amended')
                 {
                     if($value -match "^\d{3}-\d{3}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2468,7 +2576,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2480,13 +2588,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'order_revoke')
                 {
                     if($value -match "^\d{3}-\d{3}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2501,7 +2611,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2513,13 +2623,15 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'order_number')
                 {
                     if($value -match "^\d{3}-\d{3}$")
                     { 
-	                    Write-Host "[*] Value '$($value)' from '$($key)' passed validation." -ForegroundColor Green
+	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -2534,7 +2646,7 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-	                    Write-Host "[!] Value '$($value)' from '$($key)' failed validation." ([char]7) -ForegroundColor Red
+	                    Write-Verbose "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -2546,21 +2658,24 @@ function Validate-Variables()
                             $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
                             $validation_results += $validation_result
                         }
+
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 else
                 {
-                    Write-Host "[!] Incorrect or unknown parameter specified. Try again with proper input." ([char]7) -ForegroundColor Red
+                    Write-Verbose "[!] Incorrect or unknown parameter specified. Try again with proper input."  -ForegroundColor Red
+                    throw "[!] Incorrect or unknown parameter specified. Try again with proper input."
                 }
 
-                Write-Host "[*] Finished validating ($($parameters_processed)/$($parameters_passed)) parameters." -ForegroundColor Green
+                Write-Verbose "[*] Finished validating ( $($parameters_processed) / $($parameters_passed) ) parameters."
             }
 
             return $validation_results
     }
     else
     {
-        Write-Host "[!] No parameters passed. Try again with proper input." ([char]7) -ForegroundColor Red
+        Write-Verbose "[!] No parameters passed. Try again with proper input."  -ForegroundColor Red
     }
 }
 
@@ -2571,8 +2686,8 @@ $Parameters = (Get-Command -Name $MyInvocation.InvocationName).Parameters | Sele
 $TotalParameters = $parameters.count
 $ParametersPassed = $PSBoundParameters.Count
 
-If ($ParametersPassed -eq $TotalParameters) { Write-Host "All $totalParameters parameters are being used." }
-ElseIf ($ParametersPassed -eq 1) { Write-Host "1 parameter is being used." }
+If ($ParametersPassed -eq $TotalParameters) { Write-Verbose "All $totalParameters parameters are being used." }
+ElseIf ($ParametersPassed -eq 1) { Write-Verbose "1 parameter is being used." }
 Else { Write-Output "$parametersPassed parameters are being used." }
 
 if($($ParametersPassed) -gt '0')
@@ -2589,24 +2704,296 @@ if($($ParametersPassed) -gt '0')
 
         switch($p)
         {
-            "help" { Write-Host "[^] Help parameter specified. Presenting full help now." $($cyan); Get-Help .\$($script_name) -Full }
-            "version" { Write-Host "[^] Version parameter specified. Presenting version information now." $($cyan); Write-Host "Running version $($version_info)." }
-            "dir_create" { Write-Host "[-] Creating required directories." $($white);  Create-RequiredDirectories -directories $($directories); if($?) {Write-Host "[^] Creating directories finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Directory creation failed. Check the error logs at $($error_path)." $($red); exit 1 }  }
-            "backups" { Write-Host "[-] Backing up original orders file." $($white); Move-OriginalToHistorical -current_directory_working $($current_directory_working) -files_orders_original $($files_orders_original); if($?) { Write-Host "[^] Backing up original orders file finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Backing up original orders failed. Check the error logs at $($error_path)." $($red); exit 1 } }
-            "split_main" { Write-Host "[-] Splitting '*m.prt' order file(s) into individual order files." $($white); Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main);  }
-            "split_cert" { Write-Host "[-] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." $($white); Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert); if($?) { Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)." $($red); exit 1 } }
-            "edit_main" { Write-Host "[-] Editing orders '*m.prt' files." $($white); Edit-OrdersMain -mof_directory_working $($mof_directory_working) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working); if($?) { Write-Host "[^] Editing orders '*m.prt' files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)." $($red); exit 1 } }
-            "edit_cert" { Write-Host "[-] Editing orders '*c.prt' files." $($white); Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working); if($?) { Write-Host "[^] Editing orders '*c.prt' files finished successfully." -ForegroundColor Cyan } else{ $_ | Out-File -Append $($error_path); Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)." $($red); exit 1 } }
-            "combine_main" { Write-Host "[-] Combining .mof orders files." $($white); Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -run_date $($run_date); if($?) { Write-Host "[^] Combining .mof orders files finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($error_path)." ([char]7) -ForegroundColor Red ; exit 1 } }
-            "combine_cert" { Write-Host "[-] Combining .cof orders files." $($white); Combine-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date); if($?) { Write-Host "[^] Combining .cof orders files finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($error_path)." $($red); exit 1 } }
-            "magic_main" { Write-Host "[-] Working magic on .mof files now." $($white); Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main); if($?) { Write-Host "[^] Magic on .mof finished successfully. Did you expect anything less?" -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Magic on .mof failed?! Impossible. Check the error logs at $($error_path)." $($red); exit 1 } }
-            "magic_cert" { Write-Host "[-] Working magic on .cof files." $($white); Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Magic on .cof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)." $($red); exit 1 } }
-            "clean_main" { Write-Host "[-] Cleaning up .mof files." $($white); Clean-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Cleaning up .mof finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($error_path)." $($red); exit 1 } }
-            "clean_cert" { Write-Host "[-] Cleaning up .cof files." $($white); Clean-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories); if($?) { Write-Host "[^] Cleaning up .cof finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)." $($red); exit 1 } }
-            "clean_uics" { Write-Host "[-] Cleaning up UICS folder." $($white); Clean-UICS -uics_directory $($uics_directory_output); if($?) { Write-Host "[^] Cleaning up UICS folder finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Cleaning up UICS folder failed. Check the error logs at $($error_path)." $($red); exit 1 } }
-            "permissions" { Write-Host "[-] Getting permissions." $($white); Get-Permissions; if($?) { Write-Host "[^] Getting permissions of UICS folder finished successfully." -ForegroundColor Cyan } else { $_ | Out-File -Append $($error_path); Write-Host "[!] Getting permissions failed. Check the error logs at $($error_path)." $($red); exit 1 } }
-            "all" {  }
-            default { Write-Host "[!] Unrecognized parameter: $($p). Try again with proper parameter." ([char]7) -ForegroundColor Red }
+            "help" 
+            { 
+	            Write-Host "[^] Help parameter specified. Presenting full help now." -ForegroundColor Cyan
+	            Get-Help .\$($script_name) -Full 
+            }
+
+            "version" 
+            { 
+	            Write-Host "[^] Version parameter specified. Presenting version information now." -ForegroundColor Cyan
+	            Write-Host "Running version $($version_info)."
+            }
+
+            "dir_create" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Creating required directories." -ForegroundColor White
+		            Create-RequiredDirectories -directories $($directories)
+		            if($?) 
+		            {
+			            Write-Host "[^] Creating directories finished successfully." -ForegroundColor Cyan 
+		            } 
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Directory creation failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1	
+	            }
+            }
+
+            "backups" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Backing up original orders file." -ForegroundColor White
+		            Move-OriginalToHistorical -current_directory_working $($current_directory_working) -files_orders_original $($files_orders_original)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Backing up original orders file finished successfully." -ForegroundColor Cyan 
+		            }	
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Backing up original orders failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1 
+	            }
+            }
+
+            "split_main" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor White	
+		            Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
+		            if($?)
+		            {
+			            Write-Host "[^] Splitting '*m.prt' order file(s) finished successfully." -ForegroundColor Cyan 
+		            }
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Splitting '*m.prt' order file(s)  failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1 
+	            }
+            }
+
+            "split_cert"
+            { 
+	            try
+	            {
+		            Write-Host "[-] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor White
+		            Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
+		            if($?) 
+		            {
+			            Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished successfully." -ForegroundColor Cyan 
+		            } 	
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1 
+	            }
+            }
+
+            "edit_main" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Editing orders '*m.prt' files." -ForegroundColor White
+		            Edit-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Editing orders '*m.prt' files finished successfully." -ForegroundColor Cyan 
+		            }
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1
+	            }
+            }
+
+            "edit_cert" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Editing orders '*c.prt' files." -ForegroundColor White
+		            Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working)
+		            if($?)
+		            { 
+			            Write-Host "[^] Editing orders '*c.prt' files finished successfully." -ForegroundColor Cyan 
+		            } 
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1
+	            }
+            }
+
+            "combine_main" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Combining .mof orders files." -ForegroundColor White
+		            Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Combining .mof orders files finished successfully." -ForegroundColor Cyan 
+		            } 	
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($error_path)." -ForegroundColor Red
+		            exit 1 
+	            }
+            }
+
+            "combine_cert" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Combining .cof orders files." -ForegroundColor White
+		            Combine-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Combining .cof orders files finished successfully." -ForegroundColor Cyan 
+		            } 	
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1 	
+	            }
+            }
+
+            "magic_main" 
+            { 
+                Write-Host "[-] Working magic on .mof files now." -ForegroundColor White
+                Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
+		        if($?) 
+		        { 
+			        Write-Host "[^] Magic on .cof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan 
+		        } 
+            }
+
+            "magic_cert" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Working magic on .cof files." -ForegroundColor White
+		            Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Magic on .cof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan 
+		            } 	
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1 	
+	            }
+            }
+
+            "clean_main" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Cleaning up .mof files." -ForegroundColor White
+		            Clean-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Cleaning up .mof finished successfully." -ForegroundColor Cyan 
+		            } 	
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1 	
+	            }
+            }
+
+            "clean_cert" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Cleaning up .cof files." -ForegroundColor White
+		            Clean-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Cleaning up .cof finished successfully." -ForegroundColor Cyan 
+		            } 	
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1
+	            }
+            }
+
+            "clean_uics" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Cleaning up UICS folder." -ForegroundColor White
+		            Clean-UICS -uics_directory_output $($uics_directory_output)
+		            if($?)
+		            { 
+			            Write-Host "[^] Cleaning up UICS folder finished successfully." -ForegroundColor Cyan 
+		            } 	
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Cleaning up UICS folder failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1
+	            }
+            }
+            "permissions" 
+            { 
+	            try
+	            {
+		            Write-Host "[-] Getting permissions." -ForegroundColor White
+		            Get-Permissions -uics_directory_output $($uics_directory_output)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Getting permissions of UICS folder finished successfully." -ForegroundColor Cyan 
+		            } 	
+	            }
+	            catch
+	            {
+		            $_ | Out-File -Append $($error_path)
+		            Write-Host "[!] Getting permissions failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            exit 1 
+	            }
+            }
+
+            "all" 
+            {  
+	            try
+	            {
+	
+	            }
+	            catch
+	            {
+	
+	            }
+
+            }
+
+            "Verbose" 
+            { 
+	            Write-Host "[^] Verbose parameter specified. Presenting verbose information now." -ForegroundColor Cyan
+            }
+
+            default 
+            { 
+	            Write-Host "[!] Unrecognized parameter: $($p). Try again with proper parameter." -ForegroundColor Red 
+            }
         }
 
         Stop-Transcript
@@ -2614,5 +3001,5 @@ if($($ParametersPassed) -gt '0')
 }
 else
 {
-    Write-Host "[!] No parameters passed. Run 'Get-Help $($script_name) -Full' for detailed help information" ([char]7) -ForegroundColor Red
+    Write-Host "[!] No parameters passed. Run 'Get-Help $($script_name) -Full' for detailed help information" -ForegroundColor Red
 }
