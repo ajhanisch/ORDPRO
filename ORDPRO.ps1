@@ -204,7 +204,7 @@ function Create-RequiredDirectories()
 
     foreach($directory in $directories)
     {
-        Process-DevCommands
+        Process-DevCommands -sw $($sw)
 
         if(!(Test-Path $($directory)))
         {
@@ -290,7 +290,7 @@ function Move-OriginalToArchive()
 
         foreach($file in $orders_file_m_prt)
         {
-            Process-DevCommands
+            Process-DevCommands -sw $($sw)
 
             $files_moved ++
             $files_moved_total ++
@@ -322,7 +322,7 @@ function Move-OriginalToArchive()
 
         foreach($file in $orders_file_c_prt)
         {
-            Process-DevCommands
+            Process-DevCommands -sw $($sw)
 
             $files_moved ++
             $files_moved_total ++
@@ -354,7 +354,7 @@ function Move-OriginalToArchive()
 
         foreach($file in $orders_file_r_prt)
         {
-            Process-DevCommands
+            Process-DevCommands -sw $($sw)
 
             $files_moved ++
             $files_moved_total ++
@@ -386,7 +386,7 @@ function Move-OriginalToArchive()
 
         foreach($file in $orders_file_r_reg)
         {
-            Process-DevCommands
+            Process-DevCommands -sw $($sw)
 
             $files_moved ++
             $files_moved_total ++
@@ -459,7 +459,7 @@ function Split-OrdersMain()
 
             foreach($order in $orders)
             {
-                Process-DevCommands
+                Process-DevCommands -sw $($sw)
 
                 if($order)
                 {
@@ -539,7 +539,7 @@ function Split-OrdersCertificate()
 
             foreach($order in $orders)
             {
-                Process-DevCommands
+                Process-DevCommands -sw $($sw)
 
                 if($order)
                 {
@@ -620,7 +620,7 @@ $old_spacing_2 = @"
 
         foreach($file in (Get-ChildItem -Path "$($mof_directory_working)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof'}))
         {
-            Process-DevCommands
+            Process-DevCommands -sw $($sw)
 
             $file_content = (Get-Content "$($file)" -Raw -ErrorAction SilentlyContinue)
             $file_content = $file_content -replace $old_header,$new_header
@@ -698,7 +698,7 @@ function Edit-OrdersCertificate()
 
         foreach($file in (Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof'}))
         {
-            Process-DevCommands
+            Process-DevCommands -sw $($sw)
 
             $file_content = (Get-Content "$($file)" -Raw -ErrorAction SilentlyContinue)
             $file_content = $file_content -replace "`f",''
@@ -777,7 +777,7 @@ function Combine-OrdersMain()
 
         Get-ChildItem -Path $($mof_directory_working) -Recurse | Where { ! $_.PSIsContainer } | Where { $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" } | 
             ForEach-Object {
-                Process-DevCommands
+                Process-DevCommands -sw $($sw)
 
                 Out-File -FilePath $($out_file) -InputObject (Get-Content $_.FullName) -Append
                 if($?)
@@ -821,7 +821,7 @@ function Combine-OrdersCertificate()
 
         Get-ChildItem -Path $($cof_directory_working) -Recurse | Where { ! $_.PSIsContainer } | Where { $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" } | 
             ForEach-Object {
-                Process-DevCommands
+                Process-DevCommands -sw $($sw)
 
                 Out-File -FilePath $($out_file) -InputObject (Get-Content $_.FullName) -Append
                 if($?)
@@ -874,7 +874,7 @@ function Parse-OrdersMain()
 
         foreach($file in (Get-ChildItem -Path "$($mof_directory_working)" -Filter "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories }))
             {
-                Process-DevCommands
+                Process-DevCommands -sw $($sw)
 
                 # Check for different 700 forms.
                 $following_request = "Following Request is" # Disapproved || Approved
@@ -1229,8 +1229,8 @@ function Parse-OrdersMain()
 
 	                    $order_info = New-Object -TypeName PSObject
 	                    $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
-                        $order_info | Add-Member -MemberType NoteProperty -Name OrderAmended -Value $($order_amended)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name PublishedYear -Value $($published_year)
+                        $order_info | Add-Member -MemberType NoteProperty -Name OrderAmended -Value $($order_amended)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name LastName -Value $($last_name)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name FirstName -Value $($first_name)
 	                    $order_info | Add-Member -MemberType NoteProperty -Name MiddleInitial -Value $($middle_initial)
@@ -1615,7 +1615,7 @@ function Parse-OrdersMain()
                 $activity = "Working magic on .mof files."
                 $status = "Processed $($uic_soldier_order_file_name)."
                 $percent_complete = (( $orders_created_orders_main.Length)/$($total_to_create_orders_main )).ToString("P")
-                $estimated_time = (($($total_to_create_orders_main) - ($orders_created_orders_main.Length)) * 0.8 / 60)
+                $estimated_time = (($($total_to_create_orders_main) - ($orders_created_orders_main.Length)) * 0.2 / 60)
                 $formatted_estimated_time = [math]::Round($estimated_time,2)
                 $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
 
@@ -1658,7 +1658,7 @@ function Parse-OrdersCertificate()
         Write-Verbose "[#] Populating name_ssn hash table now."
         foreach($s in $soldiers)
         {
-            Process-DevCommands
+            Process-DevCommands -sw $($sw)
 
             $s = $s -split "\\" -split "___"
             $name = $s[-2]
@@ -1688,7 +1688,7 @@ function Parse-OrdersCertificate()
 
         foreach($file in (Get-ChildItem -Path "$($cof_directory_working)" -Filter "*.cof" -Include "*_edited.cof" -Exclude $($exclude_directories) -Recurse))
             {
-                Process-DevCommands
+                Process-DevCommands -sw $($sw)
 
                 foreach($line in (Get-Content "$($file)"))
                 {
@@ -1761,6 +1761,7 @@ function Parse-OrdersCertificate()
 	                $uic_directory = "$($uics_directory_output)\$($uic)"
 	                $soldier_directory = "$($uics_directory_output)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
 	                $uic_soldier_order_file_name = "$($period_from_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___$($period_to_year)$($period_to_month)$($period_to_day)___cert.txt"
+                    #$uic_soldier_order_file_name = "$($period_from_year)___$($ssn)___$($order_number)___$($year_prefix)$($period_from_year)$($period_from_month)$($period_from_day)___$($year_prefix)$($period_to_year)$($period_to_month)$($period_to_day)___cert.txt"
 	                $uic_soldier_order_file_content = (Get-Content "$($file)" -Raw)
 
 	                Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
@@ -1772,7 +1773,6 @@ function Parse-OrdersCertificate()
 	                $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($ssn)
 	                $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
 	                $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
-	                $order_info | Add-Member -MemberType NoteProperty -Name PublishedYear -Value $($published_year)
 	                $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromYear -Value $($period_from_year)
 	                $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromMonth -Value $($period_from_month)
 	                $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromDay -Value $($period_from_day)
@@ -1801,7 +1801,7 @@ function Parse-OrdersCertificate()
                 $activity = "Working magic on .cof files"
                 $status = "Processed $($uic_soldier_order_file_name)."
                 $percent_complete = (( $orders_created_orders_cert.Length)/$($total_to_create_orders_cert )).ToString("P")
-                $estimated_time = (($($total_to_create_orders_cert) - ($orders_created_orders_cert.Length)) * 0.8 / 60)
+                $estimated_time = (($($total_to_create_orders_cert) - ($orders_created_orders_cert.Length)) * 0.2 / 60)
                 $formatted_estimated_time = [math]::Round($estimated_time,2)
                 $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
 
@@ -2825,6 +2825,11 @@ function Validate-Variables()
 
 function Process-DevCommands()
 {
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $sw
+    )
+
     if ([console]::KeyAvailable)
     {
         $key = [system.console]::readkey($true)
