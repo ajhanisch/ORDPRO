@@ -99,7 +99,7 @@ param(
 DIRECTORIES OUTPUT
 #>
 $ordmanagers_directory_output = "$($output_dir)\ORD_MANAGERS"
-$ordmanagers_orders_by_ssn_output = "$($ordmanagers_directory_output)\ORDERS_BY_SSN"
+$ordmanagers_orders_by_soldier_output = "$($ordmanagers_directory_output)\ORDERS_BY_SOLDIER"
 $ordregisters_output = "$($output_dir)\ORD_REGISTERS"
 $uics_directory_output = "$($output_dir)\UICS"
 
@@ -120,7 +120,7 @@ ARRAYS
 #>
 $directories = @(
 "$($ordmanagers_directory_output)", 
-"$($ordmanagers_orders_by_ssn_output)", 
+"$($ordmanagers_orders_by_soldier_output)", 
 "$($ordregisters_output)", 
 "$($uics_directory_output)", 
 "$($tmp_directory_working)", 
@@ -223,12 +223,195 @@ function Create-RequiredDirectories()
     }
 }
 
-<#
-function Move-OriginalToHistorical($current_directory_working, $files_orders_original, $master_history_edited_working)
+function Move-OriginalToArchive()
 {
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)] $tmp_directory_working,
+        [Parameter(mandatory = $true)] $ordregisters_output,
+        [Parameter(mandatory = $true)] $archive_directory_working
+    )
 
+    $orders_file_m_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*m.prt" -File
+    $orders_file_c_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*c.prt" -File
+    $orders_file_r_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*r.prt" -File
+    $orders_file_r_reg = Get-ChildItem -Path $($current_directory_working) -Filter "*r.reg*" -File
+    
+    $year_suffix = (Get-Date -Format yyyy).Substring(2)
+    $year_orders_archive_directory = "$($archive_directory_working)\$($year_suffix)_orders"
+    $year_orders_registry_directory = "$($ordregisters_output)\$($year_suffix)_orders"
+
+    if(!(Test-Path $($year_orders_archive_directory)))
+    {
+        Write-Verbose "[#] $($year_orders_archive_directory) not created yet. Creating now."
+        New-Item -ItemType Directory -Path $($year_orders_archive_directory) -Force > $null
+
+        if($?)
+        {
+            Write-Verbose "[*] $($year_orders_archive_directory) created successfully."
+        }
+        else
+        {
+            Write-Verbose "[!] $($year_orders_archive_directory) failed to create."
+            throw "[!] $($year_orders_archive_directory) failed to create."
+        }
+    }
+    else
+    {
+        Write-Verbose "[*] $($year_orders_archive_directory) already created."
+    }
+
+    if(!(Test-Path $($year_orders_registry_directory)))
+    {
+        Write-Verbose "[#] $($year_orders_registry_directory) not created yet. Creating now."
+        New-Item -ItemType Directory -Path $($year_orders_registry_directory) -Force > $null
+
+        if($?)
+        {
+            Write-Verbose "[*] $($year_orders_registry_directory) created successfully."
+        }
+        else
+        {
+            Write-Verbose "[!] $($year_orders_registry_directory) failed to create."
+            throw "[!] $($year_orders_registry_directory) failed to create."
+        }
+    }
+    else
+    {
+        Write-Verbose "[*] $($year_orders_registry_directory) already created."
+    }
+
+    $files_moved_total = 0
+    $orders_file_m_prt_count = $($orders_file_m_prt).Count
+
+    if($($orders_file_m_prt_count) -gt 0)
+    {
+        $files_moved = 0
+
+        foreach($file in $orders_file_m_prt)
+        {
+            Process-DevCommands
+
+            $files_moved ++
+            $files_moved_total ++
+
+            Write-Verbose "[#] Moving $($file.Name) to $($year_orders_archive_directory) ($($files_moved)/$($orders_file_m_prt_count)) now."
+            Move-Item -Path $($file) -Destination "$($year_orders_archive_directory)\$($file.Name)" -Force
+
+            if($?)
+            {
+                Write-Verbose "[*] $($file) moved to $($year_orders_archive_directory) successfully."
+            }
+            else
+            {
+                Write-Verbose "[!] $($file) move to $($year_orders_archive_directory) failed."
+                throw "[!] $($file) move to $($year_orders_archive_directory) failed."
+            }
+        }
+    }
+    else
+    {
+        Write-Verbose "[!] $($orders_file_m_prt_count) '*m.prt' files to move."
+    }
+
+    $orders_file_c_prt_count = $($orders_file_c_prt).Count
+
+    if($($orders_file_c_prt_count) -gt 0)
+    {
+        $files_moved = 0
+
+        foreach($file in $orders_file_c_prt)
+        {
+            Process-DevCommands
+
+            $files_moved ++
+            $files_moved_total ++
+
+            Write-Verbose "[#] Moving $($file.Name) to $($year_orders_archive_directory) ($($files_moved)/$($orders_file_c_prt_count)) now."
+            Move-Item -Path $($file) -Destination "$($year_orders_archive_directory)\$($file.Name)" -Force
+
+            if($?)
+            {
+                Write-Verbose "[*] $($file) moved to $($year_orders_archive_directory) successfully."
+            }
+            else
+            {
+                Write-Verbose "[!] $($file) move to $($year_orders_archive_directory) failed."
+                throw "[!] $($file) move to $($year_orders_archive_directory) failed."
+            }
+        }
+    }
+    else
+    {
+        Write-Verbose "[!] $($orders_file_c_prt_count) '*c.prt' files to move."
+    }
+
+    $orders_file_r_prt_count = $($orders_file_r_prt).Count
+
+    if($($orders_file_r_prt_count) -gt 0)
+    {
+        $files_moved = 0
+
+        foreach($file in $orders_file_r_prt)
+        {
+            Process-DevCommands
+
+            $files_moved ++
+            $files_moved_total ++
+
+            Write-Verbose "[#] Moving $($file.Name) to $($year_orders_registry_directory) ($($files_moved)/$($orders_file_r_prt_count)) now."
+            Move-Item -Path $($file) -Destination "$($year_orders_registry_directory)\$($file.Name)" -Force
+
+            if($?)
+            {
+                Write-Verbose "[*] $($file) moved to $($year_orders_registry_directory) successfully."
+            }
+            else
+            {
+                Write-Verbose "[!] $($file) move to $($year_orders_registry_directory) failed."
+                throw "[!] $($file) move to $($year_orders_registry_directory) failed."
+            }
+        }
+    }
+    else
+    {
+        Write-Verbose "[!] $($orders_file_r_prt_count) '*r.prt' files to move."
+    }
+
+    $orders_file_r_reg_count = $($orders_file_r_reg).Count
+
+    if($($orders_file_r_reg_count) -gt 0)
+    {
+        $files_moved = 0
+
+        foreach($file in $orders_file_r_reg)
+        {
+            Process-DevCommands
+
+            $files_moved ++
+            $files_moved_total ++
+
+            Write-Verbose "[#] Moving $($file.Name) to $($year_orders_registry_directory) ($($files_moved)/$($orders_file_r_reg_count)) now."
+            Move-Item -Path $($file) -Destination "$($year_orders_registry_directory)\$($file.Name)" -Force
+
+            if($?)
+            {
+                Write-Verbose "[*] $($file) moved to $($year_orders_registry_directory) successfully."
+            }
+            else
+            {
+                Write-Verbose "[!] $($file) move to $($year_orders_registry_directory) failed."
+                throw "[!] $($file) move to $($year_orders_registry_directory) failed."
+            }
+        }
+
+        Write-Verbose "[*] $($files_moved_total) files moved successfully."
+    }
+    else
+    {
+        Write-Verbose "[!] $($orders_file_r_reg_count) '*r.reg' files to move."
+    }
 }
-#>
 
 function Split-OrdersMain()
 {
@@ -2722,7 +2905,7 @@ if($($ParametersPassed) -gt '0')
                         exit 1
                     }
 
-		            Write-Host "[-] Creating required directories." -ForegroundColor White
+		            Write-Host "[^] Creating required directories." -ForegroundColor Cyan
 		            Create-RequiredDirectories -directories $($directories)
 		            if($?) 
 		            {
@@ -2743,8 +2926,15 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
-		            Write-Host "[-] Backing up original orders file." -ForegroundColor White
-		            Move-OriginalToHistorical -current_directory_working $($current_directory_working) -files_orders_original $($files_orders_original)
+                    if(!($($output_dir)))
+                    {
+                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Stop-Transcript
+                        exit 1
+                    }
+
+		            Write-Host "[^] Backing up original orders file." -ForegroundColor Cyan
+		            Move-OriginalToArchive -tmp_directory_working $($tmp_directory_working) -archive_directory_working $($archive_directory_working) -ordregisters_output $($ordregisters_output)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Backing up original orders file finished successfully." -ForegroundColor Cyan 
@@ -2764,7 +2954,7 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
-		            Write-Host "[-] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor White	
+		            Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor Cyan	
 		            Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
 		            if($?)
 		            {
@@ -2785,7 +2975,7 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
-		            Write-Host "[-] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor White
+		            Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor Cyan
 		            Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
 		            if($?) 
 		            {
@@ -2806,7 +2996,7 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
-		            Write-Host "[-] Editing orders '*m.prt' files." -ForegroundColor White
+		            Write-Host "[^] Editing orders '*m.prt' files." -ForegroundColor Cyan
 		            Edit-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working)
 		            if($?) 
 		            { 
@@ -2827,7 +3017,7 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
-		            Write-Host "[-] Editing orders '*c.prt' files." -ForegroundColor White
+		            Write-Host "[^] Editing orders '*c.prt' files." -ForegroundColor Cyan
 		            Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working)
 		            if($?)
 		            { 
@@ -2848,7 +3038,7 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
-		            Write-Host "[-] Combining .mof orders files." -ForegroundColor White
+		            Write-Host "[^] Combining .mof orders files." -ForegroundColor Cyan
 		            Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories)
 		            if($?) 
 		            { 
@@ -2869,7 +3059,7 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
-		            Write-Host "[-] Combining .cof orders files." -ForegroundColor White
+		            Write-Host "[^] Combining .cof orders files." -ForegroundColor Cyan
 		            Combine-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date)
 		            if($?) 
 		            { 
@@ -2897,7 +3087,7 @@ if($($ParametersPassed) -gt '0')
                         exit 1
                     }
 
-                    Write-Host "[-] Working magic on .mof files now." -ForegroundColor White
+                    Write-Host "[^ Working magic on .mof files now." -ForegroundColor Cyan
                     Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
 		            if($?) 
 		            { 
@@ -2925,7 +3115,7 @@ if($($ParametersPassed) -gt '0')
                         exit 1
                     }
 
-		            Write-Host "[-] Working magic on .cof files." -ForegroundColor White
+		            Write-Host "[^] Working magic on .cof files." -ForegroundColor Cyan
 		            Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
 		            if($?) 
 		            { 
@@ -2946,7 +3136,7 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
-		            Write-Host "[-] Cleaning up .mof files." -ForegroundColor White
+		            Write-Host "[^] Cleaning up .mof files." -ForegroundColor Cyan
 		            Clean-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories)
 		            if($?) 
 		            { 
@@ -2967,7 +3157,7 @@ if($($ParametersPassed) -gt '0')
             { 
 	            try
 	            {
-		            Write-Host "[-] Cleaning up .cof files." -ForegroundColor White
+		            Write-Host "[^] Cleaning up .cof files." -ForegroundColor Cyan
 		            Clean-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
 		            if($?) 
 		            { 
@@ -2995,7 +3185,7 @@ if($($ParametersPassed) -gt '0')
                         exit 1
                     }
 
-		            Write-Host "[-] Cleaning up UICS folder." -ForegroundColor White
+		            Write-Host "[^] Cleaning up UICS folder." -ForegroundColor Cyan
 		            Clean-UICS -uics_directory_output $($uics_directory_output)
 		            if($?)
 		            { 
@@ -3022,7 +3212,7 @@ if($($ParametersPassed) -gt '0')
                         exit 1
                     }
 
-		            Write-Host "[-] Getting permissions." -ForegroundColor White
+		            Write-Host "[^] Getting permissions." -ForegroundColor Cyan
 		            Get-Permissions -uics_directory_output $($uics_directory_output)
 		            if($?) 
 		            { 
