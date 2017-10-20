@@ -7,6 +7,7 @@ CHANGES
 - added .csv output containing detailed information about orders created and not created
 - reintroduced overall error handling for all function calls
 - added verbose output functionality to be used with -Verbose flag
+- added backup of original "*c, *m, *r, *r.reg*" files to working archive directory
 ------------------------------------
 VERSION: 0.9
 DATE: 10/18/2017
