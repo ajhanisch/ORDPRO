@@ -5,6 +5,7 @@ VERSION: 1.1
 DATE: 10/20/2017
 CHANGES
 - added functionality to write orders to output directory\UICS and output directory\ord_managers
+- modified main order editing to not find and replace entire header, instead only insert the missing line at the top
 ------------------------------------
 VERSION: 1.0
 DATE: 10/19/2017
