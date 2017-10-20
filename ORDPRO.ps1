@@ -3117,7 +3117,7 @@ if($($ParametersPassed) -gt '0')
 	            try
 	            {
 		            Write-Host "[^] Combining .mof orders files." -ForegroundColor Cyan
-		            Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories)
+		            Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -run_date $($run_date)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Combining .mof orders files finished successfully." -ForegroundColor Cyan 
