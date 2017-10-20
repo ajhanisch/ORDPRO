@@ -132,6 +132,12 @@ $directories = @(
 "$($log_directory_working)"
 )
 
+$known_bad_strings = @(
+"                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
+"                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
+"ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}"
+)
+
 <#
 HASH TABLES
 #>
@@ -174,10 +180,9 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
-$version_info = "1.0"
+$version_info = "1.1"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $script_name = $($MyInvocation.MyCommand.Name)
-$year_prefix = (Get-Date -Format yyyy).Substring(0,2)
 $exclude_directories = '$($mof_directory_original_splits_working)|$($cof_directory_original_splits_working)'
 $files_orders_original = (Get-ChildItem -Path $current_directory_working -Filter "*.prt" -File)
 $files_orders_m_prt = (Get-ChildItem -Path $current_directory_working -Filter "*m.prt" -File)
@@ -590,60 +595,46 @@ function Edit-OrdersMain()
     if($($total_to_edit_orders_main) -gt '0')
     {
         Write-Verbose "[#] Total to edit: $($total_to_edit_orders_main)."
+
         $total_edited_orders_main = 0
-
-$old_header = @"
-
-                               DEPARTMENT OF MILITARY
-                           OFFICE OF THE ADJUTANT GENERAL
-                  2823 West Main Street, Rapid City, SD 57702-8186
-"@
-$new_header = @"
-                               STATE OF SOUTH DAKOTA
-                               DEPARTMENT OF MILITARY
-                           OFFICE OF THE ADJUTANT GENERAL
-                  2823 West Main Street, Rapid City, SD 57702-8186
-"@
-$old_spacing_1 = @"
-
-                          
-                          
-
-
-"@ # Spacing between APC DJMS-RC: and APC STANFINS Pay: created after removing FOUO's and others below
-$old_spacing_2 = @"
-
-                          
-                          
-
-
-
-"@ # Spacing between last line of Additional Instructions and FOR ARMY USE caused by removing FOUO and ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4} below
+        $total_not_edited_orders_main = 0
 
         foreach($file in (Get-ChildItem -Path "$($mof_directory_working)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof'}))
         {
             Process-DevCommands -sw $($sw)
 
-            $file_content = (Get-Content "$($file)" -Raw -ErrorAction SilentlyContinue)
-            $file_content = $file_content -replace $old_header,$new_header
-            $file_content = $file_content -replace "`f",''
-            $file_content = $file_content -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT",''
-            $file_content = $file_content -replace $regex_old_fouo_3_edit_orders_main,''
-            $file_content = $file_content -replace "`n$old_spacing_1",''
-            $file_content = $file_content -replace "$old_spacing_2",''
-
            if(!((Get-Item "$($file)") -is [System.IO.DirectoryInfo]))
             {
+                Write-Verbose "[#] Editing $($file.Name) in round 1 now."
+                
                 $out_file_name = "$($file.BaseName)_edited.mof"
 
-                Write-Verbose "[#] Editing $($file.Name) now."
+                $file_content = (Get-Content "$($file)" | Select -Skip 1 )
+                $file_content = @('                               STATE OF SOUTH DAKOTA') + $file_content
 
+                # Remove known bad strings first.
+                foreach($pattern in $known_bad_strings)
+                {
+                    Write-Verbose "[#] Removing known bad string $($pattern) from $($file)."
+                    $file_content = ( $file_content | Select-String -Pattern $($pattern) -NotMatch )
+
+                    if($?)
+                    {
+                        Write-Verbose "[*] Removed known bad string $($pattern) from $($file) succesfully."
+                    }
+                    else
+                    {
+                        Write-Verbose "[!] Removing known bad string $($pattern) from $($file) failed."
+                        throw "[!] Removing known bad string $($pattern) from $($file) failed."
+                    }
+                }
+
+                # Write to edited file.
                 Set-Content -Path "$($mof_directory_working)\$($out_file_name)" $file_content
-            
+
                 if($?)
                 {
-                    Write-Verbose "[*] $($file.Name) edited successfully."                    
-                    $total_edited_orders_main ++
+                    Write-Verbose "[*] $($file.Name) edited in round 1 successfully."                    
 
                     if($($file.Name) -cnotcontains "*_edited.mof")
                     {
@@ -663,8 +654,66 @@ $old_spacing_2 = @"
                 }
                 else
                 {
-                    Write-Verbose "[!] $($file.Name) editing failed."
-                    throw "[!] $($file.Name) editing failed."
+                    $total_not_edited_orders_main ++
+                    Write-Verbose "[!] $($file.Name) editing in round 1 failed."
+                    throw "[!] $($file.Name) editing in round 1 failed."
+                }
+
+                # Remove bad spacing between 'Marital status / Number of dependents' and 'Type of incentive pay'
+                Write-Verbose "[#] Editing $($out_file_name) in round 2 now."
+                $pattern_1 = '(?smi)Marital status / Number of dependents: \w{1,}(.*?)Type of incentive pay: \w{1,}'
+                $string_1 = Get-Content "$($mof_directory_working)\$($out_file_name)" -Raw
+                try
+                {
+                    $bad_output_1 = [regex]::Matches($string_1,$pattern_1).Groups[0].Value
+                }
+                catch [System.Management.Automation.RuntimeException] # Catch the error that happens when this variable is empty due to being wrong format file to edit.
+                {
+                    $total_not_edited_orders_main ++
+                    Write-Verbose "[!] $($out_file_name) is not the proper format to be edited in round 2. Not editing this file at this time as it is not needed."
+                    continue
+                }
+                $good_output_1 = $bad_output_1.Replace("`n`r`n`r`n","")
+                $string_1 = $string_1 -replace $bad_output_1,$good_output_1
+
+                Set-Content -Path "$($mof_directory_working)\$($out_file_name)" $string_1
+                if($?)
+                {
+                    Write-Verbose "[*] $($out_file_name) edited in round 2 successfully."
+                }
+                else
+                {
+                    $total_not_edited_orders_main ++
+                    Write-Verbose "[!] $($out_file_name) edit in round 2 failed."
+                }
+
+                # Remove bad spacing between 'APC DJMS-RC' and 'APC STANFINS Pay'
+                Write-Verbose "[#] Editing $($out_file_name) in round 3 now."
+                $pattern_2 = '(?smi)APC DJMS-RC: \w{1,}(.*?)APC STANFINS Pay:  \w{1,}'
+                $string_2 = Get-Content "$($mof_directory_working)\$($out_file_name)" -Raw
+                try
+                {
+                    $bad_output_2 = [regex]::Matches($string_2,$pattern_2).Groups[0].Value
+                }
+                catch [System.Management.Automation.RuntimeException] # Catch the error that happens when this variable is empty due to being wrong format file to edit.
+                {
+                    $total_not_edited_orders_main ++
+                    Write-Verbose "[!] $($out_file_name) is not the proper format to be edited in round 3. Not editing this file at this time as it is not needed."
+                    continue
+                }
+                $good_output_2 = $bad_output_2.Replace("`n`r`n","")
+                $string_2 = $string_2 -replace $bad_output_2,$good_output_2
+
+                Set-Content -Path "$($mof_directory_working)\$($out_file_name)" $string_2
+                if($?)
+                {
+                    $total_edited_orders_main ++
+                    Write-Verbose "[*] $($out_file_name) edited in round 3 successfully."
+                }
+                else
+                {
+                    $total_not_edited_orders_main ++
+                    Write-Verbose "[!] $($out_file_name) edit in round 3 failed."
                 }
             }
             else
@@ -672,7 +721,7 @@ $old_spacing_2 = @"
                 Write-Verbose "[#] $($file) is a directory. Skipping."
             }
 
-            Write-Verbose "[#] Edited: ( $($total_edited_orders_main) / $($total_to_edit_orders_main) )."
+            Write-Verbose "[#] Edited: ( $($total_edited_orders_main) / $($total_to_edit_orders_main) ). Not edited ( $($total_not_edited_orders_main) / $($total_to_edit_orders_main) )"
         }
     }
     else
@@ -697,6 +746,7 @@ function Edit-OrdersCertificate()
     {
         Write-Verbose "[#] Total to edit: $($total_to_edit_orders_cert)."
         $total_edited_orders_cert = 0
+        $total_not_edited_orders_cert = 0
 
         foreach($file in (Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof'}))
         {
@@ -739,6 +789,7 @@ function Edit-OrdersCertificate()
                 }
                 else
                 {
+                    $total_not_edited_orders_cert 
                     Write-Verbose "[!] $($file.Name) editing failed."
                     throw "[!] $($file.Name) editing failed."
                 }
@@ -748,7 +799,7 @@ function Edit-OrdersCertificate()
                 Write-Verbose "[#] $($file) is a directory. Skipping."
             }
 
-            Write-Verbose "[#] Edited: ( $($total_edited_orders_cert) / $($total_to_edit_orders_cert) )."
+            Write-Verbose "[#] Edited: ( $($total_edited_orders_cert) / $($total_to_edit_orders_cert) ). Not edited: ( $($total_not_edited_orders_cert) / $($total_to_edit_orders_cert) )."
         }
     }
     else
@@ -905,9 +956,9 @@ function Parse-OrdersMain()
                     Write-Verbose "[+] $($error_info)"
 
                     $hash = @{
-                        FILE = $($uic)
-                        ERROR_CODE = $($last_name)
-                        ERROR_INFO = $($first_name)
+                        FILE = $($file)
+                        ERROR_CODE = $($error_code)
+                        ERROR_INFO = $($error_info)
                     }
 
 	                $order_info = New-Object -TypeName PSObject -Property $hash
@@ -923,10 +974,10 @@ function Parse-OrdersMain()
 
                     Write-Verbose "[+] $($error_info)"
 
-                    $hash = @{
-                        FILE = $($uic)
-                        ERROR_CODE = $($last_name)
-                        ERROR_INFO = $($first_name)
+                     $hash = @{
+                        FILE = $($file)
+                        ERROR_CODE = $($error_code)
+                        ERROR_INFO = $($error_info)
                     }
 
 	                $order_info = New-Object -TypeName PSObject -Property $hash
@@ -985,6 +1036,8 @@ function Parse-OrdersMain()
                     $period_from_month = $period_from[5]
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $period_from[6]
+                    $period_from_year = @($period_from_year -split '(.{2})' | ? {$_})
+                    $period_from_year = $($period_from_year[1]) # YYYY turned into YY
                     $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
                     Write-Verbose "[*] Found 'period from year, month, day' in $($file)."
 
@@ -1011,11 +1064,12 @@ function Parse-OrdersMain()
                         Write-Verbose "[*] All variables for $($file) passed validation."
 
                         $uic_directory = "$($uics_directory_output)\$($uic)"
-                        $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)"
+                        $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+                        $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
                         $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
                         $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
                         
-                        Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
+                        Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
                         
                         $hash = @{
                             UIC = $($uic)
@@ -1109,6 +1163,8 @@ function Parse-OrdersMain()
                     $period_from_month = $period[4]
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $period[5]
+                    $period_from_year = @($period_from_year -split '(.{2})' | ? {$_})
+                    $period_from_year = $($period_from_year[1]) # YYYY turned into YY
                     $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
                     Write-Verbose "[*] Found 'period from year, month, day' in $($file)."
 
@@ -1123,6 +1179,8 @@ function Parse-OrdersMain()
                     $period_to_month = $period[-2]
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $period[-1]
+                    $period_to_year = @($period_to_year -split '(.{2})' | ? {$_})
+                    $period_to_year = $($period_to_year[1]) # YYYY turned into YY
                     $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
                     Write-Verbose "[*] Found 'period to year, month, day' in $($file)."
                     
@@ -1139,11 +1197,12 @@ function Parse-OrdersMain()
 	                    Write-Verbose "[*] All variables for $($file) passed validation."
 
 	                    $uic_directory = "$($uics_directory_output)\$($uic)"
-	                    $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+	                    $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+                        $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
 	                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
 	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
 	
-	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
+	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
 
                         $hash = @{
                             UIC = $($uic)
@@ -1159,6 +1218,7 @@ function Parse-OrdersMain()
                             PERIOD_FROM_DAY = $($period_from_day)
                             PERIOD_TO_YEAR = $($period_to_year)
                             PERIOD_TO_MONTH = $($period_to_month)
+                            PERIOD_TO_DAY = $($period_to_day)
                             PERIOD_TO_NUMBER = ''
                             PERIOD_TO_TIME = ''
                             FORMAT = $($format)
@@ -1244,11 +1304,12 @@ function Parse-OrdersMain()
 	                    Write-Verbose "[*] All variables for $($file) passed validation."
 
                         $uic_directory = "$($uics_directory_output)\$($uic)"
-                        $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+                        $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+                        $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
                         $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($order_amended)___$($format).txt"
                         $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
 	
-	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
+	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
 
                         $hash = @{
                             UIC = $($uic)
@@ -1349,11 +1410,12 @@ function Parse-OrdersMain()
 	                    Write-Verbose "[*] All variables for $($file) passed validation."
 
 	                    $uic_directory = "$($uics_directory_output)\$($uic)"
-	                    $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+	                    $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+                        $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
 	                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($order_revoke)___$($format).txt"
 	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
 
-	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
+	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
 
                         $hash = @{
                             UIC = $($uic)
@@ -1446,6 +1508,8 @@ function Parse-OrdersMain()
                     $period_from_month = $($period[4])
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $($period[5])
+                    $period_from_year = @($period_from_year -split '(.{2})' | ? {$_})
+                    $period_from_year = $($period_from_year[1]) # YYYY turned into YY
                     $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
                     Write-Verbose "[*] Found 'period from year, month, day' in $($file)."
 
@@ -1458,6 +1522,8 @@ function Parse-OrdersMain()
                     $period_to_month = $($period[-2])
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $($period[-1])
+                    $period_to_year = @($period_to_year -split '(.{2})' | ? {$_})
+                    $period_to_year = $($period_to_year[1]) # YYYY turned into YY
                     $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
                     Write-Verbose "[*] Found 'period to year, month, day' in $($file)."
 
@@ -1480,11 +1546,12 @@ function Parse-OrdersMain()
 	                    Write-Verbose "[*] All variables for $($file) passed validation."
 
 	                    $uic_directory = "$($uics_directory_output)\$($uic)"
-	                    $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+	                    $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+                        $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
 	                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
 	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
 
-	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
+	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
 
                         $hash = @{
                             UIC = $($uic)
@@ -1500,6 +1567,7 @@ function Parse-OrdersMain()
                             PERIOD_FROM_DAY = $($period_from_day)
                             PERIOD_TO_YEAR = $($period_to_year)
                             PERIOD_TO_MONTH = $($period_to_month)
+                            PERIOD_TO_DAY = $($period_to_day)
                             PERIOD_TO_NUMBER = ''
                             PERIOD_TO_TIME = ''
                             FORMAT = $($format)
@@ -1579,6 +1647,8 @@ function Parse-OrdersMain()
                     $period_from_month = $($period[4])
                     $period_from_month = $months.Get_Item($($period_from_month)) # Retrieve month number value from hash table.
                     $period_from_year = $($period[5])
+                    $period_from_year = @($period_from_year -split '(.{2})' | ? {$_})
+                    $period_from_year = $($period_from_year[1]) # YYYY turned into YY
                     $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
                     Write-Verbose "[*] Found 'period from year, month, day' in $($file)."
 
@@ -1591,6 +1661,8 @@ function Parse-OrdersMain()
                     $period_to_month = $($period[-2])
                     $period_to_month = $months.Get_Item($($period_to_month)) # Retrieve month number value from hash table.
                     $period_to_year = $($period[-1])
+                    $period_to_year = @($period_to_year -split '(.{2})' | ? {$_})
+                    $period_to_year = $($period_to_year[1]) # YYYY turned into YY
                     $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
                     Write-Verbose "[*] Found 'period to year, month, day' in $($file)."
                     
@@ -1613,11 +1685,12 @@ function Parse-OrdersMain()
 	                    Write-Verbose "[*] All variables for $($file) passed validation."
 
 	                    $uic_directory = "$($uics_directory_output)\$($uic)"
-	                    $soldier_directory = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+	                    $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+                        $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
 	                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
 	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
 
-	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
+	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
 
                         $hash = @{
                             UIC = $($uic)
@@ -1633,6 +1706,7 @@ function Parse-OrdersMain()
                             PERIOD_FROM_DAY = $($period_from_day)
                             PERIOD_TO_YEAR = $($period_to_year)
                             PERIOD_TO_MONTH = $($period_to_month)
+                            PERIOD_TO_DAY = $($period_to_day)
                             PERIOD_TO_NUMBER = ''
                             PERIOD_TO_TIME = ''
                             FORMAT = $($format)
@@ -1669,9 +1743,9 @@ function Parse-OrdersMain()
                     Write-Verbose "[+] $($error_info)"
                     
                     $hash = @{
-                        FILE = $($uic)
-                        ERROR_CODE = $($last_name)
-                        ERROR_INFO = $($first_name)
+                        FILE = $($file)
+                        ERROR_CODE = $($error_code)
+                        ERROR_INFO = $($error_info)
                     }
 
 	                $order_info = New-Object -TypeName PSObject -Property $hash
@@ -1790,6 +1864,7 @@ function Parse-OrdersCertificate()
                 {
                     $middle_initial = $name[7]
                 }
+                $name = "$($last_name)_$($first_name)_$($middle_initial)"
                 Write-Verbose "[*] Found 'last, first, mi' in $($file)."
 
                 Write-Verbose "[#] Looking for 'order number' in $($file)."
@@ -1809,17 +1884,19 @@ function Parse-OrdersCertificate()
                 $period_from_year = $period_from[0]
                 $period_from_month = $period_from[1]
                 $period_from_day = $period_from[2]
+                $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
 
                 $period_to = $period[7]
                 $period_to = @($period_to -split '(.{2})' | ? { $_ })
                 $period_to_year = $period_to[0]
                 $period_to_month = $period_to[1]
                 $period_to_day = $period_to[2]
+                $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
                 Write-Verbose "[*] Found 'period from year, month, day' in $($file)."
         
                 Write-Verbose "[#] Looking up 'ssn' in hash table for $($file)."
                 $ssn = $name_ssn."$($last_name)_$($first_name)_$($middle_initial)" # Retrieve ssn from soldiers_ssn hash table via key lookup.      
-                Write-Verbose "[*] FOund 'ssn' in hash table for $($file)."
+                Write-Verbose "[*] Found 'ssn' in hash table for $($file)."
 
                 $validation_results = Validate-Variables -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -uic $($uic) -order_number $($order_number) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_year $($period_to_year) -period_to_month $($period_to_month) -period_to_day $($period_to_day)
 
@@ -1828,12 +1905,12 @@ function Parse-OrdersCertificate()
 	                Write-Verbose "[*] All variables for $($file) passed validation."
 
 	                $uic_directory = "$($uics_directory_output)\$($uic)"
-	                $soldier_directory = "$($uics_directory_output)\$($uic)\$($last_name)_$($first_name)_$($middle_initial)___$($ssn)"
+	                $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
+                    $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
 	                $uic_soldier_order_file_name = "$($period_from_year)___$($ssn)___$($order_number)___$($period_from_year)$($period_from_month)$($period_from_day)___$($period_to_year)$($period_to_month)$($period_to_day)___cert.txt"
-                    #$uic_soldier_order_file_name = "$($period_from_year)___$($ssn)___$($order_number)___$($year_prefix)$($period_from_year)$($period_from_month)$($period_from_day)___$($year_prefix)$($period_to_year)$($period_to_month)$($period_to_day)___cert.txt"
 	                $uic_soldier_order_file_content = (Get-Content "$($file)" -Raw)
 
-	                Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
+	                Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
 
                     $hash = @{
                         UIC = $($uic)
@@ -1897,14 +1974,15 @@ function Work-Magic()
     [cmdletbinding()]
     Param(
         [Parameter(mandatory = $true)] $uic_directory,
-        [Parameter(mandatory = $true)] $soldier_directory,
+        [Parameter(mandatory = $true)] $soldier_directory_uics,
         [Parameter(mandatory = $true)] $uic_soldier_order_file_name,
         [Parameter(mandatory = $true)] $uic_soldier_order_file_content,
         [Parameter(mandatory = $true)] $uic,
         [Parameter(mandatory = $true)] $last_name,
         [Parameter(mandatory = $true)] $first_name,
         [Parameter(mandatory = $true)] $middle_initial,
-        [Parameter(mandatory = $true)] $ssn
+        [Parameter(mandatory = $true)] $ssn,
+        [Parameter(mandatory = $true)] $soldier_directory_ord_managers
     )
 	  
     if(Test-Path $($uic_directory))
@@ -1927,43 +2005,83 @@ function Work-Magic()
         }
     }
 
-    if(Test-Path $($soldier_directory))
+    if(Test-Path $($soldier_directory_uics))
     {
-        Write-Verbose "[*] $($soldier_directory) already created, continuing."
+        Write-Verbose "[*] $($soldier_directory_uics) already created, continuing."
     }
     else
     {
-        Write-Verbose "[#] $($soldier_directory) not created. Creating now."
-        New-Item -ItemType Directory -Path "$($soldier_directory)" > $null
+        Write-Verbose "[#] $($soldier_directory_uics) not created. Creating now."
+        New-Item -ItemType Directory -Path "$($soldier_directory_uics)" > $null
 
         if($?)
         {
-            Write-Verbose "[*] $($soldier_directory) created successfully."
+            Write-Verbose "[*] $($soldier_directory_uics) created successfully."
         }
         else
         {
-            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory) creation failed."
-            throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory) creation failed."
+            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_uics) creation failed."
+            throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_uics) creation failed."
         }
     }
 
-    if(Test-Path "$($soldier_directory)\$($uic_soldier_order_file_name)")
+    if(Test-Path "$($soldier_directory_uics)\$($uic_soldier_order_file_name)")
     {
-        Write-Verbose "[*] $($soldier_directory)\$($uic_soldier_order_file_name) already created, continuing."
+        Write-Verbose "[*] $($soldier_directory_uics)\$($uic_soldier_order_file_name) already created, continuing."
     }
     else
     {
-        Write-Verbose "[#] $($soldier_directory)\$($uic_soldier_order_file_name) not created. Creating now."
-        New-Item -ItemType File -Path $($soldier_directory) -Name $($uic_soldier_order_file_name) -Value $($uic_soldier_order_file_content) > $null
+        Write-Verbose "[#] $($soldier_directory_uics)\$($uic_soldier_order_file_name) not created. Creating now."
+        New-Item -ItemType File -Path $($soldier_directory_uics) -Name $($uic_soldier_order_file_name) -Value $($uic_soldier_order_file_content) > $null
 
         if($?)
         {
-            Write-Verbose "[*] $($soldier_directory)\$($uic_soldier_order_file_name) created successfully."
+            Write-Verbose "[*] $($soldier_directory_uics)\$($uic_soldier_order_file_name) created successfully."
         }
         else
         {
-            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory)\$($uic_soldier_order_file_name) creation failed."
-            throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory)\$($uic_soldier_order_file_name) creation failed."
+            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_uics)\$($uic_soldier_order_file_name) creation failed."
+            throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_uics)\$($uic_soldier_order_file_name) creation failed."
+        }
+    }
+
+    if(Test-Path $($soldier_directory_ord_managers))
+    {
+        Write-Verbose "[*] $($soldier_directory_ord_managers) already created, continuing."
+    }
+    else
+    {
+        Write-Verbose "[#] $($soldier_directory_ord_managers) not created. Creating now."
+        New-Item -ItemType Directory -Path "$($soldier_directory_ord_managers)" > $null
+
+        if($?)
+        {
+            Write-Verbose "[*] $($soldier_directory_ord_managers) created successfully."
+        }
+        else
+        {
+            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_ord_managers) creation failed."
+            throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_ord_managers) creation failed."
+        }
+    }
+
+    if(Test-Path "$($soldier_directory_ord_managers)\$($uic_soldier_order_file_name)")
+    {
+        Write-Verbose "[*] $($soldier_directory_ord_managers)\$($uic_soldier_order_file_name) already created, continuing."
+    }
+    else
+    {
+        Write-Verbose "[#] $($soldier_directory_ord_managers)\$($uic_soldier_order_file_name) not created. Creating now."
+        New-Item -ItemType File -Path $($soldier_directory_ord_managers) -Name $($uic_soldier_order_file_name) -Value $($uic_soldier_order_file_content) > $null
+
+        if($?)
+        {
+            Write-Verbose "[*] $($soldier_directory_ord_managers)\$($uic_soldier_order_file_name) created successfully."
+        }
+        else
+        {
+            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_ord_managers)\$($uic_soldier_order_file_name) creation failed."
+            throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_ord_managers)\$($uic_soldier_order_file_name) creation failed."
         }
     }
 }
