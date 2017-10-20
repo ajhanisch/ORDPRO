@@ -182,6 +182,8 @@ $exclude_directories = '$($mof_directory_original_splits_working)|$($cof_directo
 $files_orders_original = (Get-ChildItem -Path $current_directory_working -Filter "*.prt" -File)
 $files_orders_m_prt = (Get-ChildItem -Path $current_directory_working -Filter "*m.prt" -File)
 $files_orders_c_prt = (Get-ChildItem -Path $current_directory_working -Filter "*c.prt" -File)
+$sw = New-Object System.Diagnostics.Stopwatch
+$sw.start()
 
 if(Test-Path variable:global:psISE)
 {
@@ -861,9 +863,6 @@ function Parse-OrdersMain()
 
     if($($total_to_create_orders_main) -gt '0')
     {
-        $sw = New-Object System.Diagnostics.Stopwatch
-        $sw.start()
-
         $orders_created_orders_main = @()
         $orders_not_created_orders_main = @()
         
@@ -904,13 +903,16 @@ function Parse-OrdersMain()
                     $error_info = "File $($file) with no format. Error code $($error_code)."
 
                     Write-Verbose "[+] $($error_info)"
-                    
-                    $order_info = New-Object -TypeName PSObject
-                    $order_info | Add-Member -MemberType NoteProperty -Name File -Value $($file)
-                    $order_info | Add-Member -MemberType NoteProperty -Name ErrorCode -Value $($error_code)
-                    $order_info | Add-Member -MemberType NoteProperty -Name ErrorInfo -Value $($error_info)
+
+                    $hash = @{
+                        FILE = $($uic)
+                        ERROR_CODE = $($last_name)
+                        ERROR_INFO = $($first_name)
+                    }
+
+	                $order_info = New-Object -TypeName PSObject -Property $hash
                     $orders_not_created_orders_main += $order_info
-            
+
                     continue
                 }
 
@@ -921,12 +923,15 @@ function Parse-OrdersMain()
 
                     Write-Verbose "[+] $($error_info)"
 
-                    $order_info = New-Object -TypeName PSObject
-                    $order_info | Add-Member -MemberType NoteProperty -Name File -Value $($file)
-                    $order_info | Add-Member -MemberType NoteProperty -Name ErrorCode -Value $($error_code)
-                    $order_info | Add-Member -MemberType NoteProperty -Name ErrorInfo -Value $($error_info)
+                    $hash = @{
+                        FILE = $($uic)
+                        ERROR_CODE = $($last_name)
+                        ERROR_INFO = $($first_name)
+                    }
+
+	                $order_info = New-Object -TypeName PSObject -Property $hash
                     $orders_not_created_orders_main += $order_info
-            
+                               
                     continue
                 }
                 elseif($($format) -eq '165' -and !($($following_request_exists)))
@@ -1011,22 +1016,31 @@ function Parse-OrdersMain()
                         $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
                         
                         Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
+                        
+                        $hash = @{
+                            UIC = $($uic)
+                            LAST_NAME = $($last_name)
+                            FIRST_NAME = $($first_name)
+                            MIDDLE_INITIAL = $($middle_initial)
+                            PUBLISHED_YEAR = $($published_year)
+                            PUBLISHED_MONTH = ''
+                            PUBLISHED_DAY = ''
+                            SSN = $($ssn)
+                            PERIOD_FROM_YEAR = $($period_from_year)
+                            PERIOD_FROM_MONTH = $($period_from_month)
+                            PERIOD_FROM_DAY = $($period_from_day)
+                            PERIOD_TO_YEAR = ''
+                            PERIOD_TO_MONTH = ''
+                            PERIOD_TO_NUMBER = $($period_to_number)
+                            PERIOD_TO_TIME = $($period_to_time)
+                            FORMAT = $($format)
+                            ORDER_AMENDED = ''
+                            ORDER_REVOKE = ''
+                            ORDER_NUMBER = $($order_number)
+                        }
 
-	                    $order_info = New-Object -TypeName PSObject
-	                    $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PublishedYear -Value $($published_year)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name LastName -Value $($last_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name FirstName -Value $($first_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name MiddleInitial -Value $($middle_initial)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($ssn)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromYear -Value $($period_from_year)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromMonth -Value $($period_from_month)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromDay -Value $($period_from_day)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToTime -Value $($period_to_time)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToNumber -Value $($period_to_number)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name Format -Value $($format)
-	                    $orders_created_orders_main += $order_info                        
+	                    $order_info = New-Object -TypeName PSObject -Property $hash
+	                    $orders_created_orders_main += $order_info         
                     }
                     else
                     {
@@ -1131,20 +1145,29 @@ function Parse-OrdersMain()
 	
 	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
-	                    $order_info = New-Object -TypeName PSObject
-	                    $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PublishedYear -Value $($published_year)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name LastName -Value $($last_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name FirstName -Value $($first_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name MiddleInitial -Value $($middle_initial)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($ssn)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromYear -Value $($period_from_year)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromMonth -Value $($period_from_month)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromDay -Value $($period_from_day)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToTime -Value $($period_to_time)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToNumber -Value $($period_to_number)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name Format -Value $($format)
+                        $hash = @{
+                            UIC = $($uic)
+                            LAST_NAME = $($last_name)
+                            FIRST_NAME = $($first_name)
+                            MIDDLE_INITIAL = $($middle_initial)
+                            PUBLISHED_YEAR = $($published_year)
+                            PUBLISHED_MONTH = ''
+                            PUBLISHED_DAY = ''
+                            SSN = $($ssn)
+                            PERIOD_FROM_YEAR = $($period_from_year)
+                            PERIOD_FROM_MONTH = $($period_from_month)
+                            PERIOD_FROM_DAY = $($period_from_day)
+                            PERIOD_TO_YEAR = $($period_to_year)
+                            PERIOD_TO_MONTH = $($period_to_month)
+                            PERIOD_TO_NUMBER = ''
+                            PERIOD_TO_TIME = ''
+                            FORMAT = $($format)
+                            ORDER_AMENDED = ''
+                            ORDER_REVOKE = ''
+                            ORDER_NUMBER = $($order_number)
+                        }
+
+	                    $order_info = New-Object -TypeName PSObject -Property $hash
 	                    $orders_created_orders_main += $order_info
                     }
                     else
@@ -1164,7 +1187,7 @@ function Parse-OrdersMain()
 	                    }
                     }
                 }
-                elseif($($format) -eq '700' -or $($format) -eq '700  *' -and $($following_order_exists) -and !($($following_request_exists))) # Amendment order for "700" and "700 *" formats
+                elseif($($format) -like '700' -and !($($following_request_exists))) # Amendment order for "700" and "700 *" formats
                 {
                     Write-Verbose "[+] Found format $($format) in $($file)!"
 
@@ -1227,16 +1250,29 @@ function Parse-OrdersMain()
 	
 	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
-	                    $order_info = New-Object -TypeName PSObject
-	                    $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PublishedYear -Value $($published_year)
-                        $order_info | Add-Member -MemberType NoteProperty -Name OrderAmended -Value $($order_amended)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name LastName -Value $($last_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name FirstName -Value $($first_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name MiddleInitial -Value $($middle_initial)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($ssn)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name Format -Value $($format)
+                        $hash = @{
+                            UIC = $($uic)
+                            LAST_NAME = $($last_name)
+                            FIRST_NAME = $($first_name)
+                            MIDDLE_INITIAL = $($middle_initial)
+                            PUBLISHED_YEAR = $($published_year)
+                            PUBLISHED_MONTH = ''
+                            PUBLISHED_DAY = ''
+                            SSN = $($ssn)
+                            PERIOD_FROM_YEAR = $($period_from_year)
+                            PERIOD_FROM_MONTH = $($period_from_month)
+                            PERIOD_FROM_DAY = $($period_from_day)
+                            PERIOD_TO_YEAR = ''
+                            PERIOD_TO_MONTH = ''
+                            PERIOD_TO_NUMBER = ''
+                            PERIOD_TO_TIME = ''
+                            FORMAT = $($format)
+                            ORDER_AMENDED = $($order_amended)
+                            ORDER_REVOKE = ''
+                            ORDER_NUMBER = $($order_number)
+                        }
+
+	                    $order_info = New-Object -TypeName PSObject -Property $hash
 	                    $orders_created_orders_main += $order_info
                     }
                     else
@@ -1319,16 +1355,29 @@ function Parse-OrdersMain()
 
 	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
-	                    $order_info = New-Object -TypeName PSObject
-	                    $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name OrderRevoke -Value $($order_revoke)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PublishedYear -Value $($published_year)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name LastName -Value $($last_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name FirstName -Value $($first_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name MiddleInitial -Value $($middle_initial)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($ssn)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name Format -Value $($format)
+                        $hash = @{
+                            UIC = $($uic)
+                            LAST_NAME = $($last_name)
+                            FIRST_NAME = $($first_name)
+                            MIDDLE_INITIAL = $($middle_initial)
+                            PUBLISHED_YEAR = $($published_year)
+                            PUBLISHED_MONTH = ''
+                            PUBLISHED_DAY = ''
+                            SSN = $($ssn)
+                            PERIOD_FROM_YEAR = $($period_from_year)
+                            PERIOD_FROM_MONTH = $($period_from_month)
+                            PERIOD_FROM_DAY = $($period_from_day)
+                            PERIOD_TO_YEAR = ''
+                            PERIOD_TO_MONTH = ''
+                            PERIOD_TO_NUMBER = ''
+                            PERIOD_TO_TIME = ''
+                            FORMAT = $($format)
+                            ORDER_AMENDED = ''
+                            ORDER_REVOKE = $($order_revoke)
+                            ORDER_NUMBER = $($order_number)
+                        }
+
+	                    $order_info = New-Object -TypeName PSObject -Property $hash
 	                    $orders_created_orders_main += $order_info
                     }
                     else
@@ -1437,21 +1486,29 @@ function Parse-OrdersMain()
 
 	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
-	                    $order_info = New-Object -TypeName PSObject
-	                    $order_info | Add-Member -MemberType NoteProperty -Name Format -Value $($format)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name LastName -Value $($last_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name FirstName -Value $($first_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name MiddleInitial -Value $($middle_initial)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($ssn)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PublishedYear -Value $($published_year)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromYear -Value $($period_from_year)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromMonth -Value $($period_from_month)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromDay -Value $($period_from_day)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToYear -Value $($period_to_year)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToMonth -Value $($period_to_month)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToDay -Value $($period_to_day)
+                        $hash = @{
+                            UIC = $($uic)
+                            LAST_NAME = $($last_name)
+                            FIRST_NAME = $($first_name)
+                            MIDDLE_INITIAL = $($middle_initial)
+                            PUBLISHED_YEAR = $($published_year)
+                            PUBLISHED_MONTH = ''
+                            PUBLISHED_DAY = ''
+                            SSN = $($ssn)
+                            PERIOD_FROM_YEAR = $($period_from_year)
+                            PERIOD_FROM_MONTH = $($period_from_month)
+                            PERIOD_FROM_DAY = $($period_from_day)
+                            PERIOD_TO_YEAR = $($period_to_year)
+                            PERIOD_TO_MONTH = $($period_to_month)
+                            PERIOD_TO_NUMBER = ''
+                            PERIOD_TO_TIME = ''
+                            FORMAT = $($format)
+                            ORDER_AMENDED = ''
+                            ORDER_REVOKE = ''
+                            ORDER_NUMBER = $($order_number)
+                        }
+
+	                    $order_info = New-Object -TypeName PSObject -Property $hash
 	                    $orders_created_orders_main += $order_info
                     }
                     else
@@ -1562,21 +1619,29 @@ function Parse-OrdersMain()
 
 	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
-	                    $order_info = New-Object -TypeName PSObject
-	                    $order_info | Add-Member -MemberType NoteProperty -Name Format -Value $($format)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name LastName -Value $($last_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name FirstName -Value $($first_name)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name MiddleInitial -Value $($middle_initial)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($ssn)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PublishedYear -Value $($published_year)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromYear -Value $($period_from_year)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromMonth -Value $($period_from_month)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromDay -Value $($period_from_day)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToYear -Value $($period_to_year)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToMonth -Value $($period_to_month)
-	                    $order_info | Add-Member -MemberType NoteProperty -Name PeriodToDay -Value $($period_to_day)
+                        $hash = @{
+                            UIC = $($uic)
+                            LAST_NAME = $($last_name)
+                            FIRST_NAME = $($first_name)
+                            MIDDLE_INITIAL = $($middle_initial)
+                            PUBLISHED_YEAR = $($published_year)
+                            PUBLISHED_MONTH = ''
+                            PUBLISHED_DAY = ''
+                            SSN = $($ssn)
+                            PERIOD_FROM_YEAR = $($period_from_year)
+                            PERIOD_FROM_MONTH = $($period_from_month)
+                            PERIOD_FROM_DAY = $($period_from_day)
+                            PERIOD_TO_YEAR = $($period_to_year)
+                            PERIOD_TO_MONTH = $($period_to_month)
+                            PERIOD_TO_NUMBER = ''
+                            PERIOD_TO_TIME = ''
+                            FORMAT = $($format)
+                            ORDER_AMENDED = ''
+                            ORDER_REVOKE = ''
+                            ORDER_NUMBER = $($order_number)
+                        }
+
+	                    $order_info = New-Object -TypeName PSObject -Property $hash
 	                    $orders_created_orders_main += $order_info
                     }
                     else
@@ -1602,11 +1667,14 @@ function Parse-OrdersMain()
                     $error_info = "File $($file) with format $($format). This is not currently an unknown and/or handled format. Notify ORDPRO support of this error ASAP. Error code $($error_code)."
 
                     Write-Verbose "[+] $($error_info)"
+                    
+                    $hash = @{
+                        FILE = $($uic)
+                        ERROR_CODE = $($last_name)
+                        ERROR_INFO = $($first_name)
+                    }
 
-                    $order_info = New-Object -TypeName PSObject
-                    $order_info | Add-Member -MemberType NoteProperty -Name File -Value $($file)
-                    $order_info | Add-Member -MemberType NoteProperty -Name ErrorCode -Value $($error_code)
-                    $order_info | Add-Member -MemberType NoteProperty -Name ErrorInfo -Value $($error_info)
+	                $order_info = New-Object -TypeName PSObject -Property $hash
                     $orders_not_created_orders_main += $order_info
 
                     continue
@@ -1622,8 +1690,9 @@ function Parse-OrdersMain()
                 Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Created: ($($orders_created_orders_main.Length) / $($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main.Length) / $($total_to_create_orders_main)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
             }
 
-            $orders_created_orders_main | Export-Csv -NoTypeInformation -Path "$($orders_created_orders_main_csv)"
-            $orders_not_created_orders_main | Export-Csv -NoTypeInformation -Path "$($orders_not_created_orders_main_csv)"
+            Write-Verbose "[*] Writing $($orders_created_orders_main_csv) file now."
+            $orders_created_orders_main | Select FORMAT, ORDER_NUMBER, ORDER_AMENDED, ORDER_REVOKE, LAST_NAME, FIRST_NAME, MIDDLE_INITIAL, SSN, UIC, PUBLISHED_YEAR, PERIOD_FROM_YEAR, PERIOD_FROM_MONTH, PERIOD_FROM_DAY, PERIOD_TO_YEAR, PERIOD_TO_MONTH, PERIOD_TO_DAY, PERIOD_TO_NUMBER, PERIOD_TO_TIME, PUBLISHED_MONTH, PUBLISHED_DAY | Sort -Property ORDER_NUMBER | Export-Csv "$($orders_created_orders_main_csv)" -NoTypeInformation -Force
+            $orders_not_created_orders_main | Select FILE, ERROR_CODE, ERROR_INFO | Sort -Property ERROR_CODE | Export-Csv "$($orders_not_created_orders_main_csv)" -NoTypeInformation -Force
     }
     else
     {
@@ -1766,19 +1835,23 @@ function Parse-OrdersCertificate()
 
 	                Work-Magic -uic_directory $($uic_directory) -soldier_directory $($soldier_directory) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn)
 
-	                $order_info = New-Object -TypeName PSObject
-	                $order_info | Add-Member -MemberType NoteProperty -Name LastName -Value $($last_name)
-	                $order_info | Add-Member -MemberType NoteProperty -Name FirstName -Value $($first_name)
-	                $order_info | Add-Member -MemberType NoteProperty -Name MiddleInitial -Value $($middle_initial)
-	                $order_info | Add-Member -MemberType NoteProperty -Name SSN -Value $($ssn)
-	                $order_info | Add-Member -MemberType NoteProperty -Name UIC -Value $($uic)
-	                $order_info | Add-Member -MemberType NoteProperty -Name OrderNumber -Value $($order_number)
-	                $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromYear -Value $($period_from_year)
-	                $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromMonth -Value $($period_from_month)
-	                $order_info | Add-Member -MemberType NoteProperty -Name PeriodFromDay -Value $($period_from_day)
-	                $order_info | Add-Member -MemberType NoteProperty -Name PeriodToYear -Value $($period_to_year)
-	                $order_info | Add-Member -MemberType NoteProperty -Name PeriodToMonth -Value $($period_to_month)
-	                $order_info | Add-Member -MemberType NoteProperty -Name PeriodToDay -Value $($period_to_day)
+                    $hash = @{
+                        UIC = $($uic)
+                        LAST_NAME = $($last_name)
+                        FIRST_NAME = $($first_name)
+                        MIDDLE_INITIAL = $($middle_initial)
+                        SSN = $($ssn)
+                        PERIOD_FROM_YEAR = $($period_from_year)
+                        PERIOD_FROM_MONTH = $($period_from_month)
+                        PERIOD_FROM_DAY = $($period_from_day)
+                        PERIOD_TO_YEAR = $($period_to_year)
+                        PERIOD_TO_MONTH = $($period_to_month)
+                        PERIOD_TO_DAY = $($period_to_day)
+                        FORMAT = '102-10A'
+                        ORDER_NUMBER = $($order_number)
+                    }
+
+	                $order_info = New-Object -TypeName PSObject -Property $hash
 	                $orders_created_orders_cert += $order_info
                 }
                 else
@@ -1810,7 +1883,7 @@ function Parse-OrdersCertificate()
             }
 
             Write-Verbose "[*] Writing $($orders_created_orders_cert_csv) file now."
-            $orders_created_orders_cert | Export-Csv -NoTypeInformation -Path "$($orders_created_orders_cert_csv)"
+            $orders_created_orders_cert | Select FORMAT, ORDER_NUMBER, LAST_NAME, FIRST_NAME, MIDDLE_INITIAL, SSN, UIC, PERIOD_FROM_YEAR, PERIOD_FROM_MONTH, PERIOD_FROM_DAY, PERIOD_TO_YEAR, PERIOD_TO_MONTH, PERIOD_TO_DAY | Sort -Property ORDER_NUMBER | Export-Csv -NoTypeInformation -Path "$($orders_created_orders_cert_csv)"
     }
     else
     {
@@ -2014,7 +2087,7 @@ function Get-Permissions()
     }
 
     Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .csv file now."
-    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Export-Csv -Force -NoTypeInformation $($csv_report)
+    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Export-Csv -Force -NoTypeInformation $($csv_report)
     if($?)
     {
         Write-Verbose "[*] $($uics_directory_output) permissions writing to .csv finished successfully."
@@ -2038,7 +2111,7 @@ tr:nth-child(even) { background: #dae5f4; }
 tr:nth-child(odd) { background: #b8d1f3; }
 </style>
 "@
-    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | ConvertTo-Html -Title "$($uics_directory_output) Permissions Report" -Head $($css) -Body "<h1>$($uics_directory_output) Permissions Report</h1> <h5> Generated on $(Get-Date -UFormat "%Y-%m-%d @ %H-%M-%S")" | Out-File $($html_report)
+    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | ConvertTo-Html -Title "$($uics_directory_output) Permissions Report" -Head $($css) -Body "<h1>$($uics_directory_output) Permissions Report</h1> <h5> Generated on $(Get-Date -UFormat "%Y-%m-%d @ %H-%M-%S")" | Out-File $($html_report)
     if($?)
     {
         Write-Verbose "[*] $($uics_directory_output) permissions writing to .html finished successfully."
@@ -2050,7 +2123,7 @@ tr:nth-child(odd) { background: #b8d1f3; }
     }
 
     Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .txt file now."
-    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner -PassThru} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Format-Table -AutoSize -Wrap | Out-File $($txt_report)
+    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Format-Table -AutoSize -Wrap | Out-File $($txt_report)
     if($?)
     {
         Write-Verbose "[*] $($uics_directory_output) permissions writing to .txt finished successfully."
