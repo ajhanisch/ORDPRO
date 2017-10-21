@@ -535,9 +535,17 @@ function Move-OriginalToArchive()
                 Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Moved: ( $($total_files_moved.Length) / $($total_to_move_files) ). Not moved: ( $($total_files_not_moved.Length) / $($total_to_move_files) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
             }
 
-            Write-Verbose "[*] Writing $($files_moved_to_archive_csv) and $($files_not_moved_to_archive_csv) files now."
-            $total_files_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_moved_to_archive_csv)" -NoTypeInformation -Force
-            $total_files_not_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_not_moved_to_archive_csv)" -NoTypeInformation -Force
+            if($total_files_moved.Count -gt 0)
+            {
+                Write-Verbose "[*] Writing $($files_moved_to_archive_csv) file now."
+                $total_files_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_moved_to_archive_csv)" -NoTypeInformation -Force   
+            }
+
+            if($total_files_not_moved.Count -gt 0)
+            {
+                Write-Verbose "[*] Writing $($files_not_moved_to_archive_csv) file now."
+                $total_files_not_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_not_moved_to_archive_csv)" -NoTypeInformation -Force
+            }
         }
         else
         {
@@ -665,9 +673,17 @@ function Split-OrdersMain()
             Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Files parsed: ( $($count_files) / $($total_to_parse_orders_main_files) ). Orders split: ($($count_orders)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
         }   
 
-        Write-Verbose "[*] Writing $($orders_created_csv) and $($orders_not_created_csv) files now."
-        $orders_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT | Sort -Property ORDER_COUNT | Export-Csv "$($orders_created_csv)" -NoTypeInformation -Force
-        $orders_not_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT| Sort -Property ORDER_COUNT | Export-Csv "$($orders_not_created_csv)" -NoTypeInformation -Force
+        if($orders_created.Count -gt 0)
+        {
+            Write-Verbose "[*] Writing $($orders_created_csv) file now."
+            $orders_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT | Sort -Property ORDER_COUNT | Export-Csv "$($orders_created_csv)" -NoTypeInformation -Force
+        }
+
+        if($orders_not_created.Count -gt 0)
+        {
+            Write-Verbose "[*] Writing $($orders_not_created_csv) file now."
+            $orders_not_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT| Sort -Property ORDER_COUNT | Export-Csv "$($orders_not_created_csv)" -NoTypeInformation -Force
+        }
     }
     else
     {
@@ -790,9 +806,17 @@ function Split-OrdersCertificate()
             Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Files parsed: ( $($count_files) / $($total_to_parse_orders_cert_files) ). Orders split: ($($count_orders)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
         }   
 
-        Write-Verbose "[*] Writing $($orders_created_csv) and $($orders_not_created_csv) files now."
-        $orders_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT | Sort -Property ORDER_COUNT | Export-Csv "$($orders_created_csv)" -NoTypeInformation -Force
-        $orders_not_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT| Sort -Property ORDER_COUNT | Export-Csv "$($orders_not_created_csv)" -NoTypeInformation -Force
+        if($orders_created.Count -gt 0)
+        {
+            Write-Verbose "[*] Writing $($orders_created_csv) file now."
+            $orders_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT | Sort -Property ORDER_COUNT | Export-Csv "$($orders_created_csv)" -NoTypeInformation -Force
+        }
+
+        if($orders_not_created.Count -gt 0)
+        {
+            Write-Verbose "[*] Writing $($orders_not_created_csv) file now."
+            $orders_not_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT| Sort -Property ORDER_COUNT | Export-Csv "$($orders_not_created_csv)" -NoTypeInformation -Force
+        }
     }
     else
     {
@@ -1059,9 +1083,17 @@ function Edit-OrdersMain()
             Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Orders edited: ( $($orders_edited.Length) / $($total_to_edit_orders_main) ). Orders not edited: ( $($orders_not_edited.Length) / $($total_to_edit_orders_main) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
         }
 
-        Write-Verbose "[*] Writing $($orders_edited_csv) and $($orders_not_edited_csv) files now."
-        $orders_edited | Select FILE, ROUND, STATUS, REASON | Sort -Property FILE | Export-Csv "$($orders_edited_csv)" -NoTypeInformation -Force
-        $orders_not_edited | Select FILE, ROUND, STATUS, REASON | Sort -Property FILE | Export-Csv "$($orders_not_edited_csv)" -NoTypeInformation -Force
+        if($orders_edited.Count -gt 0)
+        {
+            Write-Verbose "[*] Writing $($orders_edited_csv) file now."
+            $orders_edited | Select FILE, ROUND, STATUS, REASON | Sort -Property FILE | Export-Csv "$($orders_edited_csv)" -NoTypeInformation -Force
+        }
+
+        if($orders_not_edited.Count -gt 0)
+        {
+            Write-Verbose "[*] Writing $($orders_not_edited_csv) file now."
+            $orders_not_edited | Select FILE, ROUND, STATUS, REASON | Sort -Property FILE | Export-Csv "$($orders_not_edited_csv)" -NoTypeInformation -Force
+        }
     }
     else
     {
@@ -1086,17 +1118,20 @@ function Edit-OrdersCertificate()
     {
         Write-Verbose "[#] Total to edit: $($total_to_edit_orders_cert)."
 
-        $total_edited_orders_cert = 0
-        $total_not_edited_orders_cert = 0
+        $orders_edited = @()
+        $orders_not_edited = @()
+
+        $orders_edited_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_edited_cert.csv"
+        $orders_not_edited_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_edited_cert.csv"
 
         foreach($file in (Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof'}))
         {
             Process-DevCommands -sw $($sw)
 
-           if(!((Get-Item "$($file)") -is [System.IO.DirectoryInfo]))
-            {
+            if(!((Get-Item "$($file)") -is [System.IO.DirectoryInfo]))
+            { 
                 Write-Verbose "[#] Editing $($file.Name) now."
-                
+                               
                 $out_file_name = "$($file.BaseName)_edited.cof"
 
                 $file_content = Get-Content "$($file)"
@@ -1124,8 +1159,15 @@ function Edit-OrdersCertificate()
 
                 if($?)
                 {
-                    $total_edited_orders_cert ++
-                    Write-Verbose "[*] $($file.Name) edited successfully."                    
+                    Write-Verbose "[*] $($file.Name) edited successfully."
+                    
+                    $hash = @{
+                        'FILE' = $($file)
+                        'STATUS' = 'SUCCESS'
+                    }
+
+                    $order_edited = New-Object -TypeName PSObject -Property $hash
+                    $orders_edited += $order_edited                 
 
                     if($($file.Name) -cnotcontains "*_edited.cof")
                     {
@@ -1145,9 +1187,15 @@ function Edit-OrdersCertificate()
                 }
                 else
                 {
-                    $total_not_edited_orders_cert ++
                     Write-Verbose "[!] $($file.Name) editing failed."
-                    throw "[!] $($file.Name) editing failed."
+
+                    $hash = @{
+                        'FILE' = $($file)
+                        'STATUS' = 'FAILED'
+                    }
+
+                    $order_edited = New-Object -TypeName PSObject -Property $hash
+                    $orders_not_edited += $order_edited   
                 }
             }
             else
@@ -1155,13 +1203,32 @@ function Edit-OrdersCertificate()
                 Write-Verbose "[#] $($file) is a directory. Skipping."
             }
 
-            Write-Verbose "[#] Edited: ( $($total_edited_orders_cert) / $($total_to_edit_orders_cert) ). Not edited: ( $($total_not_edited_orders_cert) / $($total_to_edit_orders_cert) )."
+            $activity = "Editing '*c.prt' files."
+            $status = "Editing $($file)."
+            $percent_complete = ($($orders_edited.Length)/$($total_to_edit_orders_cert)).ToString("P")
+            $estimated_time = (($($total_to_edit_orders_cert) - $($orders_edited.Length)) * 0.2 / 60)
+            $formatted_estimated_time = [math]::Round($estimated_time,2)
+            $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+            Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Orders edited: ( $($orders_edited.Length) / $($total_to_edit_orders_cert) ). Orders not edited: ( $($orders_not_edited.Length) / $($total_to_edit_orders_cert) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+        }
+
+        if($orders_edited.Count -gt 0)
+        {
+            Write-Verbose "[*] Writing $($orders_edited_csv) file now."
+            $orders_edited | Select FILE, STATUS | Sort -Property FILE | Export-Csv "$($orders_edited_csv)" -NoTypeInformation -Force
+        }
+
+        if($orders_not_edited.Count -gt 0)
+        {
+            Write-Verbose "[*] Writing $($orders_not_edited_csv) file now."
+            $orders_not_edited | Select FILE, STATUS | Sort -Property FILE | Export-Csv "$($orders_not_edited_csv)" -NoTypeInformation -Force
         }
     }
     else
     {
-        Write-Verbose "[!] Total to edit: $($total_to_edit_orders_cert). No .cof files in $($cof_directory_working). Make sure to split *c.prt files first. Use '$($script_name) -sc' first, then try again."
-        throw "[!] No .cof files in $($cof_directory_working). Make sure to split *c.prt files first. Use '$($script_name) -sc' first, then try again."
+        Write-Verbose "[!] Total to edit: $($total_to_edit_orders_cert). No .cof files in $($cof_directory_working). Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
+        throw "[!] Total to edit: $($total_to_edit_orders_cert). No .cof files in $($cof_directory_working). Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
     }
 }
 
@@ -1176,10 +1243,13 @@ function Combine-OrdersMain()
 	  
     $total_to_combine_orders_main = (Get-ChildItem -Path "$($mof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
 
+    $orders_combined_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_combined_cert.csv"
+
     if($($total_to_combine_orders_main) -gt '0')
     {
-        $orders_combined_orders_main = 0
-        $out_file = "$($mof_directory_working)\$($run_date)_combined_orders_m.txt"
+        $orders_combined = @()
+
+        $out_file = "$($log_directory_working)\$($run_date)\$($run_date)_combined_orders_main.txt"
 
         Write-Verbose "[#] Total to combine: $($total_to_combine_orders_main)."
         Write-Verbose "[#] Combining .mof files now."
@@ -1191,8 +1261,23 @@ function Combine-OrdersMain()
                 Out-File -FilePath $($out_file) -InputObject (Get-Content $_.FullName) -Append
                 if($?)
                 {
-                    $orders_combined_orders_main ++
-                    Write-Verbose "[#] Combined ( $($orders_combined_orders_main) / $($total_to_combine_orders_main) ) .mof files."
+                    $hash = @{
+                        'FILE' = $($_.FullName)
+                        'STATUS' = 'SUCCESS'
+                    }
+
+                    $order_combined = New-Object -TypeName PSObject -Property $hash
+                    $orders_combined += $order_combined
+
+                    $activity = "Combining '*m.prt' files."
+                    $status = "Combining $($_.FullName)."
+                    $percent_complete = ($($orders_combined.Length)/$($total_to_combine_orders_main)).ToString("P")
+                    $estimated_time = (($($total_to_combine_orders_main) - $($orders_combined.Length)) * 0.2 / 60)
+                    $formatted_estimated_time = [math]::Round($estimated_time,2)
+                    $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+                    Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Orders combined: ( $($orders_combined.Length) / $($total_to_combine_orders_main) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+                 
                 }
                 else
                 {
@@ -1201,7 +1286,11 @@ function Combine-OrdersMain()
                 }
             }
 
-        Write-Verbose "[*] Combining .mof files finished successfully. Check your results at $($out_file)"
+        if($orders_combined.Count -gt 0)
+        {
+            Write-Verbose "[*] Writing $($orders_combined_csv) file now."
+            $orders_combined | Select FILE, STATUS | Sort -Property FILE | Export-Csv "$($orders_combined_csv)" -NoTypeInformation -Force
+        }
     }
     else
     {
@@ -1220,10 +1309,13 @@ function Combine-OrdersCertificate()
 	  
     $total_to_combine_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }).Length
 
+    $orders_combined_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_combined_cert.csv"
+
     if($($total_to_combine_orders_cert) -gt '0')
     {
-        $orders_combined_orders_cert = 0
-        $out_file = "$($cof_directory_working)\$($run_date)_combined_orders_c.txt"
+        $orders_combined = @()
+
+        $out_file = "$($log_directory_working)\$($run_date)\$($run_date)_combined_orders_cert.txt"
 
         Write-Verbose "[#] Total to combine: $($total_to_combine_orders_cert)."
         Write-Verbose "[#] Combining .cof files now."
@@ -1235,8 +1327,23 @@ function Combine-OrdersCertificate()
                 Out-File -FilePath $($out_file) -InputObject (Get-Content $_.FullName) -Append
                 if($?)
                 {
-                    $orders_combined_orders_cert ++
-                    Write-Verbose "[#] Combined ( $($orders_combined_orders_cert) / $($total_to_combine_orders_cert) ) .cof files."
+                    $hash = @{
+                        'FILE' = $($_.FullName)
+                        'STATUS' = 'SUCCESS'
+                    }
+
+                    $order_combined = New-Object -TypeName PSObject -Property $hash
+                    $orders_combined += $order_combined
+
+                    $activity = "Combining '*c.prt' files."
+                    $status = "Combining $($_.FullName)."
+                    $percent_complete = ($($orders_combined.Length)/$($total_to_combine_orders_cert)).ToString("P")
+                    $estimated_time = (($($total_to_combine_orders_cert) - $($orders_combined.Length)) * 0.2 / 60)
+                    $formatted_estimated_time = [math]::Round($estimated_time,2)
+                    $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+                    Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Orders combined: ( $($orders_combined.Length) / $($total_to_combine_orders_cert) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+                 
                 }
                 else
                 {
@@ -1245,12 +1352,16 @@ function Combine-OrdersCertificate()
                 }
             }
 
-        Write-Verbose "[*] Combining .cof files finished successfully. Check your results at $($out_file)"
+        if($orders_combined.Count -gt 0)
+        {
+            Write-Verbose "[*] Writing $($orders_combined_csv) file now."
+            $orders_combined | Select FILE, STATUS | Sort -Property FILE | Export-Csv "$($orders_combined_csv)" -NoTypeInformation -Force
+        }
     }
     else
     {
-        Write-Verbose "[!] Total to combine: $($total_to_combine_orders_cert). No .cof files in $($cof_directory_working) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
-        throw "[!] No .cof files in $($cof_directory_working) to combine. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
+        Write-Verbose "[!] Total to combine: $($total_to_combine_orders_cert). No .cof files in $($cof_directory_working) to combine. Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
+        throw "[!] No .cof files in $($cof_directory_working) to combine. Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
     }
 }
 
@@ -2147,7 +2258,7 @@ function Parse-OrdersCertificate()
         $sw.start()
 
         $orders_created_orders_cert = @()
-        $orders_created_orders_cert_csv = "$($cof_directory_working)\$($run_date)\$($run_date)_orders_created_orders_cert.csv"
+        $orders_created_orders_cert_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_created_orders_cert.csv"
 
         $soldiers = @(Get-ChildItem -Path "$($uics_directory_output)" -Exclude "__PERMISSIONS" -Recurse -Include "*.txt" | % { Split-Path  -Path $_  -Parent })
         $name_ssn = @{}
