@@ -209,24 +209,55 @@ function Create-RequiredDirectories()
         [Parameter(mandatory = $true)] $directories
     )
 
-    foreach($directory in $directories)
+    $total_to_create_directories = $directories.Length
+
+    if($total_to_create_directories -gt 0)
     {
-        Process-DevCommands -sw $($sw)
+        Write-Verbose "Total to create: $($total_to_create_directories)."
+        
+        $total_directories_created = 0
+        $total_directories_not_created = 0
 
-        if(!(Test-Path $($directory)))
+        foreach($directory in $directories)
         {
-            Write-Verbose "[#] $($directory) not created. Creating now."
-            New-Item -ItemType Directory -Path $($directory) > $null
+            Process-DevCommands -sw $($sw)
 
-            if($?)
+            if(!(Test-Path $($directory)))
             {
-                Write-Verbose "[*] $($directory) created successfully."
+                Write-Verbose "[#] $($directory) not created. Creating now."
+                New-Item -ItemType Directory -Path $($directory) > $null
+
+                if($?)
+                {
+                    $total_directories_created ++
+                    Write-Verbose "[*] $($directory) created successfully."
+                }
+                else
+                {
+                    $total_directories_not_created ++
+                    Write-Verbose "[!] $($directory) creation failed. Check the error logs at $($error_path)."
+                }
             }
             else
             {
-                Write-Verbose "[!] $($directory) creation failed. Check the error logs at $($error_path)."
+                $total_directories_created ++
+                Write-Verbose "[*] $($directory) already created."
             }
+
+            $activity = "Creating required directories."
+            $status = "Created $($directory)."
+            $percent_complete = (($total_directories_created)/$($total_to_create_directories )).ToString("P")
+            $estimated_time = (($($total_to_create_directories) - ($total_directories_created)) * 0.2 / 60)
+            $formatted_estimated_time = [math]::Round($estimated_time,2)
+            $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+            Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Created: ( $($total_directories_created) / $($total_to_create_directories) ). Not created: ( $($total_directories_not_created) / $($total_to_create_directories) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
         }
+    }
+    else
+    {
+        Write-Verbose "[!] Total to create: $($total_to_create_directories). No directories to create. Make sure the directories array is populated with your desired directories to create."
+        throw "[!] Total to create: $($total_to_create_directories). No directories to create. Make sure the directories array is populated with your desired directories to create."
     }
 }
 
@@ -248,175 +279,275 @@ function Move-OriginalToArchive()
     $year_orders_archive_directory = "$($archive_directory_working)\$($year_suffix)_orders"
     $year_orders_registry_directory = "$($ordregisters_output)\$($year_suffix)_orders"
 
-    if(!(Test-Path $($year_orders_archive_directory)))
-    {
-        Write-Verbose "[#] $($year_orders_archive_directory) not created yet. Creating now."
-        New-Item -ItemType Directory -Path $($year_orders_archive_directory) -Force > $null
+    $total_to_move_files = @(Get-ChildItem -Path $($current_directory_working) | Where { ! $_.PSIsContainer } | Where { $_.Name -eq "*m.prt" -or $_.Name -eq "*c.prt" -or $_.Name -eq "*r.prt" -or $_.Name -eq "*r.reg*" -or $_.Extension -ne '.ps1' }).Count
 
-        if($?)
+    if($total_to_move_files -gt 0)
+    {
+        $total_files_moved = @()
+        $total_files_not_moved = @()
+
+        $files_moved_to_archive_csv = "$($log_directory_working)\$($run_date)\$($run_date)_files_moved_to_archive.csv"
+        $files_not_moved_to_archive_csv = "$($log_directory_working)\$($run_date)\$($run_date)_files_not_moved_to_archive.csv"
+
+        # Ensure that required directories are in place before trying to move.
+        if(!(Test-Path $($year_orders_archive_directory)))
         {
-            Write-Verbose "[*] $($year_orders_archive_directory) created successfully."
+            Write-Verbose "[#] $($year_orders_archive_directory) not created yet. Creating now."
+            New-Item -ItemType Directory -Path $($year_orders_archive_directory) -Force > $null
+
+            if($?)
+            {
+                Write-Verbose "[*] $($year_orders_archive_directory) created successfully."
+            }
+            else
+            {
+                Write-Verbose "[!] $($year_orders_archive_directory) failed to create."
+                throw "[!] $($year_orders_archive_directory) failed to create."
+            }
         }
         else
         {
-            Write-Verbose "[!] $($year_orders_archive_directory) failed to create."
-            throw "[!] $($year_orders_archive_directory) failed to create."
+            Write-Verbose "[*] $($year_orders_archive_directory) already created."
         }
-    }
-    else
-    {
-        Write-Verbose "[*] $($year_orders_archive_directory) already created."
-    }
 
-    if(!(Test-Path $($year_orders_registry_directory)))
-    {
-        Write-Verbose "[#] $($year_orders_registry_directory) not created yet. Creating now."
-        New-Item -ItemType Directory -Path $($year_orders_registry_directory) -Force > $null
-
-        if($?)
+        if(!(Test-Path $($year_orders_registry_directory)))
         {
-            Write-Verbose "[*] $($year_orders_registry_directory) created successfully."
+            Write-Verbose "[#] $($year_orders_registry_directory) not created yet. Creating now."
+            New-Item -ItemType Directory -Path $($year_orders_registry_directory) -Force > $null
+
+            if($?)
+            {
+                Write-Verbose "[*] $($year_orders_registry_directory) created successfully."
+            }
+            else
+            {
+                Write-Verbose "[!] $($year_orders_registry_directory) failed to create."
+                throw "[!] $($year_orders_registry_directory) failed to create."
+            }
         }
         else
         {
-            Write-Verbose "[!] $($year_orders_registry_directory) failed to create."
-            throw "[!] $($year_orders_registry_directory) failed to create."
+            Write-Verbose "[*] $($year_orders_registry_directory) already created."
         }
-    }
-    else
-    {
-        Write-Verbose "[*] $($year_orders_registry_directory) already created."
-    }
 
-    $files_moved_total = 0
-    $orders_file_m_prt_count = $($orders_file_m_prt).Count
+        # Move '*m.prt' files to archive folder.
+        $orders_file_m_prt_count = $($orders_file_m_prt).Count
 
-    if($($orders_file_m_prt_count) -gt 0)
-    {
-        $files_moved = 0
-
-        foreach($file in $orders_file_m_prt)
+        if($($orders_file_m_prt_count) -gt 0)
         {
-            Process-DevCommands -sw $($sw)
-
-            $files_moved ++
-            $files_moved_total ++
-
-            Write-Verbose "[#] Moving $($file.Name) to $($year_orders_archive_directory) ($($files_moved)/$($orders_file_m_prt_count)) now."
-            Move-Item -Path $($file) -Destination "$($year_orders_archive_directory)\$($file.Name)" -Force
-
-            if($?)
+            foreach($file in $orders_file_m_prt)
             {
-                Write-Verbose "[*] $($file) moved to $($year_orders_archive_directory) successfully."
-            }
-            else
-            {
-                Write-Verbose "[!] $($file) move to $($year_orders_archive_directory) failed."
-                throw "[!] $($file) move to $($year_orders_archive_directory) failed."
+                Process-DevCommands -sw $($sw)
+
+                Write-Verbose "[#] Moving $($file.Name) to $($year_orders_archive_directory) now."
+                Move-Item -Path $($file) -Destination "$($year_orders_archive_directory)\$($file.Name)" -Force
+
+                if($?)
+                {
+                    Write-Verbose "[*] $($file) moved to $($year_orders_archive_directory) successfully."
+                
+                    $hash = @{
+                        FILE = $($file)
+                        TYPE = '*m.prt'
+                        STATUS = 'SUCCESS'
+                    }
+
+	                $file_moved = New-Object -TypeName PSObject -Property $hash
+                    $total_files_moved += $file_moved
+                }
+                else
+                {
+                    Write-Verbose "[!] $($file) move to $($year_orders_archive_directory) failed."
+
+                    $hash = @{
+                        FILE = $($file)
+                        TYPE = '*m.prt'
+                        STATUS = 'FAILED'
+                    }
+
+	                $file_moved = New-Object -TypeName PSObject -Property $hash
+                    $total_files_not_moved += $file_moved
+                }
+
+                $activity = "Moving original '*m.prt' files to archive folder."
+                $status = "Moved $($file)."
+                $percent_complete = ($($total_files_moved.Length)/$($total_to_move_files)).ToString("P")
+                $estimated_time = (($($total_to_move_files) - $($total_files_moved.Length)) * 0.2 / 60)
+                $formatted_estimated_time = [math]::Round($estimated_time,2)
+                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Moved: ( $($total_files_moved.Length) / $($total_to_move_files) ). Not moved: ( $($total_files_not_moved.Length) / $($total_to_move_files) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
             }
         }
-    }
-    else
-    {
-        Write-Verbose "[!] $($orders_file_m_prt_count) '*m.prt' files to move."
-    }
-
-    $orders_file_c_prt_count = $($orders_file_c_prt).Count
-
-    if($($orders_file_c_prt_count) -gt 0)
-    {
-        $files_moved = 0
-
-        foreach($file in $orders_file_c_prt)
+        else
         {
-            Process-DevCommands -sw $($sw)
-
-            $files_moved ++
-            $files_moved_total ++
-
-            Write-Verbose "[#] Moving $($file.Name) to $($year_orders_archive_directory) ($($files_moved)/$($orders_file_c_prt_count)) now."
-            Move-Item -Path $($file) -Destination "$($year_orders_archive_directory)\$($file.Name)" -Force
-
-            if($?)
-            {
-                Write-Verbose "[*] $($file) moved to $($year_orders_archive_directory) successfully."
-            }
-            else
-            {
-                Write-Verbose "[!] $($file) move to $($year_orders_archive_directory) failed."
-                throw "[!] $($file) move to $($year_orders_archive_directory) failed."
-            }
+            Write-Verbose "[!] $($orders_file_m_prt_count) '*m.prt' files to move. No '*m.prt' files to move. Make sure to have the required '*m.prt' files in the current directory and try again."
         }
-    }
-    else
-    {
-        Write-Verbose "[!] $($orders_file_c_prt_count) '*c.prt' files to move."
-    }
 
-    $orders_file_r_prt_count = $($orders_file_r_prt).Count
+        # Move '*c.prt' files to archive folder.
+        $orders_file_c_prt_count = $($orders_file_c_prt).Count
 
-    if($($orders_file_r_prt_count) -gt 0)
-    {
-        $files_moved = 0
-
-        foreach($file in $orders_file_r_prt)
+        if($($orders_file_c_prt_count) -gt 0)
         {
-            Process-DevCommands -sw $($sw)
-
-            $files_moved ++
-            $files_moved_total ++
-
-            Write-Verbose "[#] Moving $($file.Name) to $($year_orders_registry_directory) ($($files_moved)/$($orders_file_r_prt_count)) now."
-            Move-Item -Path $($file) -Destination "$($year_orders_registry_directory)\$($file.Name)" -Force
-
-            if($?)
+            foreach($file in $orders_file_c_prt)
             {
-                Write-Verbose "[*] $($file) moved to $($year_orders_registry_directory) successfully."
-            }
-            else
-            {
-                Write-Verbose "[!] $($file) move to $($year_orders_registry_directory) failed."
-                throw "[!] $($file) move to $($year_orders_registry_directory) failed."
+                Process-DevCommands -sw $($sw)
+
+                Write-Verbose "[#] Moving $($file.Name) to $($year_orders_archive_directory) now."
+                Move-Item -Path $($file) -Destination "$($year_orders_archive_directory)\$($file.Name)" -Force
+
+                if($?)
+                {
+                    Write-Verbose "[*] $($file) moved to $($year_orders_archive_directory) successfully."
+                    $hash = @{
+                        FILE = $($file)
+                        TYPE = '*c.prt'
+                        STATUS = 'SUCCESS'
+                    }
+
+	                $file_moved = New-Object -TypeName PSObject -Property $hash
+                    $total_files_moved += $file_moved
+                }
+                else
+                {
+                    Write-Verbose "[!] $($file) move to $($year_orders_archive_directory) failed."
+                    $hash = @{
+                        FILE = $($file)
+                        TYPE = '*c.prt'
+                        STATUS = 'FAILED'
+                    }
+
+	                $file_moved = New-Object -TypeName PSObject -Property $hash
+                    $total_files_not_moved += $file_moved
+                }
+
+                $activity = "Moving original '*c.prt' files to archive folder."
+                $status = "Moved $($file)."
+                $percent_complete = ($($total_files_moved.Length)/$($total_to_move_files)).ToString("P")
+                $estimated_time = (($($total_to_move_files) - $($total_files_moved.Length)) * 0.2 / 60)
+                $formatted_estimated_time = [math]::Round($estimated_time,2)
+                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Moved: ( $($total_files_moved.Length) / $($total_to_move_files) ). Not moved: ( $($total_files_not_moved.Length) / $($total_to_move_files) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
             }
         }
-    }
-    else
-    {
-        Write-Verbose "[!] $($orders_file_r_prt_count) '*r.prt' files to move."
-    }
-
-    $orders_file_r_reg_count = $($orders_file_r_reg).Count
-
-    if($($orders_file_r_reg_count) -gt 0)
-    {
-        $files_moved = 0
-
-        foreach($file in $orders_file_r_reg)
+        else
         {
-            Process-DevCommands -sw $($sw)
-
-            $files_moved ++
-            $files_moved_total ++
-
-            Write-Verbose "[#] Moving $($file.Name) to $($year_orders_registry_directory) ($($files_moved)/$($orders_file_r_reg_count)) now."
-            Move-Item -Path $($file) -Destination "$($year_orders_registry_directory)\$($file.Name)" -Force
-
-            if($?)
-            {
-                Write-Verbose "[*] $($file) moved to $($year_orders_registry_directory) successfully."
-            }
-            else
-            {
-                Write-Verbose "[!] $($file) move to $($year_orders_registry_directory) failed."
-                throw "[!] $($file) move to $($year_orders_registry_directory) failed."
-            }
+            Write-Verbose "[!] $($orders_file_c_prt_count) '*c.prt' files to move. No '*c.prt' files to move. Make sure to have the required '*c.prt' files in the current directory and try again."
         }
 
-        Write-Verbose "[*] $($files_moved_total) files moved successfully."
+        # Move '*r.prt' files to archive folder.
+        $orders_file_r_prt_count = $($orders_file_r_prt).Count
+
+        if($($orders_file_r_prt_count) -gt 0)
+        {
+            foreach($file in $orders_file_r_prt)
+            {
+                Process-DevCommands -sw $($sw)
+
+                Write-Verbose "[#] Moving $($file.Name) to $($year_orders_registry_directory) now."
+                Move-Item -Path $($file) -Destination "$($year_orders_registry_directory)\$($file.Name)" -Force
+
+                if($?)
+                {
+                    Write-Verbose "[*] $($file) moved to $($year_orders_registry_directory) successfully."
+                    $hash = @{
+                        FILE = $($file)
+                        TYPE = '*p.prt'
+                        STATUS = 'SUCCESS'
+                    }
+
+	                $file_moved = New-Object -TypeName PSObject -Property $hash
+                    $total_files_moved += $file_moved
+                }
+                else
+                {
+                    Write-Verbose "[!] $($file) move to $($year_orders_registry_directory) failed."
+                    $hash = @{
+                        FILE = $($file)
+                        TYPE = '*r.prt'
+                        STATUS = 'FAILED'
+                    }
+
+	                $file_moved = New-Object -TypeName PSObject -Property $hash
+                    $total_files_not_moved += $file_moved
+                }
+            
+                $activity = "Moving original '*r.prt' files to archive folder."
+                $status = "Moved $($file)."
+                $percent_complete = ($($total_files_moved.Length)/$($total_to_move_files)).ToString("P")
+                $estimated_time = (($($total_to_move_files) - $($total_files_moved.Length)) * 0.2 / 60)
+                $formatted_estimated_time = [math]::Round($estimated_time,2)
+                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Moved: ( $($total_files_moved.Length) / $($total_to_move_files) ). Not moved: ( $($total_files__not_moved.Length) / $($total_to_move_files) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+            }
+        }
+        else
+        {
+            Write-Verbose "[!] $($orders_file_r_prt_count) '*r.prt' files to move. No '*r.prt' files to move. Make sure to have the required '*r.prt' files in the current directory and try again."
+        }
+
+        # Move '*r.reg*' files to archive folder.
+        $orders_file_r_reg_count = $($orders_file_r_reg).Count
+
+        if($($orders_file_r_reg_count) -gt 0)
+        {
+            foreach($file in $orders_file_r_reg)
+            {
+                Process-DevCommands -sw $($sw)
+
+                Write-Verbose "[#] Moving $($file.Name) to $($year_orders_registry_directory) now."
+                Move-Item -Path $($file) -Destination "$($year_orders_registry_directory)\$($file.Name)" -Force
+
+                if($?)
+                {
+                    Write-Verbose "[*] $($file) moved to $($year_orders_registry_directory) successfully."
+                    $hash = @{
+                        FILE = $($file)
+                        TYPE = '*r.reg*'
+                        STATUS = 'SUCCESS'
+                    }
+
+	                $file_moved = New-Object -TypeName PSObject -Property $hash
+                    $total_files_moved += $file_moved
+                }
+                else
+                {
+                    Write-Verbose "[!] $($file) move to $($year_orders_registry_directory) failed."
+                    $hash = @{
+                        FILE = $($file)
+                        TYPE = '*r.reg*'
+                        STATUS = 'FAILED'
+                    }
+
+	                $file_moved = New-Object -TypeName PSObject -Property $hash
+                    $total_files_moved += $file_moved
+                }
+            
+                $activity = "Moving original '*r.reg*' files to archive folder."
+                $status = "Moved $($file)."
+                $percent_complete = ($($total_files_moved.Length)/$($total_to_move_files )).ToString("P")
+                $estimated_time = (($($total_to_move_files) - $($total_files_moved.Length)) * 0.2 / 60)
+                $formatted_estimated_time = [math]::Round($estimated_time,2)
+                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Moved: ( $($total_files_moved.Length) / $($total_to_move_files) ). Not moved: ( $($total_files_not_moved.Length) / $($total_to_move_files) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+            }
+
+            Write-Verbose "[*] Writing $($files_moved_to_archive_csv) and $($files_not_moved_to_archive_csv) files now."
+            $total_files_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_moved_to_archive_csv)" -NoTypeInformation -Force
+            $total_files_not_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_not_moved_to_archive_csv)" -NoTypeInformation -Force
+        }
+        else
+        {
+            Write-Verbose "[!] $($orders_file_r_reg_count) '*r.reg*' files to move. No '*r.reg*' files to move. Make sure to have the required '*r.reg*' files in the current directory and try again."
+        }
     }
     else
     {
-        Write-Verbose "[!] $($orders_file_r_reg_count) '*r.reg' files to move."
+        Write-Verbose "[!] Total to move: $($total_to_move_files). No files to move. Make sure to have the required '*m.prt', '*c.prt', '*r.prt', '*r.reg' files in the current directory and try again."
+        throw "[!] Total to move: $($total_to_move_files). No files to move. Make sure to have the required '*m.prt', '*c.prt', '*r.prt', '*r.reg' files in the current directory and try again."
     }
 }
 
@@ -431,14 +562,20 @@ function Split-OrdersMain()
         [Parameter(mandatory = $true)] $regex_beginning_m_split_orders_main
     )
 	  
-    $total_to_parse_orders_main_files = $files_orders_m_prt.Length
+    $total_to_parse_orders_main_files = @($files_orders_m_prt).Count
+
+    $orders_created = @()
+    $orders_not_created = @()
+
+    $orders_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_created_main.csv"
+    $orders_not_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_created_main.csv"
+
+    $out_directory = $($mof_directory_working)
 
     if($total_to_parse_orders_main_files -gt '0')
     {
-        $count_files = 0
         $count_orders = 0
-
-        $out_directory = $($mof_directory_working)
+        $count_files = 0
 
         if(!(Test-Path $($out_directory)))
         {
@@ -460,9 +597,8 @@ function Split-OrdersMain()
         {
             $content = (Get-Content $($file) -ErrorAction SilentlyContinue | Out-String)
             $orders = [regex]::Match($content,'(?<=STATE OF SOUTH DAKOTA).+(?=The Adjutant General)',"singleline").Value -split "$($regex_beginning_m_split_orders_main)"
-            $count_files ++
 
-            Write-Verbose "[#] Parsing $($file) ( $($count_files)/$($total_to_parse_orders_main_files) ) now."
+            Write-Verbose "[#] Parsing $($file) now."
 
             foreach($order in $orders)
             {
@@ -481,22 +617,62 @@ function Split-OrdersMain()
                     if($?)
                     {
                         Write-Verbose "[*] $($out_file) file created successfully."
+
+                        $hash = @{
+                            'ORIGINAL_FILE' = $($file)
+                            'OUT_FILE' = $($out_file)
+                            'ORDER_COUNT' = $($count_orders)
+                        }
+
+	                    $order_created = New-Object -TypeName PSObject -Property $hash
+                        $orders_created += $order_created
+                        
                     }
                     else
                     {
                         Write-Verbose "[!] $($out_file) file creation failed."
-                        throw "[!] $($out_file) file creation failed."
+
+                        $hash = @{
+                            'ORIGINAL_FILE' = $($file)
+                            'OUT_FILE' = $($out_file)
+                            'ORDER_COUNT' = $($count_orders)
+                        }
+
+	                    $order_created = New-Object -TypeName PSObject -Property $hash
+                        $orders_not_created += $order_created
                     }
                 }
+
+                $activity = "Splitting '*m.prt' file into individual order files."
+                $status = "Parsing $($file)."
+                $percent_complete = ($($count_files)/$($total_to_parse_orders_main_files )).ToString("P")
+                $estimated_time = (($($total_to_parse_orders_main_files) - $($count_files)) * 0.2 / 60)
+                $formatted_estimated_time = [math]::Round($estimated_time,2)
+                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Files parsed: ( $($count_files) / $($total_to_parse_orders_main_files) ). Orders split: ($($count_orders)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
             }
 
-            Write-Verbose "[*] $($file) ( $($count_files) / $($total_to_parse_orders_main_files) ) parsed successfully."
+            $count_files ++
+
+            $activity = "Splitting '*m.prt' file into individual order files."
+            $status = "Parsing $($file)."
+            $percent_complete = ($($count_files)/$($total_to_parse_orders_main_files )).ToString("P")
+            $estimated_time = (($($total_to_parse_orders_main_files) - $($count_files)) * 0.2 / 60)
+            $formatted_estimated_time = [math]::Round($estimated_time,2)
+            $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+            Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Files parsed: ( $($count_files) / $($total_to_parse_orders_main_files) ). Orders split: ($($count_orders)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
         }   
+
+        Write-Verbose "[*] Writing $($orders_created_csv) and $($orders_not_created_csv) files now."
+        $orders_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT | Sort -Property ORDER_COUNT | Export-Csv "$($orders_created_csv)" -NoTypeInformation -Force
+        $orders_not_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT| Sort -Property ORDER_COUNT | Export-Csv "$($orders_not_created_csv)" -NoTypeInformation -Force
     }
     else
     {
-        Write-Verbose "[!] No *m.prt files in $($current_directory_working). Come back with proper input next time."
-        throw "[!] No *m.prt files in $($current_directory_working). Come back with proper input next time."
+        Write-Verbose "[!] $($current_directory_working) '*m.prt' files to split. No '*m.prt' files to split. Make sure to have the required '*m.prt' files in the current directory and try again."
+        throw "[!] $($current_directory_working) '*m.prt' files to split. No '*m.prt' files to split. Make sure to have the required '*m.prt' files in the current directory and try again."
     }
 }
 
@@ -511,14 +687,20 @@ function Split-OrdersCertificate()
         [Parameter(mandatory = $true)] $regex_end_cert
     )
 	  
-    $total_to_parse_orders_cert_files = ($($files_orders_c_prt)).Length
+    $total_to_parse_orders_cert_files = @($files_orders_c_prt).Count
+
+    $orders_created = @()
+    $orders_not_created = @()
+
+    $orders_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_created_cert.csv"
+    $orders_not_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_created_cert.csv"
+
+    $out_directory = $($cof_directory_working)
 
     if($total_to_parse_orders_cert_files -gt '0')
     {
-        $count_files = 0
         $count_orders = 0
-
-        $out_directory = "$($cof_directory_working)"
+        $count_files = 0
 
         if(!(Test-Path $($out_directory)))
         {
@@ -540,9 +722,8 @@ function Split-OrdersCertificate()
         {
             $content = (Get-Content $($file) -ErrorAction SilentlyContinue | Out-String)
             $orders = [regex]::Match($content,'(?<=FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=Automated NGB Form 102-10A  dtd  12 AUG 96)',"singleline").Value -split "$($regex_end_cert)"
-            $count_files ++
 
-            Write-Verbose "[#] Parsing $($file) ( $($count_files)/$($total_to_parse_orders_cert_files) ) now."
+            Write-Verbose "[#] Parsing $($file) now."
 
             foreach($order in $orders)
             {
@@ -561,22 +742,62 @@ function Split-OrdersCertificate()
                     if($?)
                     {
                         Write-Verbose "[*] $($out_file) file created successfully."
+
+                        $hash = @{
+                            'ORIGINAL_FILE' = $($file)
+                            'OUT_FILE' = $($out_file)
+                            'ORDER_COUNT' = $($count_orders)
+                        }
+
+	                    $order_created = New-Object -TypeName PSObject -Property $hash
+                        $orders_created += $order_created
+                        
                     }
                     else
                     {
                         Write-Verbose "[!] $($out_file) file creation failed."
-                        throw "[!] $($out_file) file creation failed." 
+
+                        $hash = @{
+                            'ORIGINAL_FILE' = $($file)
+                            'OUT_FILE' = $($out_file)
+                            'ORDER_COUNT' = $($count_orders)
+                        }
+
+	                    $order_created = New-Object -TypeName PSObject -Property $hash
+                        $orders_not_created += $order_created
                     }
                 }
+
+                $activity = "Splitting '*c.prt' file into individual order files."
+                $status = "Parsing $($file)."
+                $percent_complete = ($($count_files)/$($total_to_parse_orders_cert_files )).ToString("P")
+                $estimated_time = (($($total_to_parse_orders_cert_files) - $($count_files)) * 0.2 / 60)
+                $formatted_estimated_time = [math]::Round($estimated_time,2)
+                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Files parsed: ( $($count_files) / $($total_to_parse_orders_cert_files) ). Orders split: ($($count_orders)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
             }
 
-            Write-Verbose "[*] $($file) ( $($count_files) / $($total_to_parse_orders_cert_files) ) parsed successfully."
-        }
+            $count_files ++
+
+            $activity = "Splitting '*c.prt' file into individual order files."
+            $status = "Parsing $($file)."
+            $percent_complete = ($($count_files)/$($total_to_parse_orders_cert_files )).ToString("P")
+            $estimated_time = (($($total_to_parse_orders_cert_files) - $($count_files)) * 0.2 / 60)
+            $formatted_estimated_time = [math]::Round($estimated_time,2)
+            $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+            Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Files parsed: ( $($count_files) / $($total_to_parse_orders_cert_files) ). Orders split: ($($count_orders)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+        }   
+
+        Write-Verbose "[*] Writing $($orders_created_csv) and $($orders_not_created_csv) files now."
+        $orders_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT | Sort -Property ORDER_COUNT | Export-Csv "$($orders_created_csv)" -NoTypeInformation -Force
+        $orders_not_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT| Sort -Property ORDER_COUNT | Export-Csv "$($orders_not_created_csv)" -NoTypeInformation -Force
     }
     else
     {
-        Write-Verbose "[!] No *c.prt files in $($current_directory_working). Come back with proper input next time."
-        throw "[!] No *c.prt files in $($current_directory_working). Come back with proper input next time."
+        Write-Verbose "[!] $($current_directory_working) '*c.prt' files to split. No '*c.prt' files to split. Make sure to have the required '*c.prt' files in the current directory and try again."
+        throw "[!] $($current_directory_working) '*c.prt' files to split. No '*c.prt' files to split. Make sure to have the required '*c.prt' files in the current directory and try again."
     }
 }
 
@@ -596,14 +817,22 @@ function Edit-OrdersMain()
     {
         Write-Verbose "[#] Total to edit: $($total_to_edit_orders_main)."
 
-        $total_edited_orders_main = 0
-        $total_not_edited_orders_main = 0
+        $orders_edited = @()
+        $orders_not_edited = @()
+
+        $orders_edited_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_edited_main.csv"
+        $orders_not_edited_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_edited_main.csv"
 
         foreach($file in (Get-ChildItem -Path "$($mof_directory_working)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof'}))
         {
             Process-DevCommands -sw $($sw)
 
-           if(!((Get-Item "$($file)") -is [System.IO.DirectoryInfo]))
+            $following_request = "Following Request is" # Disapproved || Approved
+            $following_request_exists = (Select-String -Path "$($file)" -Pattern $($following_request) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+            $following_order = "Following order is." # Amendment order. $($format.Length) -eq 4
+            $following_order_exists = (Select-String -Path "$($file)" -Pattern $($following_order) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+
+            if(!((Get-Item "$($file)") -is [System.IO.DirectoryInfo]))
             {
                 Write-Verbose "[#] Editing $($file.Name) in round 1 now."
                 
@@ -654,9 +883,22 @@ function Edit-OrdersMain()
                 }
                 else
                 {
-                    $total_not_edited_orders_main ++
                     Write-Verbose "[!] $($file.Name) editing in round 1 failed."
-                    throw "[!] $($file.Name) editing in round 1 failed."
+
+                    if(-not ($($orders_not_edited) -contains $file))
+                    {
+                        Write-Verbose "[!] $($file.Name) editing in round 1 failed."
+
+                        $hash = @{
+                            'FILE' = $($file)
+                            'ROUND' = '2'
+                            'STATUS' = 'FAILED'
+                            'REASON' = "[!] $($file.Name) editing in round 1 failed."
+                        }
+
+                        $order_edited = New-Object -TypeName PSObject -Property $hash
+                        $orders_not_edited += $order_edited
+                    }
                 }
 
                 # Remove bad spacing between 'Marital status / Number of dependents' and 'Type of incentive pay'
@@ -669,9 +911,7 @@ function Edit-OrdersMain()
                 }
                 catch [System.Management.Automation.RuntimeException] # Catch the error that happens when this variable is empty due to being wrong format file to edit.
                 {
-                    $total_not_edited_orders_main ++
                     Write-Verbose "[!] $($out_file_name) is not the proper format to be edited in round 2. Not editing this file at this time as it is not needed."
-                    continue
                 }
                 $good_output_1 = $bad_output_1.Replace("`n`r`n`r`n","")
                 $string_1 = $string_1 -replace $bad_output_1,$good_output_1
@@ -683,8 +923,20 @@ function Edit-OrdersMain()
                 }
                 else
                 {
-                    $total_not_edited_orders_main ++
-                    Write-Verbose "[!] $($out_file_name) edit in round 2 failed."
+                    if(-not ($($orders_not_edited) -contains $file))
+                    {
+                        Write-Verbose "[!] $($out_file_name) edit in round 2 failed."
+
+                        $hash = @{
+                            'FILE' = $($file)
+                            'ROUND' = '2'
+                            'STATUS' = 'FAILED'
+                            'REASON' = "[!] $($out_file_name) edit in round 2 failed."
+                        }
+
+                        $order_edited = New-Object -TypeName PSObject -Property $hash
+                        $orders_not_edited += $order_edited
+                    }
                 }
 
                 # Remove bad spacing between 'APC DJMS-RC' and 'APC STANFINS Pay'
@@ -697,9 +949,7 @@ function Edit-OrdersMain()
                 }
                 catch [System.Management.Automation.RuntimeException] # Catch the error that happens when this variable is empty due to being wrong format file to edit.
                 {
-                    $total_not_edited_orders_main ++
                     Write-Verbose "[!] $($out_file_name) is not the proper format to be edited in round 3. Not editing this file at this time as it is not needed."
-                    continue
                 }
                 $good_output_2 = $bad_output_2.Replace("`n`r`n","")
                 $string_2 = $string_2 -replace $bad_output_2,$good_output_2
@@ -707,13 +957,91 @@ function Edit-OrdersMain()
                 Set-Content -Path "$($mof_directory_working)\$($out_file_name)" $string_2
                 if($?)
                 {
-                    $total_edited_orders_main ++
                     Write-Verbose "[*] $($out_file_name) edited in round 3 successfully."
                 }
                 else
                 {
-                    $total_not_edited_orders_main ++
-                    Write-Verbose "[!] $($out_file_name) edit in round 3 failed."
+                    if(-not ($($orders_not_edited) -contains $file))
+                    {
+                        Write-Verbose "[!] $($out_file_name) edit in round 3 failed."
+
+                        $hash = @{
+                            'FILE' = $($file)
+                            'ROUND' = '3'
+                            'STATUS' = 'FAILED'
+                            'REASON' = "[!] $($out_file_name) edit in round 3 failed."
+                        }
+
+                        $order_edited = New-Object -TypeName PSObject -Property $hash
+                        $orders_not_edited += $order_edited
+                    }
+                }
+
+                # Remove bad spacing between 'Auth:' and 'HOR:'
+                Write-Verbose "[#] Editing $($out_file_name) in round 4 now."
+                $pattern_3 = '(?smi)Auth:\s\w{1,}(.*?)HOR:\s\w{1,}'
+                $string_3 = Get-Content "$($mof_directory_working)\$($out_file_name)" -Raw
+                try
+                {
+                    $bad_output_3 = [regex]::Matches($string_3,$pattern_3).Groups[0].Value
+                }
+                catch [System.Management.Automation.RuntimeException] # Catch the error that happens when this variable is empty due to being wrong format file to edit.
+                {
+                    Write-Verbose "[!] $($out_file_name) is not the proper format to be edited in round 4. Not editing this file at this time as it is not needed."
+
+                    if(-not ($($orders_not_edited) -contains $file))
+                    {
+                        Write-Verbose "[!] $($out_file_name) is not the proper format to be edited in round 4. Not editing this file at this time as it is not needed."
+
+                        $hash = @{
+                            'FILE' = $($file)
+                            'ROUND' = '4'
+                            'STATUS' = 'FAILED'
+                            'REASON' = "[!] $($out_file_name) is not the proper format to be edited in round 4. Not editing this file at this time as it is not needed."
+                        }
+
+                        $order_edited = New-Object -TypeName PSObject -Property $hash
+                        $orders_not_edited += $order_edited
+                    }
+                }
+                $good_output_3 = @($bad_output_3 -split '\r\n\r\n\r\n')
+                $good_output_3 = $good_output_3[0] + "`n" + $good_output_3[1]
+                $string_3 = $string_3.Replace($bad_output_3,$good_output_3)
+
+                Set-Content -Path "$($mof_directory_working)\$($out_file_name)" $string_3
+                if($?)
+                {
+                    if( -not ($($orders_edited) -contains $file) -and -not ($($following_request_exists)) -and -not ($($following_order_exists)) )
+                    {
+                        Write-Verbose "[*] $($out_file_name) edited in round 4 successfully."
+
+                        $hash = @{
+                            'FILE' = $($file)
+                            'ROUND' = '4'
+                            'STATUS' = 'SUCCESS'
+                            'REASON' = ''
+                        }
+
+                        $order_edited = New-Object -TypeName PSObject -Property $hash
+                        $orders_edited += $order_edited
+                    }
+                }
+                else
+                {
+                    if(-not ($($orders_not_edited) -contains $file))
+                    {
+                        Write-Verbose "[!] $($out_file_name) edit in round 4 failed."
+
+                        $hash = @{
+                            'FILE' = $($file)
+                            'ROUND' = '4'
+                            'STATUS' = 'FAILED'
+                            'REASON' = "[!] $($out_file_name) edit in round 4 failed."
+                        }
+
+                        $order_edited = New-Object -TypeName PSObject -Property $hash
+                        $orders_not_edited += $order_edited
+                    }
                 }
             }
             else
@@ -721,8 +1049,19 @@ function Edit-OrdersMain()
                 Write-Verbose "[#] $($file) is a directory. Skipping."
             }
 
-            Write-Verbose "[#] Edited: ( $($total_edited_orders_main) / $($total_to_edit_orders_main) ). Not edited ( $($total_not_edited_orders_main) / $($total_to_edit_orders_main) )"
+            $activity = "Editing '*m.prt' files."
+            $status = "Editing $($file)."
+            $percent_complete = ($($orders_edited.Length)/$($total_to_edit_orders_main)).ToString("P")
+            $estimated_time = (($($total_to_edit_orders_main) - $($orders_edited.Length)) * 0.2 / 60)
+            $formatted_estimated_time = [math]::Round($estimated_time,2)
+            $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+
+            Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Orders edited: ( $($orders_edited.Length) / $($total_to_edit_orders_main) ). Orders not edited: ( $($orders_not_edited.Length) / $($total_to_edit_orders_main) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
         }
+
+        Write-Verbose "[*] Writing $($orders_edited_csv) and $($orders_not_edited_csv) files now."
+        $orders_edited | Select FILE, ROUND, STATUS, REASON | Sort -Property FILE | Export-Csv "$($orders_edited_csv)" -NoTypeInformation -Force
+        $orders_not_edited | Select FILE, ROUND, STATUS, REASON | Sort -Property FILE | Export-Csv "$($orders_not_edited_csv)" -NoTypeInformation -Force
     }
     else
     {
@@ -740,11 +1079,13 @@ function Edit-OrdersCertificate()
         [Parameter(mandatory = $true)] $regex_end_cert,
         [Parameter(mandatory = $true)] $cof_directory_original_splits_working
     )
+
     $total_to_edit_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
 
     if($($total_to_edit_orders_cert) -gt '0')
     {
         Write-Verbose "[#] Total to edit: $($total_to_edit_orders_cert)."
+
         $total_edited_orders_cert = 0
         $total_not_edited_orders_cert = 0
 
@@ -752,29 +1093,44 @@ function Edit-OrdersCertificate()
         {
             Process-DevCommands -sw $($sw)
 
-            $file_content = (Get-Content "$($file)" -Raw -ErrorAction SilentlyContinue)
-            $file_content = $file_content -replace "`f",''
-            $file_content = $file_content -replace "                          FOR OFFICIAL USE ONLY - PRIVACY ACT",''
-            $file_content = $file_content -replace "                          FOR OFFICIAL USE ONLY - PRIVACY ACT",''
-
-            if(!((Get-Item "$($file)") -is [System.IO.DirectoryInfo]))
+           if(!((Get-Item "$($file)") -is [System.IO.DirectoryInfo]))
             {
+                Write-Verbose "[#] Editing $($file.Name) now."
+                
                 $out_file_name = "$($file.BaseName)_edited.cof"
 
-                Write-Verbose "[#] Editing $($file.Name) now."
+                $file_content = Get-Content "$($file)"
 
+                # Remove known bad strings first.
+                foreach($pattern in $known_bad_strings)
+                {
+                    Write-Verbose "[#] Removing known bad string $($pattern) from $($file)."
+                    $file_content = ( $file_content | Select-String -Pattern $($pattern) -NotMatch )
+
+                    if($?)
+                    {
+                        Write-Verbose "[*] Removed known bad string $($pattern) from $($file) succesfully."
+                    }
+                    else
+                    {
+                        Write-Verbose "[!] Removing known bad string $($pattern) from $($file) failed."
+                        throw "[!] Removing known bad string $($pattern) from $($file) failed."
+                    }
+                }
+
+                # Write to edited file.
                 Set-Content -Path "$($cof_directory_working)\$($out_file_name)" $file_content
-				Add-Content -Path "$($cof_directory_working)\$($out_file_name)" -Value $($regex_end_cert)
-            
+                Add-Content -Path "$($cof_directory_working)\$($out_file_name)" -Value $($regex_end_cert)
+
                 if($?)
                 {
-                    Write-Verbose "[*] $($file.Name) edited successfully."                    
                     $total_edited_orders_cert ++
+                    Write-Verbose "[*] $($file.Name) edited successfully."                    
 
                     if($($file.Name) -cnotcontains "*_edited.cof")
                     {
                         Write-Verbose "[#] Moving $($file.Name) to $($cof_directory_original_splits_working)"
-                        Move-Item -Path "$($file)" -Destination "$($cof_directory_original_splits_working)\$($file.Name)" -Force
+                        Move-Item "$($file)" -Destination "$($cof_directory_original_splits_working)\$($file.Name)" -Force
 
                         if($?)
                         {
@@ -789,7 +1145,7 @@ function Edit-OrdersCertificate()
                 }
                 else
                 {
-                    $total_not_edited_orders_cert 
+                    $total_not_edited_orders_cert ++
                     Write-Verbose "[!] $($file.Name) editing failed."
                     throw "[!] $($file.Name) editing failed."
                 }
@@ -917,8 +1273,8 @@ function Parse-OrdersMain()
         $orders_created_orders_main = @()
         $orders_not_created_orders_main = @()
         
-        $orders_created_orders_main_csv = "$($mof_directory_working)\$($run_date)_orders_created_orders_main.csv"
-        $orders_not_created_orders_main_csv = "$($mof_directory_working)\$($run_date)_orders_not_created_orders_main.csv"
+        $orders_created_orders_main_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_created_orders_main.csv"
+        $orders_not_created_orders_main_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_created_orders_main.csv"
 
         Write-Verbose "[#] Total to create: $($total_to_create_orders_main)."
 
@@ -1791,7 +2147,7 @@ function Parse-OrdersCertificate()
         $sw.start()
 
         $orders_created_orders_cert = @()
-        $orders_created_orders_cert_csv = "$($cof_directory_working)\$($run_date)_orders_created_orders_cert.csv"
+        $orders_created_orders_cert_csv = "$($cof_directory_working)\$($run_date)\$($run_date)_orders_created_orders_cert.csv"
 
         $soldiers = @(Get-ChildItem -Path "$($uics_directory_output)" -Exclude "__PERMISSIONS" -Recurse -Include "*.txt" | % { Split-Path  -Path $_  -Parent })
         $name_ssn = @{}
@@ -3169,6 +3525,7 @@ if($($ParametersPassed) -gt '0')
 
             "split_cert"
             { 
+
 	            try
 	            {
 		            Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor Cyan
@@ -3186,6 +3543,7 @@ if($($ParametersPassed) -gt '0')
                     Stop-Transcript 
 		            exit 1 
 	            }
+
             }
 
             "edit_main" 
