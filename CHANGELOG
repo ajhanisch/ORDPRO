@@ -8,6 +8,8 @@ CHANGES
 - modified main order editing to not find and replace entire header, instead only insert the missing line at the top
 - modified main order editing to replace 3 areas of blank lines created from editing
 - added edited and not edited to main order editing
+- activity active progess output to every function
+- added actioned and not actioned to csv output to every function to log folder
 ------------------------------------
 VERSION: 1.0
 DATE: 10/19/2017
