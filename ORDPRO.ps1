@@ -43,14 +43,6 @@
    Script parses all '*m.prt' and '*c.prt' files in current directory. Script archives '*r.prt' and '*r.reg*' files to '.\ARCHIVE\YY_orders' directory with YY being the last 2 digits of the current year.
 .OUTPUTS
    Script automatically creates required output directory structure, splits, edits, and moves orders to their appropiate location in the created structure. Output includes detailed results of success and failure of each parameter to .csv files in the '.\LOGS\<RUN_DATE>' directory to be viewed during troubleshooting and future reporting purposes as well as detailed logging of all parameter use when any parameter is combined with the 'Verbose' paramter. 
-.NOTES
-   NAME: ORDPRO.ps1 (Order Processing)
-   AUTHOR: Ashton J. Hanisch
-   TROUBLESHOOTING: All script output will be in '.\TMP\LOGS' directory. Should you have any problems script use, email ajhanisch@gmail.com with a description of your issue and the log file that is associated with your problem.
-   SUPPORT: For any issues, comments, concerns, ideas, contributions, etc. to any part of this script or its functionality, reach out to me at ajhanisch@gmail.com. I am open to any thoughts you may have to make this work better for you or things you think are broken or need to be different. I will ensure to give credit where credit is due for any contributions or improvement ideas that are shared.
-   UPDATES: To check out any updates or revisions made to this script check out the updated CHANGELOG file with this script or check out the gitlab link below for the most recent information.
-.LINK
-   https://gitlab.com/ajhanisch/ORDPRO
 .EXAMPLE
     .\ORDPRO.ps1 -all -output_dir "\\path\to\your\desired\output\directory" -Verbose
 
@@ -65,6 +57,14 @@
     View detailed output of script processing information during script use. 
     
     Adding the 'Verbose' parameter to any command passed to the script will result in very detailed verbosity of script actions and processing. This is desired when wanting to learn more of script functionality as well as for logging purposes.
+.NOTES
+   NAME: ORDPRO.ps1 (Order Processing)
+   AUTHOR: Ashton J. Hanisch
+   TROUBLESHOOTING: All script output will be in '.\TMP\LOGS' directory. Should you have any problems script use, email ajhanisch@gmail.com with a description of your issue and the log file that is associated with your problem.
+   SUPPORT: For any issues, comments, concerns, ideas, contributions, etc. to any part of this script or its functionality, reach out to me at ajhanisch@gmail.com. I am open to any thoughts you may have to make this work better for you or things you think are broken or need to be different. I will ensure to give credit where credit is due for any contributions or improvement ideas that are shared.
+   UPDATES: To check out any updates or revisions made to this script check out the updated CHANGELOG file with this script or check out the gitlab link below for the most recent information.
+.LINK
+   https://gitlab.com/ajhanisch/ORDPRO
 #>
 
 <#
@@ -210,7 +210,7 @@ function Create-RequiredDirectories()
     {
         Write-Verbose "Total to create: $($($directories.Count))."
         
-        #cls
+        cls
 
         $total_directories_created = 0
         $total_directories_not_created = 0
@@ -243,7 +243,7 @@ function Create-RequiredDirectories()
             }
 
             $status = "Creating required directories."
-            $activity = "Creating directory $total_directories_created of $($directories.Count)"
+            $activity = "Creating directory $total_directories_created of $($directories.Count)."
             $percent_complete = (($total_directories_created/$($directories.Count)) * 100)
             $current_operation = "$("{0:N2}" -f ((($total_directories_created/$($directories.Count)) * 100),2))% Complete"
             $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
@@ -253,7 +253,7 @@ function Create-RequiredDirectories()
 
             if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
             {
-                Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation)."
             }
             
             elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
@@ -301,7 +301,7 @@ function Move-OriginalToArchive()
     
 	if($total_files_to_move -gt 0)
 	{
-        #cls
+        cls
 
         $total_files_moved = @()
         $total_files_not_moved = @()
@@ -421,7 +421,7 @@ function Move-OriginalToArchive()
 
                     if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
                     {
-                        Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                        Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation)."
                     }
             
                     elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
@@ -461,7 +461,7 @@ function Split-OrdersMain()
         [Parameter(mandatory = $true)] $regex_beginning_m_split_orders_main
     )
 	
-    #cls
+    cls
 
     $total_to_parse_orders_main_files = @($files_orders_m_prt).Count
 
@@ -557,7 +557,7 @@ function Split-OrdersMain()
 
             if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
             {
-                Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation)."
             }
             
             elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
@@ -595,7 +595,7 @@ function Split-OrdersCertificate()
         [Parameter(mandatory = $true)] $regex_end_cert
     )
 	
-    #cls
+    cls
 
     $total_to_parse_orders_cert_files = @($files_orders_c_prt).Count
 
@@ -692,7 +692,7 @@ function Split-OrdersCertificate()
 
             if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
             {
-                Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation)."
             }
             
             elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
@@ -729,7 +729,7 @@ function Edit-OrdersMain()
         [Parameter(mandatory = $true)] $mof_directory_original_splits_working
     )
 	 
-    #cls 
+    cls 
 
     $StartTime = Get-Date
 
@@ -980,7 +980,7 @@ function Edit-OrdersMain()
 
             if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
             {
-                Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation)."
             }
             
             elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
@@ -1017,7 +1017,7 @@ function Edit-OrdersCertificate()
         [Parameter(mandatory = $true)] $cof_directory_original_splits_working
     )
 
-    #cls
+    cls
 
     $StartTime = Get-Date
 
@@ -1121,7 +1121,7 @@ function Edit-OrdersCertificate()
 
             if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
             {
-                Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation)."
             }
             
             elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
@@ -1157,7 +1157,7 @@ function Combine-OrdersMain()
         [Parameter(mandatory = $true)] $exclude_directories
     )
 	 
-    #cls 
+    cls 
 
     $StartTime = Get-Date
  
@@ -1200,14 +1200,13 @@ function Combine-OrdersMain()
 
                     if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
                     {
-                        Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                        Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation)."
                     }
             
-                    elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+                    elseif((Get-PSCallStack)[1].Arguments -like '*Verbose=False*')
                     {
                         Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
-                    }
-                 
+                    }                 
                 }
                 else
                 {
@@ -1235,7 +1234,7 @@ function Combine-OrdersCertificate()
         [Parameter(mandatory = $true)] $run_date
     )
 	  
-    #cls
+    cls
 
     $StartTime = Get-Date
 
@@ -1278,14 +1277,13 @@ function Combine-OrdersCertificate()
 
                     if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
                     {
-                        Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                        Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation)."
                     }
             
-                    elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+                    elseif((Get-PSCallStack)[1].Arguments -like '*Verbose=False*')
                     {
                         Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
-                    }
-                 
+                    }                    
                 }
                 else
                 {
@@ -1317,7 +1315,7 @@ function Parse-OrdersMain()
         [Parameter(mandatory = $true)] $regex_pertaining_to_parse_orders_main
     )
 	  
-    #cls
+    cls
 
     $StartTime = Get-Date
 
@@ -2164,7 +2162,7 @@ function Parse-OrdersMain()
 
                 if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
                 {
-                    Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                    Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation)."
                 }
             
                 elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
@@ -2198,7 +2196,7 @@ function Parse-OrdersCertificate()
         $sw = New-Object System.Diagnostics.Stopwatch
         $sw.start()
 
-        #cls
+        cls
 
         $StartTime = Get-Date
 
@@ -2369,7 +2367,7 @@ function Parse-OrdersCertificate()
 
                 if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
                 {
-                    Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                    Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation)."
                 }
             
                 elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
