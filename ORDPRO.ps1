@@ -2,72 +2,83 @@
 .Synopsis
    Script to help automate order management.
 .DESCRIPTION
-   Script designed to assist in management and processing of orders given in the format of a single file containing numerous orders. The script begins by splitting each order into individual orders. It determines what folders need to be created based on UIC and SSN information parsed from each order. It creates folders for each UIC and SSN and places orders in appropriate SSN folder. During this time it also creates historical backups of each order parsed for back and redundancy. After this it will assign permissions to appropiate groups on each UIC and SSN folder. When it has finished this and cleaned up, it will notify appropriate users and groups of newly published orders.
+   Script designed to assist in management and processing of orders. Given input of any number of '*m.prt' and '*c.prt' files in the same directory as the script, it begins by splitting each order within the pared '*m.prt' and '*c.prt' files into individual order files. These files contain numerous known bad strings and spacing at this point. From there the script will edit each file to remove the known bad strings and spacing. After splitting and editing, the script will begin capturing the desired information from each order file in order to create the directory structure desired. During the data capturing phase, it will use the data captured to create the directory structure and move the split and edited orders to their appropiate locations in the structure. During this time it will also assign permissions to the structure as needed. Once all splitting, editing, data capturing, structure creation, order moving, and permissions assignment has happened it will create archival backups of the original '*m.prt' and '*c.prt' files in '.\ARCHIVE\YY_orders' directory where YY represents the last two digits of the current year.
 .PARAMETER help
    Help page. Alias: 'h'. This parameter tells the script you want to learn more about it. It will display this page after running the command 'Get-Help .\ORDPRO.ps1 -Full' for you.
 .PARAMETER version
    Version information. Alias: 'v'. This parameter tells the script you want to check its version number.
 .PARAMETER output_dir
-   Version information. Alias: 'o'. This parameter tells the script where you want the output to go. Give it the full UNC path to the folder you want output to land and it will do the rest.
+   Version information. Alias: 'o'. This parameter tells the script where you want the output to go. Give it the full UNC path to the directory you want output to land and it will do the rest.
 .PARAMETER dir_create
-   Directory creation. Alias: 'd'. This parameter tells the script to create the required directories for the script to run. Directories created are ".\MASTER-HISTORY\{EDITED}{NONEDITED}" ".\UICS" ".\TMP\{___LOGS}{__MOF}{__COF}".
+   Directory creation. Alias: 'd'. This parameter tells the script to create the required directories for the script to process in working directory and output to land given the 'o' parameter.
 .PARAMETER backups
-   Backup original order files. Alias: 'b'. This parameter tells the script to create backups of all files in current directory. Backups all files with ".prt" extension in current directory to ".\MASTER-HISTORY\NONEDITED" directory.
+   Backup original order files. Alias: 'b'. This parameter tells the script to create backups of all files in current directory to the archive directory.
 .PARAMETER split_main
-   Split main order files with "*m.prt" name. Alias: 'sm'. This parameter tells the script to split the main "*m.prt" file into individual orders. Individual order files are split to ".\TMP\__MOF\{run_date}_{n}.mof" files for editing.
+   Split main order files with '*m.prt' name. Alias: 'sm'. This parameter tells the script to split the main '*m.prt' file into individual unedited order files.
 .PARAMETER split_cert
-   Split certificate order files with "*c.prt" name. Alias: 'sc'. This parameter tells the script to split the main "*c.prt" file into individual certificate orders. Individual certificate orders files are split to ".\TMP\__COF\{run_date}_{n}.cof" files for editing.
+   Split certificate order files with '*c.prt' name. Alias: 'sc'. This parameter tells the script to split the main '*c.prt' file into individual unedited certificate order files.
 .PARAMETER edit_main
-   Edit main order files. Alias: 'em'. This parameter tells the script to edit the individual ".\TMP\__MOF\{run_date}_{n}.mof" files to be ready to be combined.
+   Edit main order files. Alias: 'em'. This parameter tells the script to edit the split files created from use of the 'sm' parameter. Editing includes removing known bad strings and spacing resulting from the splitting of the original '*m.prt' file.
 .PARAMETER edit_cert
-   Edit certificate order files. Alias: 'ec'. This parameter tells the script to edit the individual ".\TMP\__COF\{run_date}_{n}.cof" files to be ready to be combined.
+   Edit certificate order files. Alias: 'ec'. This parameter tells the script to edit the split files created from use of the 'sc' parameter. Editing includes removing known bad strings and spacing resulting from the splitting of the original '*c.prt' file.
 .PARAMETER combine_main
-   Combine main order files. Alias: 'cm'. This parameter tells the script to combine the edited main order files into a single document to be used at a later date.
+   Combine main order files. Alias: 'cm'. This parameter tells the script to combine the split and edited edited main order files into a single document to be used at a later date.
 .PARAMETER combine_cert
-   Combine certificate order files. Alias: 'cc'. This parameter tells the script to combine the edited certificate order files into a single document to be used at a later date.
+   Combine certificate order files. Alias: 'cc'. This parameter tells the script to combine the split and edited certificate order files into a single document to be used at a later date.
 .PARAMETER magic_main
-   Magic work on main orders. TAlias: 'mm'. his parameter tells the script to parse the split main order files, create directory structure based on parsed data, and put orders in appropriate ".\UICS\UIC\SSN" folders.
+   Magic work on main orders. Alias: 'mm'. This parameter tells the script to parse the split and edited main order files, create directory structure based on parsed data, and put orders in appropriate directories.
 .PARAMETER magic_cert
-   Magic work on certificate orders. Alias: 'mc'. This parameter tells the script to parse the split certificate order files, create directory structure based on parsed data, and put orders in appropriate ".\UICS\UIC\SSN" folders. If you are not using the 'all' parameter, make sure to run 'magic_main' or 'mm' before this parameter.
+   Magic work on certificate orders. Alias: 'mc'. This parameter tells the script to parse the split and edited certificate order files, create directory structure based on parsed data, and put orders in appropriate directories. If you are not using the 'all' parameter, make sure to run 'magic_main' or 'mm' before this parameter.
 .PARAMETER clean_main
-   Cleanup main order files. Alias: 'xm'. This parameter tells the script to cleanup the ".\TMP\__MOF" directory of all "\TMP\__MOF\{run_date}_{n}.mof" files.
+   Cleanup main order files. Alias: 'xm'. This parameter tells the script to cleanup the '.\TMP\MOF' directory of all files and directories.
 .PARAMETER clean_cert
-   Cleanup certificate order files. Alias: 'xc'. This parameter tells the script to cleanup the ".\TMP" directory of all "\TMP\__COF\{run_date}_{n}.cof" files.
+   Cleanup certificate order files. Alias: 'xc'. This parameter tells the script to cleanup the '.\TMP\COF' directory of all files and directories.
 .PARAMETER clean_uics
-   Cleanup UICS folder. Alias: 'xu'. This parameter tells the script to cleanup the ".\UICS" directory of all UIC folders. This parameter is NOT used when 'all' is used. This is typically only for development and administrative use.
+   Cleanup UICS directory. Alias: 'xu'. This parameter tells the script to cleanup the output UICS directory of all UICS directories. This parameter is NOT used when 'all' is used. This is typically only for development and administrative use. The 'o' parameter is required for use with the parameter as it cleans up the UICS directory in the output directory.
 .PARAMETER permissions
-   Get permissions of ".\UICS" folder contents. Alias: 'p'. This parameter tells the script to recursively get the permissions of each file and folder in the UICS directory. Output includes a .csv file, .html report, and a .txt file.
+   Get permissions of the output UICS directory recursively. Alias: 'p'. This parameter tells the script to recursively get the permissions of each file and directory in the UICS directory. Output includes a .csv file, .html report, and a .txt file.
 .PARAMETER all
    All parameters. Alias: 'a'. This parameter tells the script to run all required parameters needed to be successful. Most common parameter to those new to using this script.
 .INPUTS
-   Script parses all "*m.prt" and "*c.prt" files in current directory.
+   Script parses all '*m.prt' and '*c.prt' files in current directory. Script archives '*r.prt' and '*r.reg*' files to '.\ARCHIVE\YY_orders' directory with YY being the last 2 digits of the current year.
 .OUTPUTS
-   Script creates directory structure and invididual order files within each ".\UIC\SSN" folder.
+   Script automatically creates required output directory structure, splits, edits, and moves orders to their appropiate location in the created structure. Output includes detailed results of success and failure of each parameter to .csv files in the '.\LOGS\<RUN_DATE>' directory to be viewed during troubleshooting and future reporting purposes as well as detailed logging of all parameter use when any parameter is combined with the 'Verbose' paramter. 
 .NOTES
-   NAME: ORDPRO.ps1 (Order Processing Automation)
-
+   NAME: ORDPRO.ps1 (Order Processing)
    AUTHOR: Ashton J. Hanisch
-
-   TROUBLESHOOTING: All script output will be in ".\TMP\___LOGS" folder. Should you have any problems script use, email ajhanisch@gmail.com with a description of your issue and the log file that is associated with your problem.
-
+   TROUBLESHOOTING: All script output will be in '.\TMP\LOGS' directory. Should you have any problems script use, email ajhanisch@gmail.com with a description of your issue and the log file that is associated with your problem.
    SUPPORT: For any issues, comments, concerns, ideas, contributions, etc. to any part of this script or its functionality, reach out to me at ajhanisch@gmail.com. I am open to any thoughts you may have to make this work better for you or things you think are broken or need to be different. I will ensure to give credit where credit is due for any contributions or improvement ideas that are shared.
+   UPDATES: To check out any updates or revisions made to this script check out the updated CHANGELOG file with this script or check out the gitlab link below for the most recent information.
+.LINK
+   https://gitlab.com/ajhanisch/ORDPRO
+.EXAMPLE
+    .\ORDPRO.ps1 -dir_create -split_main -edit_main -magic_main -split_cert -edit_cert -magic_cert -backups -output_dir "\\path\to\your\desired\output\directory" -Verbose
 
-   UPDATES: To check out any updates or revisions made to this script check out the updated CHANGELOG file with this script.
-   
-   WISHLIST: 
-            Warren Hofmann  - * - [x] Handle *c.prt files
-                            - * - [] Assign permissions to UIC groups as needed
+    Most commonly used command for normal use. The order in which you define the parameters does not matter, however, this example provides the steps in the needed order for scipt success.
+    
+    This will create required directories (-d -o "\\path\to\your\desired\output\directory"), split the '*m.prt' files into individual files from the original file (-split_main), edit the '*m.prt' files (-edit_main), parse '*m.prt' files and create output directory structure and move orders to appropriate locations (-magic_main), split the '*c.prt' files into individual files from the original file (-split_cert), edit the '*c.prt' files (-edit_cert), parse '*c.prt' files and move orders to appropriate locations (-magic_cert), and perform archival backup of original files (-backups), and set the output location to "\\path\to\your\desired\output\directory" (-o) while showing detailed script verbosity (-Verbose).
 
-            Ryan Mattfield  - (10/5/2017)  [] Email group(s)/UIC(s) with required access UNC links to new orders published in their persepective folder
-                            - (10/5/2017)  [] Shortcuts to SSN's rather than duplicating data in G1 master folder
-                            - (10/6/2017)  [] Web page serving root directory structure to access orders
+    Short version of this command would be .\ORDPRO.ps1 -d -sm -em -mm -sc -ec -mc -b -o "\\path\to\your\desired\output\directory" -Verbose
 
-            Joshua Schaefer - (10/4/2017)  [] Reformat all orders processed and combine into single file to upload to iperms more easily
-
-            Ashton Hanisch  - (10/6/2017)  [x] Progress bar with estimated time. Similar to YASP progress bar notification information.
-                            - (10/6/2017)  [] Output summary results of orders parsed.
-                            - (10/10/2017) [] Handle all formats not currently handled.
-                            - (10/11/2017) [] Have orders follow soldier as they move UIC's
+    ---------------------------
+    Steps in order for success:
+    ---------------------------
+    1. Create required directories (Requires 'o' parameter included)
+    2. Split the main order files
+    3. Edit the main order files
+    4. Work magic on main order files
+    5. Split the certificate order files
+    6. Edit the certificate order files
+    7. Work magic on certificate order files (Work magic on main files before working magic on cert files.)
+    8. (optional) backup original files (Requires 'o' parameter included)
+    9. Define output directory
+    ---------------------------
+.EXAMPLE
+    .\ORDPRO.ps1 -Verbose
+    
+    View detailed output of script processing information during script use. 
+    
+    Adding the 'Verbose' parameter to any command passed to the script will result in very detailed verbosity of script actions and processing. This is desired when wanting to learn more of script functionality as well as for logging purposes.
 #>
 
 <#
