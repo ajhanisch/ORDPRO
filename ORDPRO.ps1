@@ -224,6 +224,8 @@ function Create-RequiredDirectories()
     {
         Write-Verbose "Total to create: $($($directories.Count))."
         
+        cls
+
         $total_directories_created = 0
         $total_directories_not_created = 0
         $StartTime = Get-Date
@@ -260,8 +262,18 @@ function Create-RequiredDirectories()
             $current_operation = "$("{0:N2}" -f ((($total_directories_created/$($directories.Count)) * 100),2))% Complete"
             $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
             $seconds_remaining = ($seconds_elapsed / ($total_directories_created / $directories.Count)) - $seconds_elapsed
+            $ts =  [timespan]::fromseconds($seconds_remaining)
+            $ts = $ts.ToString("hh\:mm\:ss")
 
-            Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+            if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+            {
+                Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+            }
+            
+            elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+            {
+                Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+            }
         }
     }
     else
@@ -304,6 +316,8 @@ function Move-OriginalToArchive()
     
 	if($total_files_to_move -gt 0)
 	{
+        cls
+
         $total_files_moved = @()
         $total_files_not_moved = @()
 
@@ -356,6 +370,7 @@ function Move-OriginalToArchive()
                                 FILE = $($value)
                                 TYPE = $($name)
                                 STATUS = 'SUCCESS'
+                                DESTINATION = $($year_orders_archive_directory)
                             }
 
 	                        $file_moved = New-Object -TypeName PSObject -Property $hash
@@ -369,6 +384,7 @@ function Move-OriginalToArchive()
                                 FILE = $($value)
                                 TYPE = $($name)
                                 STATUS = 'FAILED'
+                                DESTINATION = $($year_orders_archive_directory)
                             }
 
 	                        $file_moved = New-Object -TypeName PSObject -Property $hash
@@ -388,6 +404,7 @@ function Move-OriginalToArchive()
                                 FILE = $($value)
                                 TYPE = $($name)
                                 STATUS = 'SUCCESS'
+                                DESTINATION = $($year_orders_registry_directory)
                             }
 
 	                        $file_moved = New-Object -TypeName PSObject -Property $hash
@@ -401,6 +418,7 @@ function Move-OriginalToArchive()
                                 FILE = $($value)
                                 TYPE = $($name)
                                 STATUS = 'FAILED'
+                                DESTINATION = $($year_orders_registry_directory)
                             }
 
 	                        $file_moved = New-Object -TypeName PSObject -Property $hash
@@ -414,8 +432,18 @@ function Move-OriginalToArchive()
                     $current_operation = "$("{0:N2}" -f (((($total_files_moved.Count)/$($total_files_to_move)) * 100),2))% Complete"
                     $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
                     $seconds_remaining = ($seconds_elapsed / ($total_files_moved.Count / $total_files_to_move)) - $seconds_elapsed
+                    $ts =  [timespan]::fromseconds($seconds_remaining)
+                    $ts = $ts.ToString("hh\:mm\:ss")
 
-                    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining) 
+                    if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+                    {
+                        Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                    }
+            
+                    elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+                    {
+                        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                    }
                 }
             }
 		}
@@ -423,13 +451,13 @@ function Move-OriginalToArchive()
         if($total_files_moved.Count -gt 0)
         {
             Write-Verbose "[*] Writing $($files_moved_to_archive_csv) file now."
-            $total_files_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_moved_to_archive_csv)" -NoTypeInformation -Force
+            $total_files_moved | Select FILE, TYPE, STATUS, DESTINATION | Sort -Property STATUS | Export-Csv "$($files_moved_to_archive_csv)" -NoTypeInformation -Force
         }
 
         if($total_files_not_moved.Count -gt 0)
         {
             Write-Verbose "[*] Writing $($files_not_moved_to_archive_csv) file now."
-            $total_files_not_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_not_moved_to_archive_csv)" -NoTypeInformation -Force
+            $total_files_not_moved | Select FILE, TYPE, STATUS, DESTINATION | Sort -Property STATUS | Export-Csv "$($files_not_moved_to_archive_csv)" -NoTypeInformation -Force
         }
 	}
     else
@@ -449,7 +477,9 @@ function Split-OrdersMain()
         [Parameter(mandatory = $true)] $files_orders_m_prt,
         [Parameter(mandatory = $true)] $regex_beginning_m_split_orders_main
     )
-	  
+	
+    cls
+
     $total_to_parse_orders_main_files = @($files_orders_m_prt).Count
 
     $orders_created = @()
@@ -535,13 +565,23 @@ function Split-OrdersMain()
 	        }
 	
 	        $status = "Splitting '*m.prt' files."
-	        $activity = "Processing file $count_files of $($files_orders_m_prt.Count)"
+	        $activity = "Processing file $count_files of $($files_orders_m_prt.Count)."
 	        $percent_complete = (($count_files/$($files_orders_m_prt.Count)) * 100)
 	        $current_operation = "$("{0:N2}" -f ((($count_files/$($files_orders_m_prt.Count)) * 100),2))% Complete"
 	        $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
 	        $seconds_remaining = ($seconds_elapsed / ($count_files / $files_orders_m_prt.Count)) - $seconds_elapsed
+            $ts =  [timespan]::fromseconds($seconds_remaining)
+            $ts = $ts.ToString("hh\:mm\:ss")
 
-	        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+            if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+            {
+                Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+            }
+            
+            elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+            {
+                Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+            }
         }
 
         if($orders_created.Count -gt 0)
@@ -573,7 +613,9 @@ function Split-OrdersCertificate()
         [Parameter(mandatory = $true)] $files_orders_c_prt,
         [Parameter(mandatory = $true)] $regex_end_cert
     )
-	  
+	
+    cls
+
     $total_to_parse_orders_cert_files = @($files_orders_c_prt).Count
 
     $orders_created = @()
@@ -660,13 +702,23 @@ function Split-OrdersCertificate()
 	        }
 
 	        $status = "Splitting '*c.prt' files."
-	        $activity = "Processing file $count_files of $($files_orders_c_prt.Count)"
+	        $activity = "Processing file $count_files of $($files_orders_c_prt.Count)."
 	        $percent_complete = (($count_files/$($files_orders_c_prt.Count)) * 100)
 	        $current_operation = "$("{0:N2}" -f ((($count_files/$($files_orders_c_prt.Count)) * 100),2))% Complete"
 	        $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
 	        $seconds_remaining = ($seconds_elapsed / ($count_files / $files_orders_c_prt.Count)) - $seconds_elapsed
+            $ts =  [timespan]::fromseconds($seconds_remaining)
+            $ts = $ts.ToString("hh\:mm\:ss")
 
-	        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+            if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+            {
+                Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+            }
+            
+            elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+            {
+                Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+            }
         }  
 
         if($orders_created.Count -gt 0)
@@ -697,7 +749,11 @@ function Edit-OrdersMain()
         [Parameter(mandatory = $true)] $regex_old_fouo_3_edit_orders_main,
         [Parameter(mandatory = $true)] $mof_directory_original_splits_working
     )
-	  
+	 
+    cls 
+
+    $StartTime = Get-Date
+
     $total_to_edit_orders_main = (Get-ChildItem -Path "$($mof_directory_working)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
 
     if($($total_to_edit_orders_main) -gt '0')
@@ -731,12 +787,12 @@ function Edit-OrdersMain()
                 # Remove known bad strings first.
                 foreach($pattern in $known_bad_strings)
                 {
-                    Write-Verbose "[#] Removing known bad string $($pattern) from $($file)."
+                    #Write-Verbose "[#] Removing known bad string $($pattern) from $($file)."
                     $file_content = ( $file_content | Select-String -Pattern $($pattern) -NotMatch )
 
                     if($?)
                     {
-                        Write-Verbose "[*] Removed known bad string $($pattern) from $($file) succesfully."
+                        #Write-Verbose "[*] Removed known bad string $($pattern) from $($file) succesfully."
                     }
                     else
                     {
@@ -750,16 +806,16 @@ function Edit-OrdersMain()
 
                 if($?)
                 {
-                    Write-Verbose "[*] $($file.Name) edited in round 1 successfully."                    
+                    #Write-Verbose "[*] $($file.Name) edited in round 1 successfully."                    
 
                     if($($file.Name) -cnotcontains "*_edited.mof")
                     {
-                        Write-Verbose "[#] Moving $($file.Name) to $($mof_directory_original_splits_working)"
+                        #Write-Verbose "[#] Moving $($file.Name) to $($mof_directory_original_splits_working)"
                         Move-Item "$($file)" -Destination "$($mof_directory_original_splits_working)\$($file.Name)" -Force
 
                         if($?)
                         {
-                            Write-Verbose "[*] $($file) moved to $($mof_directory_original_splits_working) successfully."
+                            #Write-Verbose "[*] $($file) moved to $($mof_directory_original_splits_working) successfully."
                         }
                         else
                         {
@@ -806,7 +862,7 @@ function Edit-OrdersMain()
                 Set-Content -Path "$($mof_directory_working)\$($out_file_name)" $string_1
                 if($?)
                 {
-                    Write-Verbose "[*] $($out_file_name) edited in round 2 successfully."
+                    #Write-Verbose "[*] $($out_file_name) edited in round 2 successfully."
                 }
                 else
                 {
@@ -844,7 +900,7 @@ function Edit-OrdersMain()
                 Set-Content -Path "$($mof_directory_working)\$($out_file_name)" $string_2
                 if($?)
                 {
-                    Write-Verbose "[*] $($out_file_name) edited in round 3 successfully."
+                    #Write-Verbose "[*] $($out_file_name) edited in round 3 successfully."
                 }
                 else
                 {
@@ -900,7 +956,7 @@ function Edit-OrdersMain()
                 {
                     if( -not ($($orders_edited) -contains $file) -and -not ($($following_request_exists)) -and -not ($($following_order_exists)) )
                     {
-                        Write-Verbose "[*] $($out_file_name) edited in round 4 successfully."
+                        #Write-Verbose "[*] $($out_file_name) edited in round 4 successfully."
 
                         $hash = @{
                             'FILE' = $($file)
@@ -933,17 +989,27 @@ function Edit-OrdersMain()
             }
             else
             {
-                Write-Verbose "[#] $($file) is a directory. Skipping."
+                #Write-Verbose "[#] $($file) is a directory. Skipping."
             }
 
-            $activity = "Editing '*m.prt' files."
-            $status = "Editing $($file)."
-            $percent_complete = ($($orders_edited.Length)/$($total_to_edit_orders_main)).ToString("P")
-            $estimated_time = (($($total_to_edit_orders_main) - $($orders_edited.Length)) * 0.2 / 60)
-            $formatted_estimated_time = [math]::Round($estimated_time,2)
-            $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+	        $status = "Editing '*m.prt' files."
+	        $activity = "Processing file $($orders_edited.Count) of $($total_to_edit_orders_main). $($orders_not_edited.Count) of $($total_to_edit_orders_main) not edited."
+	        $percent_complete = (($($orders_edited.Count)/$($total_to_edit_orders_main)) * 100)
+	        $current_operation = "$("{0:N2}" -f ((($($orders_edited.Count)/$($total_to_edit_orders_main)) * 100),2))% Complete"
+	        $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
+	        $seconds_remaining = ($seconds_elapsed / ($($orders_edited.Count) / $total_to_edit_orders_main)) - $seconds_elapsed
+            $ts =  [timespan]::fromseconds($seconds_remaining)
+            $ts = $ts.ToString("hh\:mm\:ss")
 
-            Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Orders edited: ( $($orders_edited.Length) / $($total_to_edit_orders_main) ). Orders not edited: ( $($orders_not_edited.Length) / $($total_to_edit_orders_main) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+            if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+            {
+                Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+            }
+            
+            elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+            {
+                Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+            }
         }
 
         if($orders_edited.Count -gt 0)
@@ -974,6 +1040,10 @@ function Edit-OrdersCertificate()
         [Parameter(mandatory = $true)] $regex_end_cert,
         [Parameter(mandatory = $true)] $cof_directory_original_splits_working
     )
+
+    cls
+
+    $StartTime = Get-Date
 
     $total_to_edit_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
 
@@ -1066,14 +1136,24 @@ function Edit-OrdersCertificate()
                 Write-Verbose "[#] $($file) is a directory. Skipping."
             }
 
-            $activity = "Editing '*c.prt' files."
-            $status = "Editing $($file)."
-            $percent_complete = ($($orders_edited.Length)/$($total_to_edit_orders_cert)).ToString("P")
-            $estimated_time = (($($total_to_edit_orders_cert) - $($orders_edited.Length)) * 0.2 / 60)
-            $formatted_estimated_time = [math]::Round($estimated_time,2)
-            $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+	        $status = "Editing '*c.prt' files."
+	        $activity = "Processing file $($orders_edited.Count) of $($total_to_edit_orders_cert). $($orders_not_edited.Count) of $($total_to_edit_orders_cert) not edited."
+	        $percent_complete = (($($orders_edited.Count)/$($total_to_edit_orders_cert)) * 100)
+	        $current_operation = "$("{0:N2}" -f ((($($orders_edited.Count)/$($total_to_edit_orders_cert)) * 100),2))% Complete"
+	        $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
+	        $seconds_remaining = ($seconds_elapsed / ($($orders_edited.Count) / $total_to_edit_orders_cert)) - $seconds_elapsed
+            $ts =  [timespan]::fromseconds($seconds_remaining)
+            $ts = $ts.ToString("hh\:mm\:ss")
 
-            Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Orders edited: ( $($orders_edited.Length) / $($total_to_edit_orders_cert) ). Orders not edited: ( $($orders_not_edited.Length) / $($total_to_edit_orders_cert) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+            if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+            {
+                Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+            }
+            
+            elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+            {
+                Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+            }
         }
 
         if($orders_edited.Count -gt 0)
@@ -1103,7 +1183,11 @@ function Combine-OrdersMain()
         [Parameter(mandatory = $true)] $run_date,
         [Parameter(mandatory = $true)] $exclude_directories
     )
-	  
+	 
+    cls 
+
+    $StartTime = Get-Date
+ 
     $total_to_combine_orders_main = (Get-ChildItem -Path "$($mof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
 
     $orders_combined_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_combined_cert.csv"
@@ -1132,14 +1216,24 @@ function Combine-OrdersMain()
                     $order_combined = New-Object -TypeName PSObject -Property $hash
                     $orders_combined += $order_combined
 
-                    $activity = "Combining '*m.prt' files."
-                    $status = "Combining $($_.FullName)."
-                    $percent_complete = ($($orders_combined.Length)/$($total_to_combine_orders_main)).ToString("P")
-                    $estimated_time = (($($total_to_combine_orders_main) - $($orders_combined.Length)) * 0.2 / 60)
-                    $formatted_estimated_time = [math]::Round($estimated_time,2)
-                    $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+	                $status = "Combining '*m.prt' files."
+	                $activity = "Processing file $($orders_combined.Count) of $($total_to_combine_orders_main)."
+	                $percent_complete = (($($orders_combined.Count)/$($total_to_combine_orders_main)) * 100)
+	                $current_operation = "$("{0:N2}" -f ((($($orders_combined.Count)/$($total_to_combine_orders_main)) * 100),2))% Complete"
+	                $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
+	                $seconds_remaining = ($seconds_elapsed / ($($orders_combined.Count) / $total_to_combine_orders_main)) - $seconds_elapsed
+                    $ts =  [timespan]::fromseconds($seconds_remaining)
+                    $ts = $ts.ToString("hh\:mm\:ss")
 
-                    Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Orders combined: ( $($orders_combined.Length) / $($total_to_combine_orders_main) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+                    if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+                    {
+                        Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                    }
+            
+                    elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+                    {
+                        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                    }
                  
                 }
                 else
@@ -1170,6 +1264,10 @@ function Combine-OrdersCertificate()
         [Parameter(mandatory = $true)] $run_date
     )
 	  
+    cls
+
+    $StartTime = Get-Date
+
     $total_to_combine_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }).Length
 
     $orders_combined_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_combined_cert.csv"
@@ -1198,14 +1296,24 @@ function Combine-OrdersCertificate()
                     $order_combined = New-Object -TypeName PSObject -Property $hash
                     $orders_combined += $order_combined
 
-                    $activity = "Combining '*c.prt' files."
-                    $status = "Combining $($_.FullName)."
-                    $percent_complete = ($($orders_combined.Length)/$($total_to_combine_orders_cert)).ToString("P")
-                    $estimated_time = (($($total_to_combine_orders_cert) - $($orders_combined.Length)) * 0.2 / 60)
-                    $formatted_estimated_time = [math]::Round($estimated_time,2)
-                    $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+	                $status = "Combining '*c.prt' files."
+	                $activity = "Processing file $($orders_combined.Count) of $($total_to_combine_orders_cert)."
+	                $percent_complete = (($($orders_combined.Count)/$($total_to_combine_orders_cert)) * 100)
+	                $current_operation = "$("{0:N2}" -f ((($($orders_combined.Count)/$($total_to_combine_orders_cert)) * 100),2))% Complete"
+	                $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
+	                $seconds_remaining = ($seconds_elapsed / ($($orders_combined.Count) / $total_to_combine_orders_cert)) - $seconds_elapsed
+                    $ts =  [timespan]::fromseconds($seconds_remaining)
+                    $ts = $ts.ToString("hh\:mm\:ss")
 
-                    Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Orders combined: ( $($orders_combined.Length) / $($total_to_combine_orders_cert) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+                    if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+                    {
+                        Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                    }
+            
+                    elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+                    {
+                        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                    }
                  
                 }
                 else
@@ -1240,6 +1348,10 @@ function Parse-OrdersMain()
         [Parameter(mandatory = $true)] $regex_pertaining_to_parse_orders_main
     )
 	  
+    cls
+
+    $StartTime = Get-Date
+
     $total_to_create_orders_main = (Get-ChildItem -Path $($mof_directory_working) | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
 
     if($($total_to_create_orders_main) -gt '0')
@@ -2084,14 +2196,24 @@ function Parse-OrdersMain()
                     continue
                 }
 
-                $activity = "Working magic on .mof files."
-                $status = "Processed $($uic_soldier_order_file_name)."
-                $percent_complete = (( $orders_created_orders_main.Length)/$($total_to_create_orders_main )).ToString("P")
-                $estimated_time = (($($total_to_create_orders_main) - ($orders_created_orders_main.Length)) * 0.2 / 60)
-                $formatted_estimated_time = [math]::Round($estimated_time,2)
-                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+	            $status = "Working magic on '*m.prt' files."
+	            $activity = "Processing file $($orders_created_orders_main.Count) of $($total_to_create_orders_main). $($orders_not_created_orders_main.Count) of $($total_to_create_orders_main) not created."
+	            $percent_complete = (($($orders_created_orders_main.Count)/$($total_to_create_orders_main)) * 100)
+	            $current_operation = "$("{0:N2}" -f ((($($orders_created_orders_main.Count)/$($total_to_create_orders_main)) * 100),2))% Complete"
+	            $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
+	            $seconds_remaining = ($seconds_elapsed / ($($orders_created_orders_main.Count) / $total_to_create_orders_main)) - $seconds_elapsed
+                $ts =  [timespan]::fromseconds($seconds_remaining)
+                $ts = $ts.ToString("hh\:mm\:ss")
 
-                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Created: ($($orders_created_orders_main.Length) / $($total_to_create_orders_main)). Not created ($($orders_not_created_orders_main.Length) / $($total_to_create_orders_main)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+                if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+                {
+                    Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                }
+            
+                elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+                {
+                    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                }
             }
 
             Write-Verbose "[*] Writing $($orders_created_orders_main_csv) file now."
@@ -2119,6 +2241,10 @@ function Parse-OrdersCertificate()
     {
         $sw = New-Object System.Diagnostics.Stopwatch
         $sw.start()
+
+        cls
+
+        $StartTime = Get-Date
 
         $orders_created_orders_cert = @()
         $orders_created_orders_cert_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_created_orders_cert.csv"
@@ -2278,14 +2404,24 @@ function Parse-OrdersCertificate()
 	                }
                 }
 
-                $activity = "Working magic on .cof files"
-                $status = "Processed $($uic_soldier_order_file_name)."
-                $percent_complete = (( $orders_created_orders_cert.Length)/$($total_to_create_orders_cert )).ToString("P")
-                $estimated_time = (($($total_to_create_orders_cert) - ($orders_created_orders_cert.Length)) * 0.2 / 60)
-                $formatted_estimated_time = [math]::Round($estimated_time,2)
-                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+	            $status = "Working magic on '*c.prt' files."
+	            $activity = "Processing file $($orders_created_orders_cert.Count) of $($total_to_create_orders_cert). $($orders_not_created_orders_cert.Count) of $($total_to_create_orders_cert) not created."
+	            $percent_complete = (($($orders_created_orders_cert.Count)/$($total_to_create_orders_cert)) * 100)
+	            $current_operation = "$("{0:N2}" -f ((($($orders_created_orders_cert.Count)/$($total_to_create_orders_cert)) * 100),2))% Complete"
+	            $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
+	            $seconds_remaining = ($seconds_elapsed / ($($orders_created_orders_cert.Count) / $total_to_create_orders_cert)) - $seconds_elapsed
+                $ts =  [timespan]::fromseconds($seconds_remaining)
+                $ts = $ts.ToString("hh\:mm\:ss")
 
-                Write-Verbose "[#]Activity: ($($activity)). Status: ($($status)). Created: ($($orders_created_orders_cert.Length) / $($total_to_create_orders_cert)). Not created ($($orders_not_created_orders_cert.Length) / $($total_to_create_orders_cert)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+                if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+                {
+                    Write-Verbose "[#] $($status) $($activity). $($ts) remaining. $($current_operation)."
+                }
+            
+                elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+                {
+                    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                }
 
             }
 
@@ -2423,7 +2559,7 @@ function Clean-OrdersMain()
         [Parameter(mandatory = $true)] $mof_directory_working,
         [Parameter(mandatory = $true)] $exclude_directories
     )
-	  
+
     $total_to_clean_main_files = (Get-ChildItem -Path "$($mof_directory_working)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
 
     if($($total_to_clean_main_files) -gt '0')
