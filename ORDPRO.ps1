@@ -220,14 +220,13 @@ function Create-RequiredDirectories()
         [Parameter(mandatory = $true)] $directories
     )
 
-    $total_to_create_directories = $directories.Length
-
-    if($total_to_create_directories -gt 0)
+    if($($directories.Count) -gt 0)
     {
-        Write-Verbose "Total to create: $($total_to_create_directories)."
+        Write-Verbose "Total to create: $($($directories.Count))."
         
         $total_directories_created = 0
         $total_directories_not_created = 0
+        $StartTime = Get-Date
 
         foreach($directory in $directories)
         {
@@ -255,20 +254,20 @@ function Create-RequiredDirectories()
                 Write-Verbose "[*] $($directory) already created."
             }
 
-            $activity = "Creating required directories."
-            $status = "Created $($directory)."
-            $percent_complete = (($total_directories_created)/$($total_to_create_directories )).ToString("P")
-            $estimated_time = (($($total_to_create_directories) - ($total_directories_created)) * 0.2 / 60)
-            $formatted_estimated_time = [math]::Round($estimated_time,2)
-            $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+            $status = "Creating required directories."
+            $activity = "Creating directory $total_directories_created of $($directories.Count)"
+            $percent_complete = (($total_directories_created/$($directories.Count)) * 100)
+            $current_operation = "$("{0:N2}" -f ((($total_directories_created/$($directories.Count)) * 100),2))% Complete"
+            $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
+            $seconds_remaining = ($seconds_elapsed / ($total_directories_created / $directories.Count)) - $seconds_elapsed
 
-            Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Created: ( $($total_directories_created) / $($total_to_create_directories) ). Not created: ( $($total_directories_not_created) / $($total_to_create_directories) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
+            Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
         }
     }
     else
     {
-        Write-Verbose "[!] Total to create: $($total_to_create_directories). No directories to create. Make sure the directories array is populated with your desired directories to create."
-        throw "[!] Total to create: $($total_to_create_directories). No directories to create. Make sure the directories array is populated with your desired directories to create."
+        Write-Verbose "[!] Total to create: $($($directories.Count)). No directories to create. Make sure the directories array is populated with your desired directories to create."
+        throw "[!] Total to create: $($($directories.Count)). No directories to create. Make sure the directories array is populated with your desired directories to create."
     }
 }
 
@@ -281,288 +280,158 @@ function Move-OriginalToArchive()
         [Parameter(mandatory = $true)] $archive_directory_working
     )
 
-    $orders_file_m_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*m.prt" -File
-    $orders_file_c_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*c.prt" -File
-    $orders_file_r_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*r.prt" -File
-    $orders_file_r_reg = Get-ChildItem -Path $($current_directory_working) -Filter "*r.reg*" -File
-    
     $year_suffix = (Get-Date -Format yyyy).Substring(2)
     $year_orders_archive_directory = "$($archive_directory_working)\$($year_suffix)_orders"
     $year_orders_registry_directory = "$($ordregisters_output)\$($year_suffix)_orders"
 
-    $total_to_move_files = @(Get-ChildItem -Path $($current_directory_working) | Where { ! $_.PSIsContainer } | Where { $_.Name -eq "*m.prt" -or $_.Name -eq "*c.prt" -or $_.Name -eq "*r.prt" -or $_.Name -eq "*r.reg*" -or $_.Extension -ne '.ps1' }).Count
-
-    if($total_to_move_files -gt 0)
-    {
+	$total_files_to_move = @(Get-ChildItem -Path $($current_directory_working) | Where { ! $_.PSIsContainer } | Where { $_.Name -eq "*m.prt" -or $_.Name -eq "*c.prt" -or $_.Name -eq "*r.prt" -or $_.Name -eq "*r.reg*" -or $_.Extension -ne '.ps1' }).Count
+    $orders_file_m_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*m.prt" -File
+    $orders_file_c_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*c.prt" -File
+    $orders_file_r_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*r.prt" -File
+    $orders_file_r_reg = Get-ChildItem -Path $($current_directory_working) -Filter "*r.reg*" -File
+	
+	$archive_directories = @(
+		"$($year_orders_archive_directory)",
+		"$($year_orders_registry_directory)"
+	)
+	
+	$order_files = @{
+        M_PRT = $orders_file_m_prt; 
+        C_PRT = $orders_file_c_prt; 
+        R_PRT = $orders_file_r_prt; 
+        R_REG = $orders_file_r_reg; 
+    }
+    
+	if($total_files_to_move -gt 0)
+	{
         $total_files_moved = @()
         $total_files_not_moved = @()
 
         $files_moved_to_archive_csv = "$($log_directory_working)\$($run_date)\$($run_date)_files_moved_to_archive.csv"
         $files_not_moved_to_archive_csv = "$($log_directory_working)\$($run_date)\$($run_date)_files_not_moved_to_archive.csv"
+		
+        $StartTime = Get-Date
 
-        # Ensure that required directories are in place before trying to move.
-        if(!(Test-Path $($year_orders_archive_directory)))
-        {
-            Write-Verbose "[#] $($year_orders_archive_directory) not created yet. Creating now."
-            New-Item -ItemType Directory -Path $($year_orders_archive_directory) -Force > $null
+		foreach($directory in $archive_directories)
+		{
+			if(!(Test-Path $($directory)))
+			{
+				Write-Verbose "[#] $($directory) not created yet. Creating now."
+				New-Item -ItemType Directory -Path $($directory) -Force > $null
 
-            if($?)
+				if($?)
+				{
+					Write-Verbose "[*] $($directory) created successfully."
+				}
+				else
+				{
+					Write-Verbose "[!] $($directory) failed to create."
+					throw "[!] $($directory) failed to create."
+				}
+			}
+			else
+			{
+				Write-Verbose "[*] $($directory) already created."
+			}
+		}
+		
+		foreach($order_file_type in $order_files.GetEnumerator())
+		{
+            foreach($name in $($order_file_type.Name))
             {
-                Write-Verbose "[*] $($year_orders_archive_directory) created successfully."
-            }
-            else
-            {
-                Write-Verbose "[!] $($year_orders_archive_directory) failed to create."
-                throw "[!] $($year_orders_archive_directory) failed to create."
-            }
-        }
-        else
-        {
-            Write-Verbose "[*] $($year_orders_archive_directory) already created."
-        }
-
-        if(!(Test-Path $($year_orders_registry_directory)))
-        {
-            Write-Verbose "[#] $($year_orders_registry_directory) not created yet. Creating now."
-            New-Item -ItemType Directory -Path $($year_orders_registry_directory) -Force > $null
-
-            if($?)
-            {
-                Write-Verbose "[*] $($year_orders_registry_directory) created successfully."
-            }
-            else
-            {
-                Write-Verbose "[!] $($year_orders_registry_directory) failed to create."
-                throw "[!] $($year_orders_registry_directory) failed to create."
-            }
-        }
-        else
-        {
-            Write-Verbose "[*] $($year_orders_registry_directory) already created."
-        }
-
-        # Move '*m.prt' files to archive folder.
-        $orders_file_m_prt_count = $($orders_file_m_prt).Count
-
-        if($($orders_file_m_prt_count) -gt 0)
-        {
-            foreach($file in $orders_file_m_prt)
-            {
-                Process-DevCommands -sw $($sw)
-
-                Write-Verbose "[#] Moving $($file.Name) to $($year_orders_archive_directory) now."
-                Move-Item -Path $($file) -Destination "$($year_orders_archive_directory)\$($file.Name)" -Force
-
-                if($?)
+                foreach($value in $($order_file_type.Value))
                 {
-                    Write-Verbose "[*] $($file) moved to $($year_orders_archive_directory) successfully."
+                    Process-DevCommands -sw $($sw)
+
+                    if($name -eq 'C_PRT' -or $name -eq 'M_PRT')
+                    {
+                        Write-Verbose "[#] Moving $($value) to $($year_orders_archive_directory) now."
+                        Move-Item -Path $($value) -Destination "$($year_orders_archive_directory)\$($value)" -Force
+
+                        if($?)
+                        {
+                            Write-Verbose "[*] $($value) moved to $($year_orders_archive_directory) successfully."
                 
-                    $hash = @{
-                        FILE = $($file)
-                        TYPE = '*m.prt'
-                        STATUS = 'SUCCESS'
+                            $hash = @{
+                                FILE = $($value)
+                                TYPE = $($name)
+                                STATUS = 'SUCCESS'
+                            }
+
+	                        $file_moved = New-Object -TypeName PSObject -Property $hash
+                            $total_files_moved += $file_moved
+                        }
+                        else
+                        {
+                            Write-Verbose "[!] $($value) move to $($year_orders_archive_directory) failed."
+
+                            $hash = @{
+                                FILE = $($value)
+                                TYPE = $($name)
+                                STATUS = 'FAILED'
+                            }
+
+	                        $file_moved = New-Object -TypeName PSObject -Property $hash
+                            $total_files_not_moved += $file_moved
+                        }
+                    }
+                    elseif($name -eq 'R_PRT' -or $name -eq 'R_REG')
+                    {
+                        Write-Verbose "[#] Moving $($value) to $($year_orders_registry_directory) now."
+                        Move-Item -Path $($value) -Destination "$($year_orders_registry_directory)\$($value)" -Force
+
+                        if($?)
+                        {
+                            Write-Verbose "[*] $($value) moved to $($year_orders_registry_directory) successfully."
+                
+                            $hash = @{
+                                FILE = $($value)
+                                TYPE = $($name)
+                                STATUS = 'SUCCESS'
+                            }
+
+	                        $file_moved = New-Object -TypeName PSObject -Property $hash
+                            $total_files_moved += $file_moved
+                        }
+                        else
+                        {
+                            Write-Verbose "[!] $($value) move to $($year_orders_registry_directory) failed."
+
+                            $hash = @{
+                                FILE = $($value)
+                                TYPE = $($name)
+                                STATUS = 'FAILED'
+                            }
+
+	                        $file_moved = New-Object -TypeName PSObject -Property $hash
+                            $total_files_not_moved += $file_moved
+                        }
                     }
 
-	                $file_moved = New-Object -TypeName PSObject -Property $hash
-                    $total_files_moved += $file_moved
+                    $status = "Moving original $($name) files to archive folder."
+                    $activity = "Moving file $($total_files_moved.Count) of $($total_files_to_move). $($total_files_not_moved.Count) of $($total_files_to_move) not moved."
+                    $percent_complete = (($total_files_moved.Count/$($total_files_to_move)) * 100)
+                    $current_operation = "$("{0:N2}" -f (((($total_files_moved.Count)/$($total_files_to_move)) * 100),2))% Complete"
+                    $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
+                    $seconds_remaining = ($seconds_elapsed / ($total_files_moved.Count / $total_files_to_move)) - $seconds_elapsed
+
+                    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining) 
                 }
-                else
-                {
-                    Write-Verbose "[!] $($file) move to $($year_orders_archive_directory) failed."
-
-                    $hash = @{
-                        FILE = $($file)
-                        TYPE = '*m.prt'
-                        STATUS = 'FAILED'
-                    }
-
-	                $file_moved = New-Object -TypeName PSObject -Property $hash
-                    $total_files_not_moved += $file_moved
-                }
-
-                $activity = "Moving original '*m.prt' files to archive folder."
-                $status = "Moved $($file)."
-                $percent_complete = ($($total_files_moved.Length)/$($total_to_move_files)).ToString("P")
-                $estimated_time = (($($total_to_move_files) - $($total_files_moved.Length)) * 0.2 / 60)
-                $formatted_estimated_time = [math]::Round($estimated_time,2)
-                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
-
-                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Moved: ( $($total_files_moved.Length) / $($total_to_move_files) ). Not moved: ( $($total_files_not_moved.Length) / $($total_to_move_files) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
             }
-        }
-        else
+		}
+
+        if($total_files_moved.Count -gt 0)
         {
-            Write-Verbose "[!] $($orders_file_m_prt_count) '*m.prt' files to move. No '*m.prt' files to move. Make sure to have the required '*m.prt' files in the current directory and try again."
+            Write-Verbose "[*] Writing $($files_moved_to_archive_csv) file now."
+            $total_files_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_moved_to_archive_csv)" -NoTypeInformation -Force
         }
 
-        # Move '*c.prt' files to archive folder.
-        $orders_file_c_prt_count = $($orders_file_c_prt).Count
-
-        if($($orders_file_c_prt_count) -gt 0)
+        if($total_files_not_moved.Count -gt 0)
         {
-            foreach($file in $orders_file_c_prt)
-            {
-                Process-DevCommands -sw $($sw)
-
-                Write-Verbose "[#] Moving $($file.Name) to $($year_orders_archive_directory) now."
-                Move-Item -Path $($file) -Destination "$($year_orders_archive_directory)\$($file.Name)" -Force
-
-                if($?)
-                {
-                    Write-Verbose "[*] $($file) moved to $($year_orders_archive_directory) successfully."
-                    $hash = @{
-                        FILE = $($file)
-                        TYPE = '*c.prt'
-                        STATUS = 'SUCCESS'
-                    }
-
-	                $file_moved = New-Object -TypeName PSObject -Property $hash
-                    $total_files_moved += $file_moved
-                }
-                else
-                {
-                    Write-Verbose "[!] $($file) move to $($year_orders_archive_directory) failed."
-                    $hash = @{
-                        FILE = $($file)
-                        TYPE = '*c.prt'
-                        STATUS = 'FAILED'
-                    }
-
-	                $file_moved = New-Object -TypeName PSObject -Property $hash
-                    $total_files_not_moved += $file_moved
-                }
-
-                $activity = "Moving original '*c.prt' files to archive folder."
-                $status = "Moved $($file)."
-                $percent_complete = ($($total_files_moved.Length)/$($total_to_move_files)).ToString("P")
-                $estimated_time = (($($total_to_move_files) - $($total_files_moved.Length)) * 0.2 / 60)
-                $formatted_estimated_time = [math]::Round($estimated_time,2)
-                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
-
-                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Moved: ( $($total_files_moved.Length) / $($total_to_move_files) ). Not moved: ( $($total_files_not_moved.Length) / $($total_to_move_files) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
-            }
+            Write-Verbose "[*] Writing $($files_not_moved_to_archive_csv) file now."
+            $total_files_not_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_not_moved_to_archive_csv)" -NoTypeInformation -Force
         }
-        else
-        {
-            Write-Verbose "[!] $($orders_file_c_prt_count) '*c.prt' files to move. No '*c.prt' files to move. Make sure to have the required '*c.prt' files in the current directory and try again."
-        }
-
-        # Move '*r.prt' files to archive folder.
-        $orders_file_r_prt_count = $($orders_file_r_prt).Count
-
-        if($($orders_file_r_prt_count) -gt 0)
-        {
-            foreach($file in $orders_file_r_prt)
-            {
-                Process-DevCommands -sw $($sw)
-
-                Write-Verbose "[#] Moving $($file.Name) to $($year_orders_registry_directory) now."
-                Move-Item -Path $($file) -Destination "$($year_orders_registry_directory)\$($file.Name)" -Force
-
-                if($?)
-                {
-                    Write-Verbose "[*] $($file) moved to $($year_orders_registry_directory) successfully."
-                    $hash = @{
-                        FILE = $($file)
-                        TYPE = '*p.prt'
-                        STATUS = 'SUCCESS'
-                    }
-
-	                $file_moved = New-Object -TypeName PSObject -Property $hash
-                    $total_files_moved += $file_moved
-                }
-                else
-                {
-                    Write-Verbose "[!] $($file) move to $($year_orders_registry_directory) failed."
-                    $hash = @{
-                        FILE = $($file)
-                        TYPE = '*r.prt'
-                        STATUS = 'FAILED'
-                    }
-
-	                $file_moved = New-Object -TypeName PSObject -Property $hash
-                    $total_files_not_moved += $file_moved
-                }
-            
-                $activity = "Moving original '*r.prt' files to archive folder."
-                $status = "Moved $($file)."
-                $percent_complete = ($($total_files_moved.Length)/$($total_to_move_files)).ToString("P")
-                $estimated_time = (($($total_to_move_files) - $($total_files_moved.Length)) * 0.2 / 60)
-                $formatted_estimated_time = [math]::Round($estimated_time,2)
-                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
-
-                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Moved: ( $($total_files_moved.Length) / $($total_to_move_files) ). Not moved: ( $($total_files__not_moved.Length) / $($total_to_move_files) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
-            }
-        }
-        else
-        {
-            Write-Verbose "[!] $($orders_file_r_prt_count) '*r.prt' files to move. No '*r.prt' files to move. Make sure to have the required '*r.prt' files in the current directory and try again."
-        }
-
-        # Move '*r.reg*' files to archive folder.
-        $orders_file_r_reg_count = $($orders_file_r_reg).Count
-
-        if($($orders_file_r_reg_count) -gt 0)
-        {
-            foreach($file in $orders_file_r_reg)
-            {
-                Process-DevCommands -sw $($sw)
-
-                Write-Verbose "[#] Moving $($file.Name) to $($year_orders_registry_directory) now."
-                Move-Item -Path $($file) -Destination "$($year_orders_registry_directory)\$($file.Name)" -Force
-
-                if($?)
-                {
-                    Write-Verbose "[*] $($file) moved to $($year_orders_registry_directory) successfully."
-                    $hash = @{
-                        FILE = $($file)
-                        TYPE = '*r.reg*'
-                        STATUS = 'SUCCESS'
-                    }
-
-	                $file_moved = New-Object -TypeName PSObject -Property $hash
-                    $total_files_moved += $file_moved
-                }
-                else
-                {
-                    Write-Verbose "[!] $($file) move to $($year_orders_registry_directory) failed."
-                    $hash = @{
-                        FILE = $($file)
-                        TYPE = '*r.reg*'
-                        STATUS = 'FAILED'
-                    }
-
-	                $file_moved = New-Object -TypeName PSObject -Property $hash
-                    $total_files_moved += $file_moved
-                }
-            
-                $activity = "Moving original '*r.reg*' files to archive folder."
-                $status = "Moved $($file)."
-                $percent_complete = ($($total_files_moved.Length)/$($total_to_move_files )).ToString("P")
-                $estimated_time = (($($total_to_move_files) - $($total_files_moved.Length)) * 0.2 / 60)
-                $formatted_estimated_time = [math]::Round($estimated_time,2)
-                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
-
-                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Moved: ( $($total_files_moved.Length) / $($total_to_move_files) ). Not moved: ( $($total_files_not_moved.Length) / $($total_to_move_files) ). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
-            }
-
-            if($total_files_moved.Count -gt 0)
-            {
-                Write-Verbose "[*] Writing $($files_moved_to_archive_csv) file now."
-                $total_files_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_moved_to_archive_csv)" -NoTypeInformation -Force   
-            }
-
-            if($total_files_not_moved.Count -gt 0)
-            {
-                Write-Verbose "[*] Writing $($files_not_moved_to_archive_csv) file now."
-                $total_files_not_moved | Select FILE, TYPE, STATUS | Sort -Property STATUS | Export-Csv "$($files_not_moved_to_archive_csv)" -NoTypeInformation -Force
-            }
-        }
-        else
-        {
-            Write-Verbose "[!] $($orders_file_r_reg_count) '*r.reg*' files to move. No '*r.reg*' files to move. Make sure to have the required '*r.reg*' files in the current directory and try again."
-        }
-    }
+	}
     else
     {
         Write-Verbose "[!] Total to move: $($total_to_move_files). No files to move. Make sure to have the required '*m.prt', '*c.prt', '*r.prt', '*r.reg' files in the current directory and try again."
@@ -593,9 +462,6 @@ function Split-OrdersMain()
 
     if($total_to_parse_orders_main_files -gt '0')
     {
-        $count_orders = 0
-        $count_files = 0
-
         if(!(Test-Path $($out_directory)))
         {
             Write-Verbose "[#] $($out_directory) not created. Creating now."
@@ -612,77 +478,71 @@ function Split-OrdersMain()
             }
         }
 
-        foreach($file in $files_orders_m_prt)
+        $count_orders = 0
+        $count_files = 0
+
+        $StartTime = Get-Date
+
+        foreach ($file in $files_orders_m_prt)
         {
-            $content = (Get-Content $($file) -ErrorAction SilentlyContinue | Out-String)
-            $orders = [regex]::Match($content,'(?<=STATE OF SOUTH DAKOTA).+(?=The Adjutant General)',"singleline").Value -split "$($regex_beginning_m_split_orders_main)"
+	        $count_files ++
+	        $content = (Get-Content $($file) -ErrorAction SilentlyContinue | Out-String)
+	        $orders = [regex]::Match($content,'(?<=STATE OF SOUTH DAKOTA).+(?=The Adjutant General)',"singleline").Value -split "$($regex_beginning_m_split_orders_main)"
 
-            Write-Verbose "[#] Parsing $($file) now."
+	        Write-Verbose "[#] Parsing $($file) now."
 
-            foreach($order in $orders)
-            {
-                Process-DevCommands -sw $($sw)
+	        foreach($order in $orders)
+	        {
+		        Process-DevCommands -sw $($sw)
 
-                if($order)
-                {
-                    $count_orders ++
+		        if($order)
+		        {
+			        $count_orders ++
 
-                    $out_file = "$($run_date)_$($count_orders).mof"
+			        $out_file = "$($run_date)_$($count_orders).mof"
 
-                    Write-Verbose "[#] Processing $($out_file) now."
+			        #Write-Verbose "[#] Processing $($out_file) now."
 
-                    New-Item -ItemType File -Path $($out_directory) -Name $($out_file) -Value $($order) > $null
+			        New-Item -ItemType File -Path $($out_directory) -Name $($out_file) -Value $($order) > $null
 
-                    if($?)
-                    {
-                        Write-Verbose "[*] $($out_file) file created successfully."
+			        if($?)
+			        {
+				        #Write-Verbose "[*] $($out_file) file created successfully."
 
-                        $hash = @{
-                            'ORIGINAL_FILE' = $($file)
-                            'OUT_FILE' = $($out_file)
-                            'ORDER_COUNT' = $($count_orders)
-                        }
+				        $hash = @{
+					        'ORIGINAL_FILE' = $($file)
+					        'OUT_FILE' = $($out_file)
+					        'ORDER_COUNT' = $($count_orders)
+				        }
 
-	                    $order_created = New-Object -TypeName PSObject -Property $hash
-                        $orders_created += $order_created
-                        
-                    }
-                    else
-                    {
-                        Write-Verbose "[!] $($out_file) file creation failed."
+				        $order_created = New-Object -TypeName PSObject -Property $hash
+				        $orders_created += $order_created				
+			        }
+			        else
+			        {
+				        Write-Verbose "[!] $($out_file) file creation failed."
 
-                        $hash = @{
-                            'ORIGINAL_FILE' = $($file)
-                            'OUT_FILE' = $($out_file)
-                            'ORDER_COUNT' = $($count_orders)
-                        }
+				        $hash = @{
+					        'ORIGINAL_FILE' = $($file)
+					        'OUT_FILE' = $($out_file)
+					        'ORDER_COUNT' = $($count_orders)
+				        }
 
-	                    $order_created = New-Object -TypeName PSObject -Property $hash
-                        $orders_not_created += $order_created
-                    }
-                }
+				        $order_created = New-Object -TypeName PSObject -Property $hash
+				        $orders_not_created += $order_created
+			        }
+		        }
+	        }
+	
+	        $status = "Splitting '*m.prt' files."
+	        $activity = "Processing file $count_files of $($files_orders_m_prt.Count)"
+	        $percent_complete = (($count_files/$($files_orders_m_prt.Count)) * 100)
+	        $current_operation = "$("{0:N2}" -f ((($count_files/$($files_orders_m_prt.Count)) * 100),2))% Complete"
+	        $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
+	        $seconds_remaining = ($seconds_elapsed / ($count_files / $files_orders_m_prt.Count)) - $seconds_elapsed
 
-                $activity = "Splitting '*m.prt' file into individual order files."
-                $status = "Parsing $($file)."
-                $percent_complete = ($($count_files)/$($total_to_parse_orders_main_files )).ToString("P")
-                $estimated_time = (($($total_to_parse_orders_main_files) - $($count_files)) * 0.2 / 60)
-                $formatted_estimated_time = [math]::Round($estimated_time,2)
-                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
-
-                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Files parsed: ( $($count_files) / $($total_to_parse_orders_main_files) ). Orders split: ($($count_orders)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
-            }
-
-            $count_files ++
-
-            $activity = "Splitting '*m.prt' file into individual order files."
-            $status = "Parsing $($file)."
-            $percent_complete = ($($count_files)/$($total_to_parse_orders_main_files )).ToString("P")
-            $estimated_time = (($($total_to_parse_orders_main_files) - $($count_files)) * 0.2 / 60)
-            $formatted_estimated_time = [math]::Round($estimated_time,2)
-            $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
-
-            Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Files parsed: ( $($count_files) / $($total_to_parse_orders_main_files) ). Orders split: ($($count_orders)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
-        }   
+	        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+        }
 
         if($orders_created.Count -gt 0)
         {
@@ -726,9 +586,6 @@ function Split-OrdersCertificate()
 
     if($total_to_parse_orders_cert_files -gt '0')
     {
-        $count_orders = 0
-        $count_files = 0
-
         if(!(Test-Path $($out_directory)))
         {
             Write-Verbose "[#] $($out_directory) not created. Creating now."
@@ -745,77 +602,72 @@ function Split-OrdersCertificate()
             }
         }
 
+        $count_orders = 0
+        $count_files = 0
+
+        $StartTime = Get-Date
+
         foreach($file in $files_orders_c_prt)
         {
-            $content = (Get-Content $($file) -ErrorAction SilentlyContinue | Out-String)
-            $orders = [regex]::Match($content,'(?<=FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=Automated NGB Form 102-10A  dtd  12 AUG 96)',"singleline").Value -split "$($regex_end_cert)"
+	        $count_files ++
+	        $content = (Get-Content $($file) -ErrorAction SilentlyContinue | Out-String)
+	        $orders = [regex]::Match($content,'(?<=FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=Automated NGB Form 102-10A  dtd  12 AUG 96)',"singleline").Value -split "$($regex_end_cert)"
 
-            Write-Verbose "[#] Parsing $($file) now."
+	        Write-Verbose "[#] Parsing $($file) now."
 
-            foreach($order in $orders)
-            {
-                Process-DevCommands -sw $($sw)
+	        foreach($order in $orders)
+	        {
+		        Process-DevCommands -sw $($sw)
 
-                if($order)
-                {
-                    $count_orders ++
+		        if($order)
+		        {
+			        $count_orders ++
 
-                    $out_file = "$($run_date)_$($count_orders).cof"
+			        $out_file = "$($run_date)_$($count_orders).cof"
 
-                    Write-Verbose "[#] Processing $($out_file) now."
+			        #Write-Verbose "[#] Processing $($out_file) now."
 
-                    New-Item -ItemType File -Path $($out_directory) -Name $($out_file) -Value $($order) > $null
+			        New-Item -ItemType File -Path $($out_directory) -Name $($out_file) -Value $($order) > $null
 
-                    if($?)
-                    {
-                        Write-Verbose "[*] $($out_file) file created successfully."
+			        if($?)
+			        {
+				        #Write-Verbose "[*] $($out_file) file created successfully."
 
-                        $hash = @{
-                            'ORIGINAL_FILE' = $($file)
-                            'OUT_FILE' = $($out_file)
-                            'ORDER_COUNT' = $($count_orders)
-                        }
+				        $hash = @{
+					        'ORIGINAL_FILE' = $($file)
+					        'OUT_FILE' = $($out_file)
+					        'ORDER_COUNT' = $($count_orders)
+				        }
 
-	                    $order_created = New-Object -TypeName PSObject -Property $hash
-                        $orders_created += $order_created
-                        
-                    }
-                    else
-                    {
-                        Write-Verbose "[!] $($out_file) file creation failed."
+				        $order_created = New-Object -TypeName PSObject -Property $hash
+				        $orders_created += $order_created
+				
+			        }
+			        else
+			        {
+				        Write-Verbose "[!] $($out_file) file creation failed."
 
-                        $hash = @{
-                            'ORIGINAL_FILE' = $($file)
-                            'OUT_FILE' = $($out_file)
-                            'ORDER_COUNT' = $($count_orders)
-                        }
+				        $hash = @{
+					        'ORIGINAL_FILE' = $($file)
+					        'OUT_FILE' = $($out_file)
+					        'ORDER_COUNT' = $($count_orders)
+				        }
 
-	                    $order_created = New-Object -TypeName PSObject -Property $hash
-                        $orders_not_created += $order_created
-                    }
-                }
+				        $order_created = New-Object -TypeName PSObject -Property $hash
+				        $orders_not_created += $order_created
+			        }
+		        }
+	        }
 
-                $activity = "Splitting '*c.prt' file into individual order files."
-                $status = "Parsing $($file)."
-                $percent_complete = ($($count_files)/$($total_to_parse_orders_cert_files )).ToString("P")
-                $estimated_time = (($($total_to_parse_orders_cert_files) - $($count_files)) * 0.2 / 60)
-                $formatted_estimated_time = [math]::Round($estimated_time,2)
-                $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
+	        $status = "Splitting '*c.prt' files."
+	        $activity = "Processing file $count_files of $($files_orders_c_prt.Count)"
+	        $percent_complete = (($count_files/$($files_orders_c_prt.Count)) * 100)
+	        $current_operation = "$("{0:N2}" -f ((($count_files/$($files_orders_c_prt.Count)) * 100),2))% Complete"
+	        $seconds_elapsed = ((Get-Date) - $StartTime).TotalSeconds
+	        $seconds_remaining = ($seconds_elapsed / ($count_files / $files_orders_c_prt.Count)) - $seconds_elapsed
 
-                Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Files parsed: ( $($count_files) / $($total_to_parse_orders_cert_files) ). Orders split: ($($count_orders)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
-            }
-
-            $count_files ++
-
-            $activity = "Splitting '*c.prt' file into individual order files."
-            $status = "Parsing $($file)."
-            $percent_complete = ($($count_files)/$($total_to_parse_orders_cert_files )).ToString("P")
-            $estimated_time = (($($total_to_parse_orders_cert_files) - $($count_files)) * 0.2 / 60)
-            $formatted_estimated_time = [math]::Round($estimated_time,2)
-            $elapsed_time = $sw.Elapsed.ToString('hh\:mm\:ss')
-
-            Write-Verbose "[#] Activity: ($($activity)). Status: ($($status)). Files parsed: ( $($count_files) / $($total_to_parse_orders_cert_files) ). Orders split: ($($count_orders)). Percent complete: ($($percent_complete)). Time left: (~$($formatted_estimated_time) minute(s)). Time elapsed: ($($elapsed_time))."
-        }   
+	        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+        }  
 
         if($orders_created.Count -gt 0)
         {
