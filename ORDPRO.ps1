@@ -203,7 +203,7 @@ $sw.start()
 
 if(Test-Path variable:global:psISE)
 {
-    Write-Host "[#] Working in PowerShell ISE. Unable to use administrative commands while using PowerShell ISE." -ForegroundColor Yellow
+    Write-Warning "[#] Working in PowerShell ISE. Unable to use administrative commands while using PowerShell ISE."
 }
 else
 {
@@ -224,7 +224,7 @@ function Create-RequiredDirectories()
     {
         Write-Verbose "Total to create: $($($directories.Count))."
         
-        cls
+        #cls
 
         $total_directories_created = 0
         $total_directories_not_created = 0
@@ -247,7 +247,7 @@ function Create-RequiredDirectories()
                 else
                 {
                     $total_directories_not_created ++
-                    Write-Verbose "[!] $($directory) creation failed. Check the error logs at $($error_path)."
+                    Write-Error "[!] $($directory) creation failed. Check the error logs at $($error_path)."
                 }
             }
             else
@@ -278,8 +278,7 @@ function Create-RequiredDirectories()
     }
     else
     {
-        Write-Verbose "[!] Total to create: $($($directories.Count)). No directories to create. Make sure the directories array is populated with your desired directories to create."
-        throw "[!] Total to create: $($($directories.Count)). No directories to create. Make sure the directories array is populated with your desired directories to create."
+        Write-Error "[!] Total to create: $($($directories.Count)). No directories to create. Make sure the directories array is populated with your desired directories to create."
     }
 }
 
@@ -316,7 +315,7 @@ function Move-OriginalToArchive()
     
 	if($total_files_to_move -gt 0)
 	{
-        cls
+        #cls
 
         $total_files_moved = @()
         $total_files_not_moved = @()
@@ -339,8 +338,7 @@ function Move-OriginalToArchive()
 				}
 				else
 				{
-					Write-Verbose "[!] $($directory) failed to create."
-					throw "[!] $($directory) failed to create."
+					Write-Error "[!] $($directory) failed to create."
 				}
 			}
 			else
@@ -462,8 +460,7 @@ function Move-OriginalToArchive()
 	}
     else
     {
-        Write-Verbose "[!] Total to move: $($total_to_move_files). No files to move. Make sure to have the required '*m.prt', '*c.prt', '*r.prt', '*r.reg' files in the current directory and try again."
-        throw "[!] Total to move: $($total_to_move_files). No files to move. Make sure to have the required '*m.prt', '*c.prt', '*r.prt', '*r.reg' files in the current directory and try again."
+        Write-Error "[!] Total to move: $($total_to_move_files). No files to move. Make sure to have the required '*m.prt', '*c.prt', '*r.prt', '*r.reg' files in the current directory and try again."
     }
 }
 
@@ -478,7 +475,7 @@ function Split-OrdersMain()
         [Parameter(mandatory = $true)] $regex_beginning_m_split_orders_main
     )
 	
-    cls
+    #cls
 
     $total_to_parse_orders_main_files = @($files_orders_m_prt).Count
 
@@ -503,8 +500,7 @@ function Split-OrdersMain()
             }
             else
             {
-                Write-Verbose "[!] $($out_directory) creation failed."
-                throw "[!] $($out_directory) creation failed."
+                Write-Error "[!] $($out_directory) creation failed."
             }
         }
 
@@ -550,7 +546,7 @@ function Split-OrdersMain()
 			        }
 			        else
 			        {
-				        Write-Verbose "[!] $($out_file) file creation failed."
+				        Write-Error "[!] $($out_file) file creation failed."
 
 				        $hash = @{
 					        'ORIGINAL_FILE' = $($file)
@@ -598,8 +594,7 @@ function Split-OrdersMain()
     }
     else
     {
-        Write-Verbose "[!] $($current_directory_working) '*m.prt' files to split. No '*m.prt' files to split. Make sure to have the required '*m.prt' files in the current directory and try again."
-        throw "[!] $($current_directory_working) '*m.prt' files to split. No '*m.prt' files to split. Make sure to have the required '*m.prt' files in the current directory and try again."
+        Write-Error "[!] $($current_directory_working) '*m.prt' files to split. No '*m.prt' files to split. Make sure to have the required '*m.prt' files in the current directory and try again."
     }
 }
 
@@ -614,7 +609,7 @@ function Split-OrdersCertificate()
         [Parameter(mandatory = $true)] $regex_end_cert
     )
 	
-    cls
+    #cls
 
     $total_to_parse_orders_cert_files = @($files_orders_c_prt).Count
 
@@ -639,8 +634,7 @@ function Split-OrdersCertificate()
             }
             else
             {
-                Write-Verbose "[!] $($out_directory) creation failed."
-                throw "[!] $($out_directory) creation failed."
+                Write-Error "[!] $($out_directory) creation failed."
             }
         }
 
@@ -735,8 +729,7 @@ function Split-OrdersCertificate()
     }
     else
     {
-        Write-Verbose "[!] $($current_directory_working) '*c.prt' files to split. No '*c.prt' files to split. Make sure to have the required '*c.prt' files in the current directory and try again."
-        throw "[!] $($current_directory_working) '*c.prt' files to split. No '*c.prt' files to split. Make sure to have the required '*c.prt' files in the current directory and try again."
+        Write-Error "[!] $($current_directory_working) '*c.prt' files to split. No '*c.prt' files to split. Make sure to have the required '*c.prt' files in the current directory and try again."
     }
 }
 
@@ -750,7 +743,7 @@ function Edit-OrdersMain()
         [Parameter(mandatory = $true)] $mof_directory_original_splits_working
     )
 	 
-    cls 
+    #cls 
 
     $StartTime = Get-Date
 
@@ -796,8 +789,7 @@ function Edit-OrdersMain()
                     }
                     else
                     {
-                        Write-Verbose "[!] Removing known bad string $($pattern) from $($file) failed."
-                        throw "[!] Removing known bad string $($pattern) from $($file) failed."
+                        Write-Error "[!] Removing known bad string $($pattern) from $($file) failed."
                     }
                 }
 
@@ -819,8 +811,7 @@ function Edit-OrdersMain()
                         }
                         else
                         {
-                            Write-Verbose "[!] $($file) move to $($mof_directory_original_splits_working) failed."
-                            throw "[!] $($file) move to $($mof_directory_original_splits_working) failed."
+                            Write-Error "[!] $($file) move to $($mof_directory_original_splits_working) failed."
                         }
                     }
                 }
@@ -1026,8 +1017,7 @@ function Edit-OrdersMain()
     }
     else
     {
-        Write-Verbose "[!] Total to edit: $($total_to_edit_orders_main). No .mof files in $($mof_directory_working). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
-        throw "[!] No .mof files in $($mof_directory_working). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
+        Write-Error "[!] Total to edit: $($total_to_edit_orders_main). No .mof files in $($mof_directory_working). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
     }
 }
 
@@ -1041,7 +1031,7 @@ function Edit-OrdersCertificate()
         [Parameter(mandatory = $true)] $cof_directory_original_splits_working
     )
 
-    cls
+    #cls
 
     $StartTime = Get-Date
 
@@ -1081,8 +1071,7 @@ function Edit-OrdersCertificate()
                     }
                     else
                     {
-                        Write-Verbose "[!] Removing known bad string $($pattern) from $($file) failed."
-                        throw "[!] Removing known bad string $($pattern) from $($file) failed."
+                        Write-Error "[!] Removing known bad string $($pattern) from $($file) failed."
                     }
                 }
 
@@ -1113,8 +1102,7 @@ function Edit-OrdersCertificate()
                         }
                         else
                         {
-                            Write-Verbose "[!] $($file) move to $($cof_directory_original_splits_working) failed."
-                            throw "[!] $($file) move to $($cof_directory_original_splits_working) failed."
+                            Write-Error "[!] $($file) move to $($cof_directory_original_splits_working) failed."
                         }
                     }
                 }
@@ -1170,8 +1158,7 @@ function Edit-OrdersCertificate()
     }
     else
     {
-        Write-Verbose "[!] Total to edit: $($total_to_edit_orders_cert). No .cof files in $($cof_directory_working). Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
-        throw "[!] Total to edit: $($total_to_edit_orders_cert). No .cof files in $($cof_directory_working). Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
+        Write-Error "[!] Total to edit: $($total_to_edit_orders_cert). No .cof files in $($cof_directory_working). Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
     }
 }
 
@@ -1184,7 +1171,7 @@ function Combine-OrdersMain()
         [Parameter(mandatory = $true)] $exclude_directories
     )
 	 
-    cls 
+    #cls 
 
     $StartTime = Get-Date
  
@@ -1238,8 +1225,7 @@ function Combine-OrdersMain()
                 }
                 else
                 {
-                    Write-Verbose "[!] Combining .mof files failed."
-                    throw "[!] Combining .mof files failed."
+                    Write-Error "[!] Combining .mof files failed."
                 }
             }
 
@@ -1251,8 +1237,7 @@ function Combine-OrdersMain()
     }
     else
     {
-        Write-Verbose "[!] Total to combine: $($total_to_combine_orders_main). No .mof files in $($mof_directory_working) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
-        throw "[!] No .mof files in $($mof_directory_working) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
+        Write-Error "[!] Total to combine: $($total_to_combine_orders_main). No .mof files in $($mof_directory_working) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
     }
 }
 
@@ -1264,7 +1249,7 @@ function Combine-OrdersCertificate()
         [Parameter(mandatory = $true)] $run_date
     )
 	  
-    cls
+    #cls
 
     $StartTime = Get-Date
 
@@ -1318,8 +1303,7 @@ function Combine-OrdersCertificate()
                 }
                 else
                 {
-                    Write-Verbose "[!] Combining .cof files failed."
-                    throw "[!] Combining .cof files failed."
+                    Write-Error "[!] Combining .cof files failed."
                 }
             }
 
@@ -1331,8 +1315,7 @@ function Combine-OrdersCertificate()
     }
     else
     {
-        Write-Verbose "[!] Total to combine: $($total_to_combine_orders_cert). No .cof files in $($cof_directory_working) to combine. Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
-        throw "[!] No .cof files in $($cof_directory_working) to combine. Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
+        Write-Error "[!] Total to combine: $($total_to_combine_orders_cert). No .cof files in $($cof_directory_working) to combine. Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
     }
 }
 
@@ -1348,7 +1331,7 @@ function Parse-OrdersMain()
         [Parameter(mandatory = $true)] $regex_pertaining_to_parse_orders_main
     )
 	  
-    cls
+    #cls
 
     $StartTime = Get-Date
 
@@ -1542,16 +1525,14 @@ function Parse-OrdersMain()
                     {
                         $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
                         if($total_validation_fails -gt 1)
-                        {
-                            Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
+                        {                            
                             $validation_results | Sort-Object -Property Status
-                            throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+                            Write-Error "[!] $($total_validation_fails) variables for $($file) failed validation."
                         }
                         elseif($total_validation_fails -eq 1)
                         {
-                            Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
                             $validation_results | Sort-Object -Property Status
-                            throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+                            Write-Error "[!] $($total_validation_fails) variable for $($file) failed validation."                            
                         }
                     }
                 }
@@ -1677,15 +1658,13 @@ function Parse-OrdersMain()
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
-		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                    Write-Error "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
-		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                    Write-Error "[!] $($total_validation_fails) variable for $($file) failed validation."
 	                    }
                     }
                 }
@@ -1783,15 +1762,13 @@ function Parse-OrdersMain()
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
-		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                    Write-Error "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
-		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                    Write-Error "[!] $($total_validation_fails) variable for $($file) failed validation."
 	                    }
                     }
                 }
@@ -1889,15 +1866,13 @@ function Parse-OrdersMain()
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
-		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                    Write-Error "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
-		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                    Write-Error "[!] $($total_validation_fails) variable for $($file) failed validation."
 	                    }
                     }
                 }
@@ -2026,15 +2001,13 @@ function Parse-OrdersMain()
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
-		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                    Write-Error "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
-		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                    Write-Error "[!] $($total_validation_fails) variable for $($file) failed validation."
 	                    }
                     }
                 }
@@ -2165,15 +2138,13 @@ function Parse-OrdersMain()
 	                    $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                    if($total_validation_fails -gt 1)
 	                    {
-		                    Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
-		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                    Write-Error "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
 	                    {
-		                    Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
 		                    $validation_results | Sort-Object -Property Status
-		                    throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                    Write-Error "[!] $($total_validation_fails) variable for $($file) failed validation."
 	                    }
                     }
                 }
@@ -2222,8 +2193,7 @@ function Parse-OrdersMain()
     }
     else
     {
-        Write-Verbose "[!] Total to create: ($($total_to_create_orders_main)). No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
-        throw "[!] No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
+        Write-Error "[!] Total to create: ($($total_to_create_orders_main)). No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
     }
 }
 
@@ -2242,7 +2212,7 @@ function Parse-OrdersCertificate()
         $sw = New-Object System.Diagnostics.Stopwatch
         $sw.start()
 
-        cls
+        #cls
 
         $StartTime = Get-Date
 
@@ -2392,15 +2362,13 @@ function Parse-OrdersCertificate()
 	                $total_validation_fails = @($validation_results | Sort-Object -Property Status | Where { $_.Status -eq 'fail' }).Count
 	                if($total_validation_fails -gt 1)
 	                {
-		                Write-Verbose "[!] $($total_validation_fails) variables for $($file) failed validation."
-                        $validation_results | Sort-Object -Property Status
-		                throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                $validation_results | Sort-Object -Property Status
+		                Write-Error "[!] $($total_validation_fails) variables for $($file) failed validation."
 	                }
 	                elseif($total_validation_fails -eq 1)
 	                {
-		                Write-Verbose "[!] $($total_validation_fails) variable for $($file) failed validation."
-                        $validation_results | Sort-Object -Property Status
-		                throw "[!] $($total_validation_fails) variables for $($file) failed validation."
+		                $validation_results | Sort-Object -Property Status
+		                Write-Error "[!] $($total_validation_fails) variable for $($file) failed validation."
 	                }
                 }
 
@@ -2430,8 +2398,7 @@ function Parse-OrdersCertificate()
     }
     else
     {
-        Write-Verbose "[!] Total to create: $($total_to_create_orders_cert). No .cof files in $($cof_directory_working) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
-        throw "[!] No .cof files in $($cof_directory_working) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
+        Write-Error "[!] Total to create: $($total_to_create_orders_cert). No .cof files in $($cof_directory_working) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
     }
 }
 
@@ -2466,8 +2433,7 @@ function Work-Magic()
         }
         else
         {
-            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($uic_directory) creation failed."
-            throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($uic_directory) creation failed."
+            Write-Error "[!] Failed to process for $($last_name) $($first_name) $($uic). $($uic_directory) creation failed."
         }
     }
 
@@ -2486,8 +2452,7 @@ function Work-Magic()
         }
         else
         {
-            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_uics) creation failed."
-            throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_uics) creation failed."
+            Write-Error "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_uics) creation failed."
         }
     }
 
@@ -2506,8 +2471,7 @@ function Work-Magic()
         }
         else
         {
-            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_uics)\$($uic_soldier_order_file_name) creation failed."
-            throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_uics)\$($uic_soldier_order_file_name) creation failed."
+            Write-Error "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_uics)\$($uic_soldier_order_file_name) creation failed."
         }
     }
 
@@ -2526,8 +2490,7 @@ function Work-Magic()
         }
         else
         {
-            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_ord_managers) creation failed."
-            throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_ord_managers) creation failed."
+            Write-Error "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_ord_managers) creation failed."
         }
     }
 
@@ -2546,8 +2509,7 @@ function Work-Magic()
         }
         else
         {
-            Write-Verbose "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_ord_managers)\$($uic_soldier_order_file_name) creation failed."
-            throw "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_ord_managers)\$($uic_soldier_order_file_name) creation failed."
+            Write-Error "[!] Failed to process for $($last_name) $($first_name) $($uic). $($soldier_directory_ord_managers)\$($uic_soldier_order_file_name) creation failed."
         }
     }
 }
@@ -2575,8 +2537,7 @@ function Clean-OrdersMain()
         }
         else
         {
-            Write-Verbose "[!] Failed to remove $($mof_directory_working)."
-            throw "[!] Failed to remove $($mof_directory_working)."
+            Write-Error "[!] Failed to remove $($mof_directory_working)."
         }
     }
     else
@@ -2608,8 +2569,7 @@ function Clean-OrdersCertificate()
         }
         else
         {
-            Write-Verbose "[!] Failed to remove $($cof_directory_working)."
-            throw "[!] Failed to remove $($cof_directory_working)."
+            Write-Error "[!] Failed to remove $($cof_directory_working)."
         }
     }
     else
@@ -2639,13 +2599,12 @@ function Clean-UICS()
         }
         else
         {
-            Write-Verbose "[!] Failed to remove $($uics_directory_output)."
-            throw "[!] Failed to remove $($uics_directory_output)."
+            Write-Error "[!] Failed to remove $($uics_directory_output)."
         }
     }
     else
     {
-        Write-Verbose "[!] Total directories to clean: $($total_to_clean_uics_directories). No directories in $($uics_directory_output) to clean up."
+        Write-Error "[!] Total directories to clean: $($total_to_clean_uics_directories). No directories in $($uics_directory_output) to clean up."
     }
 }
 
@@ -2661,9 +2620,9 @@ function Get-Permissions()
     $uics_directory = $uics_directory.Split('\')
     $uics_directory = $uics_directory[-1]
 
-    $html_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory_output)_permissions_report.html"
-    $csv_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory_output)_permissions_report.csv"
-    $txt_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory_output)_permissions_report.txt"
+    $html_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.html"
+    $csv_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.csv"
+    $txt_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.txt"
 
     if(!(Test-Path "$($permissions_reports_directory)\$($run_date)"))
     {
@@ -2671,15 +2630,20 @@ function Get-Permissions()
     }
 
     Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .csv file now."
-    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Export-Csv -Force -NoTypeInformation $($csv_report)
+    
+    
+    #$csv_report
+    #Read-Host -Prompt "Enter to continue"
+
+
+    Get-ChildItem -Recurse -Path $($uics_directory_output) | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Export-Csv -Force -NoTypeInformation $($csv_report)
     if($?)
     {
         Write-Verbose "[*] $($uics_directory_output) permissions writing to .csv finished successfully."
     }
     else
     {
-        Write-Verbose "[!] $($uics_directory_output) permissions writing to .csv failed."
-        throw "[!] $($uics_directory_output) permissions writing to .csv failed."
+        Write-Error "[!] $($uics_directory_output) permissions writing to .csv failed."
     }
 
     Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .html file now."
@@ -2695,29 +2659,28 @@ tr:nth-child(even) { background: #dae5f4; }
 tr:nth-child(odd) { background: #b8d1f3; }
 </style>
 "@
-    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | ConvertTo-Html -Title "$($uics_directory_output) Permissions Report" -Head $($css) -Body "<h1>$($uics_directory_output) Permissions Report</h1> <h5> Generated on $(Get-Date -UFormat "%Y-%m-%d @ %H-%M-%S")" | Out-File $($html_report)
+    Get-ChildItem -Recurse -Path $($uics_directory_output)  | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | ConvertTo-Html -Title "$($uics_directory_output) Permissions Report" -Head $($css) -Body "<h1>$($uics_directory_output) Permissions Report</h1> <h5> Generated on $(Get-Date -UFormat "%Y-%m-%d @ %H-%M-%S")" | Out-File $($html_report)
     if($?)
     {
         Write-Verbose "[*] $($uics_directory_output) permissions writing to .html finished successfully."
     }
     else
     {
-        Write-Verbose "[!] $($uics_directory_output) permissions writing to .html failed."
-        throw "[!] $($uics_directory_output) permissions writing to .html failed."
+        Write-Error "[!] $($uics_directory_output) permissions writing to .html failed."
     }
 
     Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .txt file now."
-    Get-ChildItem -Recurse -Path $($uics_directory_output) -Exclude '__PERMISSIONS' | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Format-Table -AutoSize -Wrap | Out-File $($txt_report)
+    Get-ChildItem -Recurse -Path $($uics_directory_output)  | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Format-Table -AutoSize -Wrap | Out-File $($txt_report)
     if($?)
     {
         Write-Verbose "[*] $($uics_directory_output) permissions writing to .txt finished successfully."
     }
     else
     {
-        Write-Verbose "[!] $($uics_directory_output) permissions writing to .txt failed."
-        throw "[!] $($uics_directory_output) permissions writing to .txt failed."
+        Write-Error "[!] $($uics_directory_output) permissions writing to .txt failed."
     }
 }
+
 
 function Validate-Variables()
 {
@@ -2795,7 +2758,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'last_name')
@@ -2830,7 +2793,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'first_name')
@@ -2865,7 +2828,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'middle_initial')
@@ -2900,7 +2863,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'published_year')
@@ -2935,7 +2898,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'published_month')
@@ -2970,7 +2933,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'published_day')
@@ -3005,7 +2968,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'ssn')
@@ -3040,7 +3003,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_from_year')
@@ -3075,7 +3038,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_from_month')
@@ -3110,7 +3073,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_from_day')
@@ -3145,7 +3108,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_to_year')
@@ -3180,7 +3143,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                         "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_to_month')
@@ -3215,7 +3178,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_to_day')
@@ -3250,7 +3213,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_to_number')
@@ -3285,7 +3248,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'period_to_time')
@@ -3320,7 +3283,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'format')
@@ -3355,7 +3318,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'order_amended')
@@ -3390,7 +3353,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'order_revoke')
@@ -3425,7 +3388,7 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 elseif($key -eq 'order_number')
@@ -3460,13 +3423,12 @@ function Validate-Variables()
                             $validation_results += $validation_result
                         }
 
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
                     }
                 }
                 else
                 {
-                    Write-Verbose "[!] Incorrect or unknown parameter specified. Try again with proper input."  -ForegroundColor Red
-                    throw "[!] Incorrect or unknown parameter specified. Try again with proper input."
+                    Write-Error "[!] Incorrect or unknown parameter specified. Try again with proper input."
                 }
 
                 Write-Verbose "[*] Finished validating ( $($parameters_processed) / $($parameters_passed) ) parameters."
@@ -3476,7 +3438,7 @@ function Validate-Variables()
     }
     else
     {
-        Write-Verbose "[!] No parameters passed. Try again with proper input."  -ForegroundColor Red
+        Write-Error "[!] No parameters passed. Try again with proper input."
     }
 }
 
@@ -3510,7 +3472,7 @@ function Process-DevCommands()
             {
                 { @("y", "Y") -contains $_ } { "Terminating at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd) by user."; exit 0 }
                 { @("n", "N") -contains $_ } { $sw.Start(); continue }
-                default { "Response not determined." }
+                default { Write-Warning "Response not determined." }
             }
         }
     }
@@ -3562,7 +3524,7 @@ if($($ParametersPassed) -gt '0')
 	            {
                     if(!($($output_dir)))
                     {
-                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Write-Error "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included."
                         Stop-Transcript
                         exit 1
                     }
@@ -3571,14 +3533,14 @@ if($($ParametersPassed) -gt '0')
 		            Create-RequiredDirectories -directories $($directories)
 		            if($?) 
 		            {
-			            Write-Host "[^] Creating directories finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Creating directories finished." -ForegroundColor Cyan 
                         Stop-Transcript
 		            } 
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Directory creation failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Directory creation failed. Check the error logs at $($error_path)."
                     Stop-Transcript
 		            exit 1	
 	            }
@@ -3590,7 +3552,7 @@ if($($ParametersPassed) -gt '0')
 	            {
                     if(!($($output_dir)))
                     {
-                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Write-Error "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included."
                         Stop-Transcript
                         exit 1
                     }
@@ -3599,14 +3561,14 @@ if($($ParametersPassed) -gt '0')
 		            Move-OriginalToArchive -tmp_directory_working $($tmp_directory_working) -archive_directory_working $($archive_directory_working) -ordregisters_output $($ordregisters_output)
 		            if($?) 
 		            { 
-			            Write-Host "[^] Backing up original orders file finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Backing up original orders file finished." -ForegroundColor Cyan 
                         Stop-Transcript
 		            }	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Backing up original orders failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Backing up original orders failed. Check the error logs at $($error_path)."
                     Stop-Transcript
 		            exit 1 
 	            }
@@ -3620,14 +3582,14 @@ if($($ParametersPassed) -gt '0')
 		            Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
 		            if($?)
 		            {
-			            Write-Host "[^] Splitting '*m.prt' order file(s) finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Splitting '*m.prt' order file(s) finished." -ForegroundColor Cyan 
                         Stop-Transcript
 		            }
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Splitting '*m.prt' order file(s)  failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Splitting '*m.prt' order file(s)  failed. Check the error logs at $($error_path)."
                     Stop-Transcript
 		            exit 1 
 	            }
@@ -3635,21 +3597,20 @@ if($($ParametersPassed) -gt '0')
 
             "split_cert"
             { 
-
 	            try
 	            {
 		            Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor Cyan
 		            Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
 		            if($?) 
 		            {
-			            Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished successfully." -ForegroundColor Cyan
+			            Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished." -ForegroundColor Cyan
                         Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Splitting '*c.prt' certificate file(s) into individual certificate files failed. Check the error logs at $($error_path)."
                     Stop-Transcript 
 		            exit 1 
 	            }
@@ -3664,14 +3625,14 @@ if($($ParametersPassed) -gt '0')
 		            Edit-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working)
 		            if($?) 
 		            { 
-			            Write-Host "[^] Editing orders '*m.prt' files finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Editing orders '*m.prt' files finished." -ForegroundColor Cyan 
                         Stop-Transcript 
 		            }
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Editing orders '*m.prt' files failed. Check the error logs at $($error_path)."
                     Stop-Transcript 
 		            exit 1
 	            }
@@ -3685,14 +3646,14 @@ if($($ParametersPassed) -gt '0')
 		            Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working)
 		            if($?)
 		            { 
-			            Write-Host "[^] Editing orders '*c.prt' files finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Editing orders '*c.prt' files finished." -ForegroundColor Cyan 
                         Stop-Transcript 
 		            } 
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)."
                     Stop-Transcript 
 		            exit 1
 	            }
@@ -3706,14 +3667,14 @@ if($($ParametersPassed) -gt '0')
 		            Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -run_date $($run_date)
 		            if($?) 
 		            { 
-			            Write-Host "[^] Combining .mof orders files finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Combining .mof orders files finished." -ForegroundColor Cyan 
                         Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Combining .mof orders files failed. Check the error logs at $($error_path)." -ForegroundColor Red
+		            Write-Error "[!] Combining .mof orders files failed. Check the error logs at $($error_path)."
                     Stop-Transcript 
 		            exit 1 
 	            }
@@ -3727,14 +3688,14 @@ if($($ParametersPassed) -gt '0')
 		            Combine-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date)
 		            if($?) 
 		            { 
-			            Write-Host "[^] Combining .cof orders files finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Combining .cof orders files finished." -ForegroundColor Cyan 
                         Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Combining .cof orders files failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Combining .cof orders files failed. Check the error logs at $($error_path)."
                     Stop-Transcript 
 		            exit 1 	
 	            }
@@ -3746,7 +3707,7 @@ if($($ParametersPassed) -gt '0')
                 {
                     if(!($($output_dir)))
                     {
-                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Write-Error "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included."
                         Stop-Transcript
                         exit 1
                     }
@@ -3755,14 +3716,14 @@ if($($ParametersPassed) -gt '0')
                     Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
 		            if($?) 
 		            { 
-			            Write-Host "[^] Magic on .mof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan 
+			            Write-Host "[^] Magic on .mof files finished. Did you expect anything less?" -ForegroundColor Cyan 
                         Stop-Transcript 
 		            }
                 }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Magic on .mof files failed?! Impossible. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Magic on .mof files failed?! Impossible. Check the error logs at $($error_path)."
                     Stop-Transcript 
 		            exit 1 	
 	            }
@@ -3774,7 +3735,7 @@ if($($ParametersPassed) -gt '0')
 	            {
                     if(!($($output_dir)))
                     {
-                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Write-Error "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included."
                         Stop-Transcript
                         exit 1
                     }
@@ -3783,14 +3744,14 @@ if($($ParametersPassed) -gt '0')
 		            Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
 		            if($?) 
 		            { 
-			            Write-Host "[^] Magic on .cof files finished successfully. Did you expect anything less?" -ForegroundColor Cyan 
+			            Write-Host "[^] Magic on .cof files finished. Did you expect anything less?" -ForegroundColor Cyan 
                         Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Magic on .cof files failed?! Impossible. Check the error logs at $($error_path)."
                     Stop-Transcript 
 		            exit 1 	
 	            }
@@ -3804,14 +3765,14 @@ if($($ParametersPassed) -gt '0')
 		            Clean-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories)
 		            if($?) 
 		            { 
-			            Write-Host "[^] Cleaning up .mof finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Cleaning up .mof finished." -ForegroundColor Cyan 
                         Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Cleaning up .mof failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Cleaning up .mof failed. Check the error logs at $($error_path)."
                     Stop-Transcript 
 		            exit 1 	
 	            }
@@ -3825,14 +3786,14 @@ if($($ParametersPassed) -gt '0')
 		            Clean-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
 		            if($?) 
 		            { 
-			            Write-Host "[^] Cleaning up .cof finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Cleaning up .cof finished." -ForegroundColor Cyan 
                         Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Cleaning up .cof failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Cleaning up .cof failed. Check the error logs at $($error_path)."
                     Stop-Transcript 
 		            exit 1
 	            }
@@ -3844,7 +3805,7 @@ if($($ParametersPassed) -gt '0')
 	            {
                     if(!($($output_dir)))
                     {
-                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Write-Error "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included."
                         Stop-Transcript
                         exit 1
                     }
@@ -3853,14 +3814,14 @@ if($($ParametersPassed) -gt '0')
 		            Clean-UICS -uics_directory_output $($uics_directory_output)
 		            if($?)
 		            { 
-			            Write-Host "[^] Cleaning up UICS folder finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Cleaning up UICS folder finished." -ForegroundColor Cyan 
                         Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Cleaning up UICS folder failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Cleaning up UICS folder failed. Check the error logs at $($error_path)."
                     Stop-Transcript 
 		            exit 1
 	            }
@@ -3871,7 +3832,7 @@ if($($ParametersPassed) -gt '0')
 	            {
                     if(!($($output_dir)))
                     {
-                        Write-Host "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included." -ForegroundColor Red
+                        Write-Error "[!] No output directory specified. Try again with '-o <destination_folder>' parameter included."
                         Stop-Transcript
                         exit 1
                     }
@@ -3880,14 +3841,14 @@ if($($ParametersPassed) -gt '0')
 		            Get-Permissions -uics_directory_output $($uics_directory_output)
 		            if($?) 
 		            { 
-			            Write-Host "[^] Getting permissions of UICS folder finished successfully." -ForegroundColor Cyan 
+			            Write-Host "[^] Getting permissions of UICS folder finished." -ForegroundColor Cyan 
                         Stop-Transcript 
 		            } 	
 	            }
 	            catch
 	            {
 		            $_ | Out-File -Append $($error_path)
-		            Write-Host "[!] Getting permissions failed. Check the error logs at $($error_path)."  -ForegroundColor Red
+		            Write-Error "[!] Getting permissions failed. Check the error logs at $($error_path)."
                     Stop-Transcript 
 		            exit 1 
 	            }
@@ -3895,31 +3856,130 @@ if($($ParametersPassed) -gt '0')
 
             "all" 
             {  
-	            try
-	            {
-	
-	            }
-	            catch
-	            {
-	
-	            }
+                $log_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=dir_create.log"
+                $error_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=dir_create_errors.log"
+                Start-Transcript -Path $($log_path)	
+                	            
+				Write-Host "[^] Creating required directories." -ForegroundColor Cyan
+		        Create-RequiredDirectories -directories $($directories)
+		        if($?) 
+		        {
+			        Write-Host "[^] Creating directories finished." -ForegroundColor Cyan
+                    Stop-Transcript
+		        } 
 
+                $log_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=split_main.log"
+                $error_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=split_main_errors.log"
+                Start-Transcript -Path $($log_path)
+
+		        Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor Cyan	
+		        Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
+		        if($?)
+		        {
+			        Write-Host "[^] Splitting '*m.prt' order file(s) finished." -ForegroundColor Cyan
+                    Stop-Transcript
+		        }
+
+                $log_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=split_cert.log"
+                $error_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=split_cert_errors.log"
+                Start-Transcript -Path $($log_path)
+
+		        Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor Cyan
+		        Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
+		        if($?) 
+		        {
+			        Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished." -ForegroundColor Cyan
+                    Stop-Transcript
+		        } 	
+					
+                $log_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=edit_main.log"
+                $error_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=edit_main.log"
+                Start-Transcript -Path $($log_path)         
+                       
+		        Write-Host "[^] Editing orders '*m.prt' files." -ForegroundColor Cyan
+		        Edit-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working)
+		        if($?) 
+		        { 
+			        Write-Host "[^] Editing orders '*m.prt' files finished." -ForegroundColor Cyan 
+                    Stop-Transcript
+		        }
+					
+                $log_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=edit_cert.log"
+                $error_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=edit_cert.log"
+                Start-Transcript -Path $($log_path)   
+
+		        Write-Host "[^] Editing orders '*c.prt' files." -ForegroundColor Cyan
+		        Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working)
+		        if($?)
+		        { 
+			        Write-Host "[^] Editing orders '*c.prt' files finished." -ForegroundColor Cyan 
+                    Stop-Transcript
+		        } 
+					
+                $log_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=combine_main.log"
+                $error_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=combine_main.log"
+                Start-Transcript -Path $($log_path)   
+
+		        Write-Host "[^] Combining .mof orders files." -ForegroundColor Cyan
+		        Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -run_date $($run_date)
+		        if($?) 
+		        { 
+			        Write-Host "[^] Combining .mof orders files finished." -ForegroundColor Cyan 
+                    Stop-Transcript
+		        } 	
+				
+                $log_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=combine_cert.log"
+                $error_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=combine_cert.log"
+                Start-Transcript -Path $($log_path)	
+
+		        Write-Host "[^] Combining .cof orders files." -ForegroundColor Cyan
+		        Combine-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date)
+		        if($?) 
+		        { 
+			        Write-Host "[^] Combining .cof orders files finished." -ForegroundColor Cyan 
+                    Stop-Transcript
+		        } 	
+
+                $log_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=magic_main.log"
+                $error_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=magic_main.log"
+                Start-Transcript -Path $($log_path)	
+
+                Write-Host "[^ Working magic on .mof files now." -ForegroundColor Cyan
+                Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
+		        if($?) 
+		        { 
+			        Write-Host "[^] Magic on .mof files finished. Did you expect anything less?" -ForegroundColor Cyan 
+                    Stop-Transcript
+		        }
+				
+                $log_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=magic_cert.log"
+                $error_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=magic_cert.log"
+                Start-Transcript -Path $($log_path)		
+
+		        Write-Host "[^] Working magic on .cof files." -ForegroundColor Cyan
+		        Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
+		        if($?) 
+		        { 
+			        Write-Host "[^] Magic on .cof files finished. Did you expect anything less?" -ForegroundColor Cyan 
+                    Stop-Transcript
+		        } 
+					
+				Stop-Transcript
             }
 
             "Verbose" 
             { 
                 continue
-	            #Write-Host "[^] Verbose parameter specified. Presenting verbose information above." -ForegroundColor Cyan
             }
 
             default 
             { 
-	            Write-Host "[!] Unrecognized parameter: $($p). Try again with proper parameter." -ForegroundColor Red 
+	            Write-Error "[!] Unrecognized parameter: $($p). Try again with proper parameter."
             }
         }
     }
 }
 else
 {
-    Write-Host "[!] No parameters passed. Run 'Get-Help $($script_name) -Full' for detailed help information" -ForegroundColor Red
+    Write-Error "[!] No parameters passed. Run 'Get-Help $($script_name) -Full' for detailed help information"
 }
