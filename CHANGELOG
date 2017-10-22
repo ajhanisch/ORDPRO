@@ -1,6 +1,12 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 1.2
+DATE: 10/22/2017
+CHANGES
+- added detailed progress bar output option when the Verbose parameter is not passed for all functions
+- modified move-originaltoarchive funcitonality to utilize hashtable of arrays lookup rather than redundant code
+------------------------------------
 VERSION: 1.1
 DATE: 10/20/2017
 CHANGES
