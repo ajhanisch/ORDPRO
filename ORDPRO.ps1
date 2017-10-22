@@ -52,27 +52,13 @@
 .LINK
    https://gitlab.com/ajhanisch/ORDPRO
 .EXAMPLE
-    .\ORDPRO.ps1 -dir_create -split_main -edit_main -magic_main -split_cert -edit_cert -magic_cert -backups -output_dir "\\path\to\your\desired\output\directory" -Verbose
+    .\ORDPRO.ps1 -all -output_dir "\\path\to\your\desired\output\directory" -Verbose
 
-    Most commonly used command for normal use. The order in which you define the parameters does not matter, however, this example provides the steps in the needed order for scipt success.
-    
-    This will create required directories (-d -o "\\path\to\your\desired\output\directory"), split the '*m.prt' files into individual files from the original file (-split_main), edit the '*m.prt' files (-edit_main), parse '*m.prt' files and create output directory structure and move orders to appropriate locations (-magic_main), split the '*c.prt' files into individual files from the original file (-split_cert), edit the '*c.prt' files (-edit_cert), parse '*c.prt' files and move orders to appropriate locations (-magic_cert), and perform archival backup of original files (-backups), and set the output location to "\\path\to\your\desired\output\directory" (-o) while showing detailed script verbosity (-Verbose).
+    Run all required parameters for success while including detailed verbosity output.
+.EXAMPLE
+    .\ORDPRO.ps1 -all -output_dir "\\path\to\your\desired\output\directory"
 
-    Short version of this command would be .\ORDPRO.ps1 -d -sm -em -mm -sc -ec -mc -b -o "\\path\to\your\desired\output\directory" -Verbose
-
-    ---------------------------
-    Steps in order for success:
-    ---------------------------
-    1. Create required directories (Requires 'o' parameter included)
-    2. Split the main order files
-    3. Edit the main order files
-    4. Work magic on main order files
-    5. Split the certificate order files
-    6. Edit the certificate order files
-    7. Work magic on certificate order files (Work magic on main files before working magic on cert files.)
-    8. (optional) backup original files (Requires 'o' parameter included)
-    9. Define output directory
-    ---------------------------
+    Run all required parameters for success showing detailed progress bar information.
 .EXAMPLE
     .\ORDPRO.ps1 -Verbose
     
