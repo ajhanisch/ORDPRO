@@ -286,7 +286,7 @@ function Create-RequiredDirectories()
                 Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation)."
             }
             
-            elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+            else
             {
                 Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
             }
@@ -470,7 +470,7 @@ function Move-OriginalToArchive()
                         Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
                     }
             
-                    elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+                    else
                     {
                         Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
                     }
@@ -620,7 +620,7 @@ function Split-OrdersMain()
                 Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
             }
             
-            elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+            else
             {
                 Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
             }
@@ -769,7 +769,7 @@ function Split-OrdersCertificate()
                 Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
             }
             
-            elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+            else
             {
                 Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
             }
@@ -1092,7 +1092,7 @@ function Edit-OrdersMain()
                 Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
             }
             
-            elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+            else
             {
                 Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
             }
@@ -1250,7 +1250,7 @@ function Edit-OrdersCertificate()
                 Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
             }
             
-            elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+            else
             {
                 Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
             }
@@ -1288,11 +1288,11 @@ function Combine-OrdersMain()
 	 
     #cls
  
-    $total_to_combine_orders_main = (Get-ChildItem -Path "$($mof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
+    $total_to_combine_orders_main = Get-ChildItem -Path "$($mof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }
 
-    $orders_combined_csv = "$($log_file_directory)\$($run_date)_orders_combined_cert.csv"
+    $orders_combined_csv = "$($log_file_directory)\$($run_date)_combined_orders_main.csv"
 
-    if($($total_to_combine_orders_main) -gt '0')
+    if($($($total_to_combine_orders_main.Count)) -gt '0')
     {
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
@@ -1300,52 +1300,53 @@ function Combine-OrdersMain()
 
         $orders_combined = @()
 
-        $out_file = "$($log_directory_working)\$($run_date)\$($run_date)_combined_orders_main.txt"
+        $out_file = "$($log_directory_working)\$($run_date)\$($run_date)_orders_combined_main.txt"
+        New-Item -ItemType File $out_file -Force > $null
 
-        Write-Log -log_file $log_file -message "[#] Total to combine: $($total_to_combine_orders_main). Combining .mof files now."
-        Write-Verbose "[#] Total to combine: $($total_to_combine_orders_main). Combining .mof files now."
+        Write-Log -log_file $log_file -message "[#] Total to combine: $($total_to_combine_orders_main.Count). Combining .mof files now."
+        Write-Verbose "[#] Total to combine: $($total_to_combine_orders_main.Count). Combining .mof files now."
 
-        Get-ChildItem -Path $($mof_directory_working) -Recurse | Where { ! $_.PSIsContainer } | Where { $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" } | 
-            ForEach-Object {
-                Process-DevCommands -sw $($sw)
+        foreach($file in $total_to_combine_orders_main)
+        {
+            Process-DevCommands -sw $($sw)
 
-                Out-File -FilePath $($out_file) -InputObject (Get-Content $_.FullName) -Append
-                if($?)
-                {
-                    $hash = @{
-                        'FILE' = $($_.FullName)
-                        'STATUS' = 'SUCCESS'
-                    }
-
-                    $order_combined = New-Object -TypeName PSObject -Property $hash
-                    $orders_combined += $order_combined
-
-	                $status = "Combining '*m.prt' files."
-	                $activity = "Processing file $($orders_combined.Count) of $($total_to_combine_orders_main)."
-	                $percent_complete = (($($orders_combined.Count)/$($total_to_combine_orders_main)) * 100)
-	                $current_operation = "$("{0:N2}" -f ((($($orders_combined.Count)/$($total_to_combine_orders_main)) * 100),2))% Complete"
-	                $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-	                $seconds_remaining = ($seconds_elapsed / ($($orders_combined.Count) / $total_to_combine_orders_main)) - $seconds_elapsed
-                    $ts =  [timespan]::fromseconds($seconds_remaining)
-                    $ts = $ts.ToString("hh\:mm\:ss")
-
-                    if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
-                    {
-                        Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
-                        Write-Verbose "[#] Start time: $($start_time)."
-                    }
-            
-                    elseif((Get-PSCallStack)[1].Arguments -like '*Verbose=False*')
-                    {
-                        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
-                    }                 
+            Get-Content "$($mof_directory_working)\$file" | Add-Content $out_file
+            if($?)
+            {
+                $hash = @{
+                    'FILE' = $($file.FullName)
+                    'STATUS' = 'SUCCESS'
                 }
+
+                $order_combined = New-Object -TypeName PSObject -Property $hash
+                $orders_combined += $order_combined
+
+	            $status = "Combining '*m.prt' files."
+	            $activity = "Processing file $($orders_combined.Count) of $($total_to_combine_orders_main.Count)."
+	            $percent_complete = (($($orders_combined.Count)/$($total_to_combine_orders_main.Count)) * 100)
+	            $current_operation = "$("{0:N2}" -f ((($($orders_combined.Count)/$($total_to_combine_orders_main.Count)) * 100),2))% Complete"
+	            $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
+	            $seconds_remaining = ($seconds_elapsed / ($($orders_combined.Count) / $total_to_combine_orders_main.Count)) - $seconds_elapsed
+                $ts =  [timespan]::fromseconds($seconds_remaining)
+                $ts = $ts.ToString("hh\:mm\:ss")
+
+                if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+                {
+                    Write-Log -log_file $log_file -message "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                    Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                }
+            
                 else
                 {
-                    Write-Log -level [ERROR] -log_file $log_file -message "[!] Combining .mof files failed."
-                    Write-Error "[!] Combining .mof files failed."
-                }
+                    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                }                    
             }
+            else
+            {
+                Write-Log -level [ERROR] -log_file $log_file -message "[!] Combining .mof files failed."
+                Write-Error "[!] Combining .mof files failed."
+            }
+        }
 
         if($orders_combined.Count -gt 0)
         {
@@ -1356,8 +1357,8 @@ function Combine-OrdersMain()
     }
     else
     {
-        Write-Log -level [WARN] -log_file $log_file -message "[!] Total to combine: $($total_to_combine_orders_main). No .mof files in $($mof_directory_working) to combine. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
-        Write-Warning -Message "[!] Total to combine: $($total_to_combine_orders_main). No .mof files in $($mof_directory_working) to combine." -RecommendedAction "Make sure to split and edit *m.prt files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
+        Write-Log -level [WARN] -log_file $log_file -message "[!] Total to combine: $($total_to_combine_orders_main.Count). No .mof files in $($mof_directory_working) to combine. Make sure to split and edit '*m.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
+        Write-Warning -Message "[!] Total to combine: $($total_to_combine_orders_main.Count). No .mof files in $($mof_directory_working) to combine." -RecommendedAction "Make sure to split and edit '*m.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
     }
 }
 
@@ -1371,11 +1372,11 @@ function Combine-OrdersCertificate()
 	  
     #cls
 
-    $total_to_combine_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }).Length
+    $total_to_combine_orders_cert = Get-ChildItem -Path "$($cof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }
 
-    $orders_combined_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_combined_cert.csv"
+    $orders_combined_csv = "$($log_directory_working)\$($run_date)\$($run_date)_combined_orders_cert.csv"
 
-    if($($total_to_combine_orders_cert) -gt '0')
+    if($($($total_to_combine_orders_cert.Count)) -gt '0')
     {
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
@@ -1383,52 +1384,53 @@ function Combine-OrdersCertificate()
 
         $orders_combined = @()
 
-        $out_file = "$($log_directory_working)\$($run_date)\$($run_date)_combined_orders_cert.txt"
+        $out_file = "$($log_directory_working)\$($run_date)\$($run_date)_orders_combined_cert.txt"
+        New-Item -ItemType File $out_file -Force > $null
 
-        Write-Log -log_file $log_file -message "[#] Total to combine: $($total_to_combine_orders_cert). Combining .cof files now."
-        Write-Verbose "[#] Total to combine: $($total_to_combine_orders_cert). Combining .cof files now."
+        Write-Log -log_file $log_file -message "[#] Total to combine: $($total_to_combine_orders_cert.Count). Combining .cof files now."
+        Write-Verbose "[#] Total to combine: $($total_to_combine_orders_cert.Count). Combining .cof files now."
 
-        Get-ChildItem -Path $($cof_directory_working) -Recurse | Where { ! $_.PSIsContainer } | Where { $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" } | 
-            ForEach-Object {
-                Process-DevCommands -sw $($sw)
+        foreach($file in $total_to_combine_orders_cert)
+        {
+            Process-DevCommands -sw $($sw)
 
-                Out-File -FilePath $($out_file) -InputObject (Get-Content $_.FullName) -Append
-                if($?)
-                {
-                    $hash = @{
-                        'FILE' = $($_.FullName)
-                        'STATUS' = 'SUCCESS'
-                    }
-
-                    $order_combined = New-Object -TypeName PSObject -Property $hash
-                    $orders_combined += $order_combined
-
-	                $status = "Combining '*c.prt' files."
-	                $activity = "Processing file $($orders_combined.Count) of $($total_to_combine_orders_cert)."
-	                $percent_complete = (($($orders_combined.Count)/$($total_to_combine_orders_cert)) * 100)
-	                $current_operation = "$("{0:N2}" -f ((($($orders_combined.Count)/$($total_to_combine_orders_cert)) * 100),2))% Complete"
-	                $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-	                $seconds_remaining = ($seconds_elapsed / ($($orders_combined.Count) / $total_to_combine_orders_cert)) - $seconds_elapsed
-                    $ts =  [timespan]::fromseconds($seconds_remaining)
-                    $ts = $ts.ToString("hh\:mm\:ss")
-
-                    if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
-                    {
-                        Write-Log -log_file $log_file -message "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                        Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                    }
-            
-                    elseif((Get-PSCallStack)[1].Arguments -like '*Verbose=False*')
-                    {
-                        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
-                    }                    
+            Get-Content "$($cof_directory_working)\$file" | Add-Content $out_file
+            if($?)
+            {
+                $hash = @{
+                    'FILE' = $($file.FullName)
+                    'STATUS' = 'SUCCESS'
                 }
+
+                $order_combined = New-Object -TypeName PSObject -Property $hash
+                $orders_combined += $order_combined
+
+	            $status = "Combining '*c.prt' files."
+	            $activity = "Processing file $($orders_combined.Count) of $($total_to_combine_orders_cert.Count)."
+	            $percent_complete = (($($orders_combined.Count)/$($total_to_combine_orders_cert.Count)) * 100)
+	            $current_operation = "$("{0:N2}" -f ((($($orders_combined.Count)/$($total_to_combine_orders_cert.Count)) * 100),2))% Complete"
+	            $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
+	            $seconds_remaining = ($seconds_elapsed / ($($orders_combined.Count) / $total_to_combine_orders_cert.Count)) - $seconds_elapsed
+                $ts =  [timespan]::fromseconds($seconds_remaining)
+                $ts = $ts.ToString("hh\:mm\:ss")
+
+                if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+                {
+                    Write-Log -log_file $log_file -message "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                    Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                }
+            
                 else
                 {
-                    Write-Log -level [ERROR] -log_file $log_file -message "[!] Combining .cof files failed."
-                    Write-Error "[!] Combining .cof files failed."
-                }
+                    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                }                    
             }
+            else
+            {
+                Write-Log -level [ERROR] -log_file $log_file -message "[!] Combining .cof files failed."
+                Write-Error "[!] Combining .cof files failed."
+            }
+        }
 
         if($orders_combined.Count -gt 0)
         {
@@ -1439,8 +1441,8 @@ function Combine-OrdersCertificate()
     }
     else
     {
-        Write-Log -level [WARN] -log_file $log_file -message "[!] Total to combine: $($total_to_combine_orders_cert). No .cof files in $($cof_directory_working) to combine. Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
-        Write-Warning -Message "[!] Total to combine: $($total_to_combine_orders_cert). No .cof files in $($cof_directory_working) to combine." -RecommendedAction "Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
+        Write-Log -level [WARN] -log_file $log_file -message "[!] Total to combine: $($total_to_combine_orders_cert.Count). No .cof files in $($cof_directory_working) to combine. Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
+        Write-Warning -Message "[!] Total to combine: $($total_to_combine_orders_cert.Count). No .cof files in $($cof_directory_working) to combine." -RecommendedAction "Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
     }
 }
 
@@ -2712,7 +2714,7 @@ function Parse-OrdersMain()
                     Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
                 }
             
-                elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+                else
                 {
                     Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
                 }
@@ -2988,7 +2990,7 @@ function Parse-OrdersCertificate()
                     Write-Verbose "[#] $($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
                 }
             
-                elseif(!((Get-PSCallStack)[1].Arguments -like '*Verbose=True*'))
+                else
                 {
                     Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
                 }
@@ -3361,34 +3363,6 @@ tr:nth-child(odd) { background: #b8d1f3; }
         Write-Error -Message "[!] $($uics_directory_output) permissions writing to .txt failed."
     }
 }
-
-Function Write-Log 
-{
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory=$False)][ValidateSet("[INFO]","[WARN]","[ERROR]","[FATAL]","[DEBUG]")][String]$level = "[INFO]",
-        [Parameter(Mandatory=$True)][string]$message,
-        [Parameter(Mandatory=$False)][string]$log_file
-    )
-
-    if(!(Test-Path $log_file))
-    {
-        New-Item -ItemType File -Path $log_file -Force > $null
-    }
-
-    $stamp = (Get-Date).toString("yyyy/MM/dd HH:mm:ss")
-    $line = "$stamp $level $message"
-
-    If($log_file) 
-    {            
-        Add-Content $log_file -Value $line
-    }
-    Else 
-    {
-        Write-Output $line
-    }
-}
-
 
 function Validate-Variables()
 {
@@ -4154,6 +4128,33 @@ function Validate-Variables()
     }
 }
 
+Function Write-Log 
+{
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory=$False)][ValidateSet("[INFO]","[WARN]","[ERROR]","[FATAL]","[DEBUG]")][String]$level = "[INFO]",
+        [Parameter(Mandatory=$True)][string]$message,
+        [Parameter(Mandatory=$False)][string]$log_file
+    )
+
+    if(!(Test-Path $log_file))
+    {
+        New-Item -ItemType File -Path $log_file -Force > $null
+    }
+
+    $stamp = (Get-Date).toString("yyyy/MM/dd HH:mm:ss")
+    $line = "$stamp $level $message"
+
+    If($log_file) 
+    {            
+        Add-Content $log_file -Value $line
+    }
+    Else 
+    {
+        Write-Output $line
+    }
+}
+
 function Process-DevCommands()
 {
     [cmdletbinding()]
@@ -4295,24 +4296,14 @@ if($($ParametersPassed) -gt '0')
 
             "edit_cert" 
             { 
-	            try
-	            {
-		            Write-Host "[^] Editing orders '*c.prt' files." -ForegroundColor Cyan
-		            Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working)
+		        Write-Host "[^] Editing orders '*c.prt' files." -ForegroundColor Cyan
+		        Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working)
 
-		            if($?)
-		            { 
-			            Write-Host "[^] Editing orders '*c.prt' files finished." -ForegroundColor Cyan 
-                        #Stop-Transcript 
-		            } 
-	            }
-	            catch
-	            {
-		            $_ | Out-File -Append $($error_path)
-		            Write-Error "[!] Editing orders '*c.prt' files failed. Check the error logs at $($error_path)."
+		        if($?)
+		        { 
+			        Write-Host "[^] Editing orders '*c.prt' files finished." -ForegroundColor Cyan 
                     #Stop-Transcript 
-		            #exit 1
-	            }
+		        } 
             }
 
             "combine_main" 
