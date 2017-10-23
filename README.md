@@ -62,4 +62,6 @@ Options:
 - [ ] Assign permissions to each UIC folder as needed automatically during processing
 - [ ] Implement some type of notification of when orders are processed
 - [ ] Implement web front end and/or database backend to store, query, and present split, edited, parsed, and moved output to users from central controlled location
+- [ ] Implement a checkpoint system
+- [ ] Implement parallel processing
   
