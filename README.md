@@ -1,12 +1,12 @@
 # **ORDPRO.ps1**  
-Order processing.  
+Orders Processor.  
   
 Orders management automation.  
 
 Author: Ashton J. Hanisch < <ajhanisch@gmail.com> >  
   
 # **SYNOPSIS**  
-Automates splitting of orders file, creates UIC/SSN based folder structure, moves orders to SSN folders, moves orders to historical folders, backs up folder structure, assigns permissions to folders, notifies users of newly published and organized orders.
+Automates splitting of orders file, creates UIC/SSN based folder structure, moves orders to desired output, and backs up folder structure.
   
 # **DESCRIPTION**  
 Script designed to assist in management and processing of orders given in the format of a single file containing numerous orders. The script begins by splitting each order into individual orders. It determines what folders need to be created based on UIC and SSN information parsed from each order. It creates folders for each UIC and SSN and places orders in appropriate SSN folder. During this time it also creates historical backups of each order parsed for back and redundancy. After this it will assign permissions to appropiate groups on each UIC and SSN folder. When it has finished this and cleaned up, it will notify appropriate users and groups of newly published orders.
