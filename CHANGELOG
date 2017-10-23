@@ -1,6 +1,12 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 1.3
+DATE: 10/23/2017
+CHANGES
+- modified verbosity and logging functionality. detailed logging now happens with verbose and progress bar output rather than just verbose
+- implemented write-log function to write to single, timestamped, level indicated, log file
+------------------------------------
 VERSION: 1.2
 DATE: 10/22/2017
 CHANGES
