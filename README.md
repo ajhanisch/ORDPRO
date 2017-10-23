@@ -27,7 +27,8 @@ Running the tool:
 Typical Usage Example:  
 .\ORDPRO.ps1 -a -o "\\path\to\desired\output\directory"
   
-Options: 
+Options:   
+  
 | Step # |  Parameter  |                                                                                              Result                                                                                               |                                                Additional Considerations                                                 |  |
 |--------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|--|
 |    1   |    -d       | Create required directories in working directory and output directory                                                                                                                             | Requires -o "\\path\" to be used as well                                                                                 |  |
@@ -48,6 +49,7 @@ Options:
 |   14   |    -b       | (Optional). Performs archival backup of the original '*m.prt', '*c.prt', '*r.prt', and '*r.reg' files in the current working directory                                                            | This should be ran after all other desired operations have been done                                                     |  |
 |   15   |    -a       | (Optional). Performs all required steps to be successful for you in one parameter.                                                                                                                | Ensure to include the -o "\\path\" with this parameter to tell the script where you want output to go                    |  |
 |   16   |    -Verbose | (Optional). Including this parameter with any other parameter will output detailed verbosity of script processing. This is desired for detailed log files as well as learning how script operates | Omitting this parameter will result in a detailed progress bar presented rather than detailed verbosity in the console   |  |
+
   
 # **WISH LIST / TO DO**  
 - [ ] Assign permissions to UICS\UICS folders as needed
