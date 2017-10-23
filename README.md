@@ -15,7 +15,14 @@ Script designed to assist in management and processing of orders given in the fo
 Automated parsing, organization, and backup of daily orders published.
       
 # **CONSIDERATIONS**  
-None currently.
+ORDPRO comes built in with runtime commands to make life of the script user easier. Runtime commands currently built in are as follows.
+
+	+----------------------+--------------+
+	| Keyboard Combination |    Result    |
+	+----------------------+--------------+
+	| CTRL + P             | Pause script |
+	| CTRL + Q             | Quit script  |
+	+----------------------+--------------+  
     
 # **DOCUMENTATION**  
 Check out the README and Wiki page for detailed information.
@@ -25,13 +32,13 @@ Running the tool:
 .\ORDPRO.ps1 [options]
   
 Typical Usage Example:  
-.\ORDPRO.ps1 -a -o "\\path\to\desired\output\directory"
+.\ORDPRO.ps1 -a -o "\\\path\to\desired\output\directory"
   
 Options:   
   
 | Step # |  Parameter  |                                                                                                               Result                                                                                                               |                                                                                                     Additional Considerations                                                                                                     |  |
 |--------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--|
-|    1   |    -d       | Create required directories in working directory and output directory                                                                                                                                                              | Requires -o "\\path\" to be used as well                                                                                                                                                                                          |  |
+|    1   |    -d       | Create required directories in working directory and output directory                                                                                                                                                              | Requires -o "\\\path\" to be used as well                                                                                                                                                                                          |  |
 |    2   |    -sm      | Split orders in '*m.prt' file(s) in current directory into individual order files                                                                                                                                                  | Ensure to pass or already passed -d to create working directories                                                                                                                                                                 |  |
 |    3   |    -em      | Edit the split order files from the '*m.prt' files in current directory                                                                                                                                                            | Editing includes removing unwanted FOUO lines, line breaks, spacing, etc                                                                                                                                                          |  |
 |    4   |    -mm      | Magic function on '*m.prt' files. Parses files and extracts key information, create directory structure based on info extracted, and moves split and edited orders to final destinations within defined output directory structure | Steps 1-4 must be performed before step 7.                                                                                                                                                                                        |  |
