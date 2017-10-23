@@ -56,11 +56,17 @@
 
     Short version of command would be .\ORDPRO.ps1 -a -o "\\path\to\your\desired\output\directory"
 .EXAMPLE
-    .\ORDPRO.ps1 -Verbose
+    .\ORDPRO.ps1 [options] -Verbose
     
     View detailed output of ORDPRO processing information during ORDPRO use. 
     
-    Adding the 'Verbose' parameter to any command passed to ORDPRO will result in very detailed verbosity of ORDPRO actions and processing. This is desired when wanting to learn more of ORDPRO functionality as well as for logging purposes. Omitting 'Verbose' will result in detailed progress bar information for each parameter.
+    Adding the 'Verbose' parameter to any command passed to ORDPRO will result in very detailed verbosity of ORDPRO actions and processing. This is desired when wanting to learn more of ORDPRO functionality as well as for logging purposes.
+.EXAMPLE
+    .\ORDPRO.ps1 [options]
+
+    View detailed progess bar instead of verbose processing information during ORDPRO use.
+
+    Omitting 'Verbose' will result in detailed progress bar information for each parameter. This is desired when wanting cleaner, more user friendly processing information presentation.
 .NOTES
    NAME: ORDPRO.ps1 (Order Processing)
    AUTHOR: Ashton J. Hanisch
@@ -526,13 +532,13 @@ function Split-OrdersMain()
 
 			        $out_file = "$($run_date)_$($count_orders).mof"
 
-			        #Write-Verbose "[#] Processing $($out_file) now."
+			        Write-Verbose "[#] Processing $($out_file) now."
 
 			        New-Item -ItemType File -Path $($out_directory) -Name $($out_file) -Value $($order) > $null
 
 			        if($?)
 			        {
-				        #Write-Verbose "[*] $($out_file) file created successfully."
+				        Write-Verbose "[*] $($out_file) file created successfully."
 
 				        $hash = @{
 					        'ORIGINAL_FILE' = $($file)
@@ -660,13 +666,13 @@ function Split-OrdersCertificate()
 
 			        $out_file = "$($run_date)_$($count_orders).cof"
 
-			        #Write-Verbose "[#] Processing $($out_file) now."
+			        Write-Verbose "[#] Processing $($out_file) now."
 
 			        New-Item -ItemType File -Path $($out_directory) -Name $($out_file) -Value $($order) > $null
 
 			        if($?)
 			        {
-				        #Write-Verbose "[*] $($out_file) file created successfully."
+				        Write-Verbose "[*] $($out_file) file created successfully."
 
 				        $hash = @{
 					        'ORIGINAL_FILE' = $($file)
@@ -779,12 +785,12 @@ function Edit-OrdersMain()
                 # Remove known bad strings first.
                 foreach($pattern in $known_bad_strings)
                 {
-                    #Write-Verbose "[#] Removing known bad string $($pattern) from $($file)."
+                    Write-Verbose "[#] Removing known bad string $($pattern) from $($file)."
                     $file_content = ( $file_content | Select-String -Pattern $($pattern) -NotMatch )
 
                     if($?)
                     {
-                        #Write-Verbose "[*] Removed known bad string $($pattern) from $($file) succesfully."
+                        Write-Verbose "[*] Removed known bad string $($pattern) from $($file) succesfully."
                     }
                     else
                     {
@@ -797,16 +803,16 @@ function Edit-OrdersMain()
 
                 if($?)
                 {
-                    #Write-Verbose "[*] $($file.Name) edited in round 1 successfully."                    
+                    Write-Verbose "[*] $($file.Name) edited in round 1 successfully."                    
 
                     if($($file.Name) -cnotcontains "*_edited.mof")
                     {
-                        #Write-Verbose "[#] Moving $($file.Name) to $($mof_directory_original_splits_working)"
+                        Write-Verbose "[#] Moving $($file.Name) to $($mof_directory_original_splits_working)"
                         Move-Item "$($file)" -Destination "$($mof_directory_original_splits_working)\$($file.Name)" -Force
 
                         if($?)
                         {
-                            #Write-Verbose "[*] $($file) moved to $($mof_directory_original_splits_working) successfully."
+                            Write-Verbose "[*] $($file) moved to $($mof_directory_original_splits_working) successfully."
                         }
                         else
                         {
@@ -852,7 +858,7 @@ function Edit-OrdersMain()
                 Set-Content -Path "$($mof_directory_working)\$($out_file_name)" $string_1
                 if($?)
                 {
-                    #Write-Verbose "[*] $($out_file_name) edited in round 2 successfully."
+                    Write-Verbose "[*] $($out_file_name) edited in round 2 successfully."
                 }
                 else
                 {
@@ -890,7 +896,7 @@ function Edit-OrdersMain()
                 Set-Content -Path "$($mof_directory_working)\$($out_file_name)" $string_2
                 if($?)
                 {
-                    #Write-Verbose "[*] $($out_file_name) edited in round 3 successfully."
+                    Write-Verbose "[*] $($out_file_name) edited in round 3 successfully."
                 }
                 else
                 {
@@ -946,7 +952,7 @@ function Edit-OrdersMain()
                 {
                     if( -not ($($orders_edited) -contains $file) -and -not ($($following_request_exists)) -and -not ($($following_order_exists)) )
                     {
-                        #Write-Verbose "[*] $($out_file_name) edited in round 4 successfully."
+                        Write-Verbose "[*] $($out_file_name) edited in round 4 successfully."
 
                         $hash = @{
                             'FILE' = $($file)
@@ -979,7 +985,7 @@ function Edit-OrdersMain()
             }
             else
             {
-                #Write-Verbose "[#] $($file) is a directory. Skipping."
+                Write-Verbose "[#] $($file) is a directory. Skipping."
             }
 
 	        $status = "Editing '*m.prt' files."
@@ -3511,7 +3517,6 @@ if($($ParametersPassed) -gt '0')
 
             "version" 
             { 
-	            #Write-Host "[^] Version parameter specified. Presenting version information now." -ForegroundColor Cyan
 	            Write-Host "You are running ORDPRO version: $($version_info). Check https://gitlab.com/ajhanisch/ORDPRO for the most recent versions and updates."
             }
 
