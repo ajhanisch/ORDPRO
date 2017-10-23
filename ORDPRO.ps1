@@ -2,67 +2,80 @@
 .Synopsis
    Script to help automate order management.
 .DESCRIPTION
-   Script designed to assist in management and processing of orders. Given input of any number of '*m.prt' and '*c.prt' files in the same directory as the script, it begins by splitting each order within the pared '*m.prt' and '*c.prt' files into individual order files. These files contain numerous known bad strings and spacing at this point. From there the script will edit each file to remove the known bad strings and spacing. After splitting and editing, the script will begin capturing the desired information from each order file in order to create the directory structure desired. During the data capturing phase, it will use the data captured to create the directory structure and move the split and edited orders to their appropiate locations in the structure. During this time it will also assign permissions to the structure as needed. Once all splitting, editing, data capturing, structure creation, order moving, and permissions assignment has happened it will create archival backups of the original '*m.prt' and '*c.prt' files in '.\ARCHIVE\YY_orders' directory where YY represents the last two digits of the current year.
+   Script designed to assist in management and processing of orders. Given input of any number of '*m.prt' and '*c.prt' files in the same directory as ORDPRO, it begins by splitting each order within the pared '*m.prt' and '*c.prt' files into individual order files. These files contain numerous known bad strings and spacing at this point. From there ORDPRO will edit each file to remove the known bad strings and spacing. After splitting and editing, ORDPRO will begin capturing the desired information from each order file in order to create the directory structure desired. During the data capturing phase, it will use the data captured to create the directory structure and move the split and edited orders to their appropiate locations in the structure. During this time it will also assign permissions to the structure as needed. Once all splitting, editing, data capturing, structure creation, order moving, and permissions assignment has happened it will create archival backups of the original '*m.prt' and '*c.prt' files in '.\ARCHIVE\YY_orders' directory where YY represents the last two digits of the current year.
 .PARAMETER help
-   Help page. Alias: 'h'. This parameter tells the script you want to learn more about it. It will display this page after running the command 'Get-Help .\ORDPRO.ps1 -Full' for you.
+   Help page. Alias: 'h'. This parameter tells ORDPRO you want to learn more about it. It will display this page after running the command 'Get-Help .\ORDPRO.ps1 -Full' for you.
 .PARAMETER version
-   Version information. Alias: 'v'. This parameter tells the script you want to check its version number.
+   Version information. Alias: 'v'. This parameter tells ORDPRO you want to check its version number.
 .PARAMETER output_dir
-   Version information. Alias: 'o'. This parameter tells the script where you want the output to go. Give it the full UNC path to the directory you want output to land and it will do the rest.
+   Version information. Alias: 'o'. This parameter tells ORDPRO where you want the output to go. Give it the full UNC path to the directory you want output to land and it will do the rest.
 .PARAMETER dir_create
-   Directory creation. Alias: 'd'. This parameter tells the script to create the required directories for the script to process in working directory and output to land given the 'o' parameter.
+   Directory creation. Alias: 'd'. This parameter tells ORDPRO to create the required directories for ORDPRO to process in working directory and output to land given the 'o' parameter.
 .PARAMETER backups
-   Backup original order files. Alias: 'b'. This parameter tells the script to create backups of all files in current directory to the archive directory.
+   Backup original order files. Alias: 'b'. This parameter tells ORDPRO to create backups of all files in current directory to the archive directory.
 .PARAMETER split_main
-   Split main order files with '*m.prt' name. Alias: 'sm'. This parameter tells the script to split the main '*m.prt' file into individual unedited order files.
+   Split main order files with '*m.prt' name. Alias: 'sm'. This parameter tells ORDPRO to split the main '*m.prt' file into individual unedited order files.
 .PARAMETER split_cert
-   Split certificate order files with '*c.prt' name. Alias: 'sc'. This parameter tells the script to split the main '*c.prt' file into individual unedited certificate order files.
+   Split certificate order files with '*c.prt' name. Alias: 'sc'. This parameter tells ORDPRO to split the main '*c.prt' file into individual unedited certificate order files.
 .PARAMETER edit_main
-   Edit main order files. Alias: 'em'. This parameter tells the script to edit the split files created from use of the 'sm' parameter. Editing includes removing known bad strings and spacing resulting from the splitting of the original '*m.prt' file.
+   Edit main order files. Alias: 'em'. This parameter tells ORDPRO to edit the split files created from use of the 'sm' parameter. Editing includes removing known bad strings and spacing resulting from the splitting of the original '*m.prt' file.
 .PARAMETER edit_cert
-   Edit certificate order files. Alias: 'ec'. This parameter tells the script to edit the split files created from use of the 'sc' parameter. Editing includes removing known bad strings and spacing resulting from the splitting of the original '*c.prt' file.
+   Edit certificate order files. Alias: 'ec'. This parameter tells ORDPRO to edit the split files created from use of the 'sc' parameter. Editing includes removing known bad strings and spacing resulting from the splitting of the original '*c.prt' file.
 .PARAMETER combine_main
-   Combine main order files. Alias: 'cm'. This parameter tells the script to combine the split and edited edited main order files into a single document to be used at a later date.
+   Combine main order files. Alias: 'cm'. This parameter tells ORDPRO to combine the split and edited edited main order files into a single document to be used at a later date.
 .PARAMETER combine_cert
-   Combine certificate order files. Alias: 'cc'. This parameter tells the script to combine the split and edited certificate order files into a single document to be used at a later date.
+   Combine certificate order files. Alias: 'cc'. This parameter tells ORDPRO to combine the split and edited certificate order files into a single document to be used at a later date.
 .PARAMETER magic_main
-   Magic work on main orders. Alias: 'mm'. This parameter tells the script to parse the split and edited main order files, create directory structure based on parsed data, and put orders in appropriate directories.
+   Magic work on main orders. Alias: 'mm'. This parameter tells ORDPRO to parse the split and edited main order files, create directory structure based on parsed data, and put orders in appropriate directories.
 .PARAMETER magic_cert
-   Magic work on certificate orders. Alias: 'mc'. This parameter tells the script to parse the split and edited certificate order files, create directory structure based on parsed data, and put orders in appropriate directories. If you are not using the 'all' parameter, make sure to run 'magic_main' or 'mm' before this parameter.
+   Magic work on certificate orders. Alias: 'mc'. This parameter tells ORDPRO to parse the split and edited certificate order files, create directory structure based on parsed data, and put orders in appropriate directories. If you are not using the 'all' parameter, make sure to run 'magic_main' or 'mm' before this parameter.
 .PARAMETER clean_main
-   Cleanup main order files. Alias: 'xm'. This parameter tells the script to cleanup the '.\TMP\MOF' directory of all files and directories.
+   Cleanup main order files. Alias: 'xm'. This parameter tells ORDPRO to cleanup the '.\TMP\MOF' directory of all files and directories.
 .PARAMETER clean_cert
-   Cleanup certificate order files. Alias: 'xc'. This parameter tells the script to cleanup the '.\TMP\COF' directory of all files and directories.
+   Cleanup certificate order files. Alias: 'xc'. This parameter tells ORDPRO to cleanup the '.\TMP\COF' directory of all files and directories.
 .PARAMETER clean_uics
-   Cleanup UICS directory. Alias: 'xu'. This parameter tells the script to cleanup the output UICS directory of all UICS directories. This parameter is NOT used when 'all' is used. This is typically only for development and administrative use. The 'o' parameter is required for use with the parameter as it cleans up the UICS directory in the output directory.
+   Cleanup UICS directory. Alias: 'xu'. This parameter tells ORDPRO to cleanup the output UICS directory of all UICS directories. This parameter is NOT used when 'all' is used. This is typically only for development and administrative use. The 'o' parameter is required for use with the parameter as it cleans up the UICS directory in the output directory.
 .PARAMETER permissions
-   Get permissions of the output UICS directory recursively. Alias: 'p'. This parameter tells the script to recursively get the permissions of each file and directory in the UICS directory. Output includes a .csv file, .html report, and a .txt file.
+   Get permissions of the output UICS directory recursively. Alias: 'p'. This parameter tells ORDPRO to recursively get the permissions of each file and directory in the UICS directory. Output includes a .csv file, .html report, and a .txt file.
 .PARAMETER all
-   All parameters. Alias: 'a'. This parameter tells the script to run all required parameters needed to be successful. Most common parameter to those new to using this script.
+   All parameters. Alias: 'a'. This parameter tells ORDPRO to run all required parameters needed to be successful. Most common parameter to those new to using ORDPRO.
 .INPUTS
-   Script parses all '*m.prt' and '*c.prt' files in current directory. Script archives '*r.prt' and '*r.reg*' files to '.\ARCHIVE\YY_orders' directory with YY being the last 2 digits of the current year.
+   ORDPRO parses all '*m.prt' and '*c.prt' files in current directory. ORDPRO archives '*r.prt' and '*r.reg*' files to '.\ARCHIVE\YY_orders' directory with YY being the last 2 digits of the current year.
 .OUTPUTS
-   Script automatically creates required output directory structure, splits, edits, and moves orders to their appropiate location in the created structure. Output includes detailed results of success and failure of each parameter to .csv files in the '.\LOGS\<RUN_DATE>' directory to be viewed during troubleshooting and future reporting purposes as well as detailed logging of all parameter use when any parameter is combined with the 'Verbose' paramter. 
+   ORDPRO automatically creates required output directory structure, splits, edits, and moves orders to their appropiate location in the created structure. Output includes detailed results of success and failure of each parameter to .csv files in the '.\LOGS\<RUN_DATE>' directory to be viewed during troubleshooting and future reporting purposes as well as detailed logging of all parameter use when any parameter is combined with the 'Verbose' paramter. 
 .EXAMPLE
     .\ORDPRO.ps1 -all -output_dir "\\path\to\your\desired\output\directory" -Verbose
 
     Run all required parameters for success while including detailed verbosity output.
+
+    Short version of command would be .\ORDPRO.ps1 -a -o "\\path\to\your\desired\output\directory" -Verbose
 .EXAMPLE
     .\ORDPRO.ps1 -all -output_dir "\\path\to\your\desired\output\directory"
 
     Run all required parameters for success showing detailed progress bar information.
+
+    Short version of command would be .\ORDPRO.ps1 -a -o "\\path\to\your\desired\output\directory"
 .EXAMPLE
     .\ORDPRO.ps1 -Verbose
     
-    View detailed output of script processing information during script use. 
+    View detailed output of ORDPRO processing information during ORDPRO use. 
     
-    Adding the 'Verbose' parameter to any command passed to the script will result in very detailed verbosity of script actions and processing. This is desired when wanting to learn more of script functionality as well as for logging purposes.
+    Adding the 'Verbose' parameter to any command passed to ORDPRO will result in very detailed verbosity of ORDPRO actions and processing. This is desired when wanting to learn more of ORDPRO functionality as well as for logging purposes. Omitting 'Verbose' will result in detailed progress bar information for each parameter.
 .NOTES
    NAME: ORDPRO.ps1 (Order Processing)
    AUTHOR: Ashton J. Hanisch
-   TROUBLESHOOTING: All script output will be in '.\TMP\LOGS' directory. Should you have any problems script use, email ajhanisch@gmail.com with a description of your issue and the log file that is associated with your problem.
-   SUPPORT: For any issues, comments, concerns, ideas, contributions, etc. to any part of this script or its functionality, reach out to me at ajhanisch@gmail.com. I am open to any thoughts you may have to make this work better for you or things you think are broken or need to be different. I will ensure to give credit where credit is due for any contributions or improvement ideas that are shared.
-   UPDATES: To check out any updates or revisions made to this script check out the updated CHANGELOG file with this script or check out the gitlab link below for the most recent information.
+   TROUBLESHOOTING: All ORDPRO output will be in '.\TMP\LOGS' directory. Should you have any problems ORDPRO use, email ajhanisch@gmail.com with a description of your issue and the log file that is associated with your problem.
+   SUPPORT: For any issues, comments, concerns, ideas, contributions, etc. to any part of this ORDPRO or its functionality, reach out to me at ajhanisch@gmail.com. I am open to any thoughts you may have to make this work better for you or things you think are broken or need to be different. I will ensure to give credit where credit is due for any contributions or improvement ideas that are shared.
+   UPDATES: To check out any updates or revisions made to this ORDPRO check out the updated CHANGELOG file with this ORDPRO or check out the gitlab link below for the most recent information.
+   
+   ADMINISTRATIVE COMMANDS: This ORDPRO comes built in with runtime commands to make life of ORDPRO user easier. Runtime commands currently built in are as follows.
+
+	+----------------------+--------------+
+	| Keyboard Combination |    Result    |
+	+----------------------+--------------+
+	| CTRL + P             | Pause ORDPRO |
+	| CTRL + Q             | Quit ORDPRO  |
+	+----------------------+--------------+  
 .LINK
    https://gitlab.com/ajhanisch/ORDPRO
 #>
@@ -3482,7 +3495,7 @@ if($($ParametersPassed) -gt '0')
         $log_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=$($p).log"
         $error_path = "$($log_directory_working)\$($run_date)\$($run_date)_M=$($p)_errors.log"
 
-        if($p -ne 'Verbose' -or $p -ne 'help' -or $p -ne 'version')
+        if($p -ne 'Verbose' -or $p -ne 'help' -or $p -ne 'version' -or $p -ne 'v')
         {
             Start-Transcript -Path $($log_path)
             Write-Host "[^] $($p) parameter specified. Running $($p) function now." -ForegroundColor Cyan
@@ -3498,8 +3511,8 @@ if($($ParametersPassed) -gt '0')
 
             "version" 
             { 
-	            Write-Host "[^] Version parameter specified. Presenting version information now." -ForegroundColor Cyan
-	            Write-Host "Running version $($version_info)."
+	            #Write-Host "[^] Version parameter specified. Presenting version information now." -ForegroundColor Cyan
+	            Write-Host "You are running ORDPRO version: $($version_info). Check https://gitlab.com/ajhanisch/ORDPRO for the most recent versions and updates."
             }
 
             "dir_create" 
