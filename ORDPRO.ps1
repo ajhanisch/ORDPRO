@@ -68,7 +68,7 @@
    SUPPORT: For any issues, comments, concerns, ideas, contributions, etc. to any part of this ORDPRO or its functionality, reach out to me at ajhanisch@gmail.com. I am open to any thoughts you may have to make this work better for you or things you think are broken or need to be different. I will ensure to give credit where credit is due for any contributions or improvement ideas that are shared.
    UPDATES: To check out any updates or revisions made to this ORDPRO check out the updated CHANGELOG file with this ORDPRO or check out the gitlab link below for the most recent information.
    
-   ADMINISTRATIVE COMMANDS: This ORDPRO comes built in with runtime commands to make life of ORDPRO user easier. Runtime commands currently built in are as follows.
+   ADMINISTRATIVE COMMANDS: ORDPRO comes built in with runtime commands to make life of ORDPRO user easier. Runtime commands currently built in are as follows.
 
 	+----------------------+--------------+
 	| Keyboard Combination |    Result    |
