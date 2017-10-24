@@ -8,6 +8,7 @@ CHANGES
 - added ascii art generation upon success or failure
 - added function to zip up log file directory during '-a' use to save on storage space
 - fixed format 165 variable capturing for 2 variables
+- added debug statements to main orders and certificate orders functions to make debugging in the future easier
 ------------------------------------
 VERSION: 1.3
 DATE: 10/23/2017
