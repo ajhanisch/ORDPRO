@@ -111,6 +111,7 @@ param(
     [alias('a')][switch]$all
 )
 
+
 <#
 DIRECTORIES OUTPUT
 #>
@@ -148,11 +149,6 @@ $directories = @(
 "$($log_directory_working)"
 )
 
-$known_bad_strings = @(
-"                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
-"                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
-"ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}"
-)
 
 <#
 HASH TABLES
@@ -224,7 +220,8 @@ function Create-RequiredDirectories()
 {
     [cmdletbinding()]
     Param(
-        [Parameter(mandatory = $true)] $directories
+        [Parameter(mandatory = $true)] $directories,
+        [Parameter(mandatory = $true)] $log_file
     )
 
     if($($directories.Count) -gt 0)
@@ -4191,6 +4188,7 @@ function Process-DevCommands()
     }
 }
 
+
 <#
 ENTRY POINT
 #>
@@ -4235,7 +4233,7 @@ if($($ParametersPassed) -gt '0')
                 }
 
 		        Write-Host "[^] Creating required directories." -ForegroundColor Cyan
-		        Create-RequiredDirectories -directories $($directories)
+		        Create-RequiredDirectories -directories $($directories) -log_file $($log_file)
 
 		        if($?) 
 		        {
