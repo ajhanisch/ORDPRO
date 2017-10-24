@@ -5,8 +5,8 @@ function Archive-Directory
 {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory=$false)][String]$source,
-        [Parameter(Mandatory=$false)][string]$destination
+        [Parameter(Mandatory=$true)][String]$source,
+        [Parameter(Mandatory=$true)][string]$destination
     )
 
     if(Test-path $destination) 
