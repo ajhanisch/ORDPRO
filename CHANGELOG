@@ -1,14 +1,19 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 1.4
+DATE: 10/24/2017
+CHANGES
+- reworked various variable names and function designs to make more sense
+- added ascii art generation upon success or failure
+- added function to zip up log file directory during '-a' use to save on storage space
+------------------------------------
 VERSION: 1.3
 DATE: 10/23/2017
 CHANGES
 - modified verbosity and logging functionality. detailed logging now happens with verbose and progress bar output rather than just verbose
 - implemented write-log function to write to single, timestamped, level indicated, log file
 - modified combining '*m.prt' and '*c.prt' edited files functionality to be quicker and present progress bar output as well as verbose
-- reworked various variable names and function designs to make more sense
-- added ascii art generation upon success or failure
 ------------------------------------
 VERSION: 1.2
 DATE: 10/22/2017
