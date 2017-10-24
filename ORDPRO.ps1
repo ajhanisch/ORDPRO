@@ -4411,7 +4411,7 @@ if($($ParametersPassed) -gt '0')
             "all" 
             {                  	            
 				Write-Host "[^] Creating required directories." -ForegroundColor Cyan
-		        Create-RequiredDirectories -directories $($directories)
+		        Create-RequiredDirectories -directories $($directories) -log_file $($log_file)
 		        if($?) 
 		        {
 			        Write-Host "[^] Creating directories finished." -ForegroundColor Cyan
