@@ -612,7 +612,7 @@ function Split-OrdersMain()
 	        $status = "Splitting '*m.prt' files."
 	        $activity = "Processing file $count_files of $($files_orders_m_prt.Count)."
 	        $percent_complete = (($count_files/$($files_orders_m_prt.Count)) * 100)
-	        $current_operation = "$("{0:N2}" -f ((($count_files/$($files_orders_m_prt.Count)) * 100),2))% Complete"
+	        $current_operation = "$("{0:N2}" -f ((($count_files/$($files_orders_m_prt.Count)) * 100),2))% Complete."
 	        $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
 	        $seconds_remaining = ($seconds_elapsed / ($count_files / $files_orders_m_prt.Count)) - $seconds_elapsed
             $ts =  [timespan]::fromseconds($seconds_remaining)
@@ -1565,7 +1565,6 @@ function Parse-OrdersMain()
                     $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
-                    $order_number = $order_number[1]
                     Write-Log -log_file $log_file -message "[*] Found 'order number' in $($file)."
                     Write-Verbose "[*] Found 'order number' in $($file)."
 
@@ -1578,6 +1577,7 @@ function Parse-OrdersMain()
                     $published_year = $($published_year[1]) # YYYY turned into YY
                     Write-Log -log_file $log_file -message "[*] Found 'published year' in $($file)."
                     Write-Verbose "[*] Found 'published year' in $($file)."
+                    $order_number = $order_number[1]
 
                     $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "You are ordered to" -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | 
                     Select -First 1 | 
@@ -1626,9 +1626,7 @@ function Parse-OrdersMain()
                     $period_to = $period_to.ToString()
                     $period_to = $period_to.Split(' ')
                     $period_to_number = $period_to[-2]
-                    $period_to_time = $period_to[-1]
-                    $period_to_time = $period_to_time.ToUpper()
-                    $period_to_time = $period_to_time.Substring(0, 1)
+                    $period_to_time = $period_to[-1].ToUpper()
                     $period_to = "NTE$($period_to_number)$($period_to_time)"
                     Write-Log -log_file $log_file -message "[*] Found 'period to year, month, day' in $($file)."
                     Write-Verbose "[*] Found 'period to year, month, day' in $($file)."
@@ -1640,7 +1638,9 @@ function Parse-OrdersMain()
                     $uic = $($uic[0])
                     Write-Log -log_file $log_file -message "[*] Found 'uic' in $($file)."
                     Write-Verbose "[*] Found 'uic' in $($file)."
-
+                    
+                    Write-Debug "File: $($file). Format: $($format). Order Number: $($order_number). Published Year: $($published_year). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). Period From Year: $($period_from_year). Period From Month: $($period_from_month). Period From Day: $($period_from_day). Period To Time: $($period_to_time). Period To Number: $($period_to_number). UIC: $($uic). Format: $($format)."
+                    
                     $validation_results = Validate-Variables -order_number $($order_number) -published_year $($published_year) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_time $($period_to_time) -period_to_number $($period_to_number) -uic $($uic) -format $($format)
                     if(!($validation_results.Status -contains 'fail'))
                     {
@@ -1837,6 +1837,8 @@ function Parse-OrdersMain()
                     Write-Log -log_file $log_file -message "[*] Found 'uic' in $($file)."
                     Write-Verbose "[*] Found 'uic' in $($file)."
 
+                    Write-Debug "File: $($file). Format: $($format). UIC: $($uic). First Name: $($first_name). Last Name: $($last_name). Middle Initial: $($middle_initial). Order Number: $($order_number). Published Year: $($published_year). SSN: $($ssn). Period From Year: $($period_from_year). Period From Month: $($period_from_month). Period From Day: $($period_from_day) Period To Year: $($period_to_day). Period to Month: $($period_to_month). Period To Day: $($period_to_day)."
+
                     $validation_results = Validate-Variables -format $($format) -uic $($uic) -first_name $($first_name) -last_name $($last_name) -middle_initial $($middle_initial) -order_number $($order_number) -published_year $($published_year) -ssn $($ssn) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_year $($period_to_year) -period_to_month $($period_to_month) -period_to_day $($period_to_day)
 
                     if(!($validation_results.Status -contains 'fail'))
@@ -2008,6 +2010,8 @@ function Parse-OrdersMain()
                     Write-Log -log_file $log_file -message "[*] Found 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "[*] Found 'last, first, mi, ssn' in $($file)."
 
+                    Write-Debug "File: $($file). Order Number: $($order_number). Published Year: $($published_year). UIC: $(uic). Order Amended: $($order_amended). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). Format $($format)."
+
                     $validation_results = Validate-Variables -order_number $($order_number) -published_year $($published_year) -uic $($uic) -order_amended $($order_amended) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -format $($format)
 
                     if(!($validation_results.Status -contains 'fail'))
@@ -2175,6 +2179,8 @@ function Parse-OrdersMain()
                     $name = "$($last_name)_$($first_name)_$($middle_initial)"
                     Write-Log -log_file $log_file -message "[*] Found 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "[*] Found 'last, first, mi, ssn' in $($file)."
+
+                    Write-Debug "File: $($file). Order Number: $($order_number). Published Year: $($published_year). UIC: $(uic). Order Revoked: $($order_revoke). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). Format $($format)."
 
                     $validation_results = Validate-Variables -order_number $($order_number) -published_year $($published_year) -uic $($uic) -order_revoke $($order_revoke) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -format $($format)
 
@@ -2375,6 +2381,8 @@ function Parse-OrdersMain()
                     $uic = $uic[0]
                     Write-Log -log_file $log_file -message "[*] Found 'uic' in $($file)."
                     Write-Verbose "[*] Found 'uic' in $($file)."
+
+                    Write-Debug "File: $($file). Format: $($format). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). UIC: $($uic). Order Number: $($order_number). Published Year: $($published_year). Period From Year: $($period_from_year). Period From Month: $($period_from_month). Period From Day: $($period_from_day). Period To Year: $($period_to_year). Period To Month: $($period_to_month). Period To Day: $($period_to_day)."
 
                     $validation_results = Validate-Variables -format $($format) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -uic $($uic) -order_number $($order_number) -published_year $($published_year) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_year $($period_to_year) -period_to_month $($period_to_month) -period_to_day $($period_to_day)
 
@@ -2580,6 +2588,8 @@ function Parse-OrdersMain()
                     $uic = $uic[0]
                     Write-Log -log_file $log_file -message "[*] Found 'uic' in $($file)."
                     Write-Verbose "[*] Found 'uic' in $($file)."
+
+                    Write-Debug "File: $($file). Format: $($format). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). UIC: $($uic). Order Number: $($order_number). Published Year: $($published_year). Period From Year: $($period_from_year). Period From Month: $($period_from_month). Period From Day: $($period_from_day). Period To Year: $($period_to_year). Period To Month: $($period_to_month). Period To Day: $($period_to_day)."
 
                     $validation_results = Validate-Variables -format $($format) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -uic $($uic) -order_number $($order_number) -published_year $($published_year) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_year $($period_to_year) -period_to_month $($period_to_month) -period_to_day $($period_to_day)
 
@@ -2899,7 +2909,9 @@ function Parse-OrdersCertificate()
                 $ssn = $name_ssn."$($last_name)_$($first_name)_$($middle_initial)" # Retrieve ssn from soldiers_ssn hash table via key lookup.      
                 Write-Log -log_file $log_file -message "[*] Found 'ssn' in hash table for $($file)."
                 Write-Verbose "[*] Found 'ssn' in hash table for $($file)."
-
+                
+                Write-Debug "File: $($file). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). UIC: $($uic). Order Number: $($order_number). Period From Year: $($period_from_year). Period From Month: $($period_from_month). Period From Day: $($period_from_day). Period To Year: $($period_to_year). Period To Month: $($period_to_month). Period To Day: $($period_to_day)."
+                
                 $validation_results = Validate-Variables -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -uic $($uic) -order_number $($order_number) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_year $($period_to_year) -period_to_month $($period_to_month) -period_to_day $($period_to_day)
 
                 if(!($validation_results.Status -contains 'fail'))
@@ -3457,7 +3469,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\w{5}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3492,7 +3504,7 @@ function Validate-Variables()
                 {
                     if($value -match "^[a-zA-Z'-]{1,20}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3528,7 +3540,7 @@ function Validate-Variables()
                 {
                     if($value -match "^[a-zA-Z'-]{1,20}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3563,7 +3575,7 @@ function Validate-Variables()
                 {
                     if($value -match "^[A-Z]{1,3}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3598,7 +3610,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2,4}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3633,7 +3645,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3668,7 +3680,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3703,7 +3715,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{3}-\d{2}-\d{4}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3718,9 +3730,9 @@ function Validate-Variables()
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
-                        throw "[!] Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation. User most likely does not exist output directory yet. 'Make sure to run $($script_name) -sm -em -mm -o <output>' before dealing with certificate order files."
+	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation. User most likely does not exist output directory yet. 'Make sure to run $($script_name) -sm -em -mm -o <output>' before dealing with certificate order files."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation. User most likely does not exist output directory yet. 'Make sure to run $($script_name) -sm -em -mm -o <output>' before dealing with certificate order files."
 	
                         $status = "fail"
 
@@ -3738,7 +3750,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2,4}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3773,7 +3785,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3808,7 +3820,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3843,7 +3855,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2,4}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3878,7 +3890,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3913,7 +3925,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3948,7 +3960,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{1,4}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3983,7 +3995,7 @@ function Validate-Variables()
                 {
                     if($value -match "^[A-Z]{4,6}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -4018,7 +4030,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{3}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -4053,7 +4065,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{3}-\d{3}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -4088,7 +4100,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{3}-\d{3}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -4123,7 +4135,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{3}-\d{3}$")
                     { 
-                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
+                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -4264,26 +4276,30 @@ function Present-Outcome()
 $success =
 @"
 
-:::     ::: ::::::::::: :::::::: ::::::::::: ::::::::  :::::::::  :::   ::: 
-:+:     :+:     :+:    :+:    :+:    :+:    :+:    :+: :+:    :+: :+:   :+: 
-+:+     +:+     +:+    +:+           +:+    +:+    +:+ +:+    +:+  +:+ +:+  
-+#+     +:+     +#+    +#+           +#+    +#+    +:+ +#++:++#:    +#++:   
- +#+   +#+      +#+    +#+           +#+    +#+    +#+ +#+    +#+    +#+    
-  #+#+#+#       #+#    #+#    #+#    #+#    #+#    #+# #+#    #+#    #+#    
-    ###     ########### ########     ###     ########  ###    ###    ###    
+
+::::    ::::  :::    :::  ::::::::  :::    :::       ::::::::  :::    :::  ::::::::   ::::::::  :::::::::: ::::::::   ::::::::  
++:+:+: :+:+:+ :+:    :+: :+:    :+: :+:    :+:      :+:    :+: :+:    :+: :+:    :+: :+:    :+: :+:       :+:    :+: :+:    :+: 
++:+ +:+:+ +:+ +:+    +:+ +:+        +:+    +:+      +:+        +:+    +:+ +:+        +:+        +:+       +:+        +:+        
++#+  +:+  +#+ +#+    +:+ +#+        +#++:++#++      +#++:++#++ +#+    +:+ +#+        +#+        +#++:++#  +#++:++#++ +#++:++#++ 
++#+       +#+ +#+    +#+ +#+        +#+    +#+             +#+ +#+    +#+ +#+        +#+        +#+              +#+        +#+ 
+#+#       #+# #+#    #+# #+#    #+# #+#    #+#      #+#    #+# #+#    #+# #+#    #+# #+#    #+# #+#       #+#    #+# #+#    #+# 
+###       ###  ########   ########  ###    ###       ########   ########   ########   ########  ########## ########   ########  
+
 
 "@
 
 $fail = 
 @"
 
-::::::::::   :::     ::::::::::: :::       :::    ::: :::::::::  :::::::::: 
-:+:        :+: :+:       :+:     :+:       :+:    :+: :+:    :+: :+:        
-+:+       +:+   +:+      +:+     +:+       +:+    +:+ +:+    +:+ +:+        
-:#::+::# +#++:++#++:     +#+     +#+       +#+    +:+ +#++:++#:  +#++:++#   
-+#+      +#+     +#+     +#+     +#+       +#+    +#+ +#+    +#+ +#+        
-#+#      #+#     #+#     #+#     #+#       #+#    #+# #+#    #+# #+#        
-###      ###     ### ########### ########## ########  ###    ### ########## 
+
+::::::::::: :::::::::  :::   :::      :::    :::     :::     :::::::::  :::::::::  :::::::::: :::::::::  
+    :+:     :+:    :+: :+:   :+:      :+:    :+:   :+: :+:   :+:    :+: :+:    :+: :+:        :+:    :+: 
+    +:+     +:+    +:+  +:+ +:+       +:+    +:+  +:+   +:+  +:+    +:+ +:+    +:+ +:+        +:+    +:+ 
+    +#+     +#++:++#:    +#++:        +#++:++#++ +#++:++#++: +#++:++#:  +#+    +:+ +#++:++#   +#++:++#:  
+    +#+     +#+    +#+    +#+         +#+    +#+ +#+     +#+ +#+    +#+ +#+    +#+ +#+        +#+    +#+ 
+    #+#     #+#    #+#    #+#         #+#    #+# #+#     #+# #+#    #+# #+#    #+# #+#        #+#    #+# 
+    ###     ###    ###    ###         ###    ### ###     ### ###    ### #########  ########## ###    ### 
+
 
 "@
 
