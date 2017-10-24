@@ -294,6 +294,10 @@ function Create-RequiredDirectories()
                 Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
             }
         }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
@@ -313,30 +317,30 @@ function Move-OriginalToArchive()
 
     #cls
 
-    $year_suffix = (Get-Date -Format yyyy).Substring(2)
-    $year_orders_archive_directory = "$($archive_directory_working)\$($year_suffix)_orders"
-    $year_orders_registry_directory = "$($ordregisters_output)\$($year_suffix)_orders"
-
-	$total_files_to_move = @(Get-ChildItem -Path $($current_directory_working) | Where { ! $_.PSIsContainer } | Where { $_.Name -eq "*m.prt" -or $_.Name -eq "*c.prt" -or $_.Name -eq "*r.prt" -or $_.Name -eq "*r.reg*" -or $_.Extension -ne '.ps1' }).Count
-    $orders_file_m_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*m.prt" -File
-    $orders_file_c_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*c.prt" -File
-    $orders_file_r_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*r.prt" -File
-    $orders_file_r_reg = Get-ChildItem -Path $($current_directory_working) -Filter "*r.reg*" -File
-	
-	$archive_directories = @(
-		"$($year_orders_archive_directory)",
-		"$($year_orders_registry_directory)"
-	)
-	
-	$order_files = @{
-        M_PRT = $orders_file_m_prt; 
-        C_PRT = $orders_file_c_prt; 
-        R_PRT = $orders_file_r_prt; 
-        R_REG = $orders_file_r_reg; 
-    }
+    $total_files_to_move = @(Get-ChildItem -Path $($current_directory_working) | Where { ! $_.PSIsContainer } | Where { $_.Name -eq "*m.prt" -or $_.Name -eq "*c.prt" -or $_.Name -eq "*r.prt" -or $_.Name -eq "*r.reg*" -or $_.Extension -ne '.ps1' }).Count
     
 	if($total_files_to_move -gt 0)
 	{
+        $year_suffix = (Get-Date -Format yyyy).Substring(2)
+        $year_orders_archive_directory = "$($archive_directory_working)\$($year_suffix)_orders"
+        $year_orders_registry_directory = "$($ordregisters_output)\$($year_suffix)_orders"
+
+        $orders_file_m_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*m.prt" -File
+        $orders_file_c_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*c.prt" -File
+        $orders_file_r_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*r.prt" -File
+        $orders_file_r_reg = Get-ChildItem -Path $($current_directory_working) -Filter "*r.reg*" -File
+	
+	    $archive_directories = @(
+		    "$($year_orders_archive_directory)",
+		    "$($year_orders_registry_directory)"
+	    )
+	
+	    $order_files = @{
+            M_PRT = $orders_file_m_prt; 
+            C_PRT = $orders_file_c_prt; 
+            R_PRT = $orders_file_r_prt; 
+            R_REG = $orders_file_r_reg; 
+        }
 
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
@@ -495,6 +499,11 @@ function Move-OriginalToArchive()
             $total_files_not_moved | Select FILE, TYPE, STATUS, DESTINATION | Sort -Property STATUS | Export-Csv "$($files_not_moved_to_archive_csv)" -NoTypeInformation -Force
         }
 	}
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
+
     else
     {
         Write-Log -level [WARN] -log_file $log_file -message "[!] Total to move: $($total_to_move_files). No files to move. Make sure to have the required '*m.prt', '*c.prt', '*r.prt', '*r.reg' files in the current directory and try again."
@@ -515,20 +524,18 @@ function Split-OrdersMain()
 
     #cls
 
-    $total_to_parse_orders_main_files = @($files_orders_m_prt).Count
-
-    $orders_created = @()
-    $orders_not_created = @()
-
-    $orders_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_created_main.csv"
-    $orders_not_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_created_main.csv"
-
-    $out_directory = $($mof_directory_working)
-
-    if($total_to_parse_orders_main_files -gt '0')
+    if($($files_orders_m_prt).Count -gt '0')
     {
         $count_orders = 0
         $count_files = 0
+
+        $orders_created = @()
+        $orders_not_created = @()
+
+        $orders_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_created_main.csv"
+        $orders_not_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_created_main.csv"
+
+        $out_directory = $($mof_directory_working)
 
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
@@ -642,6 +649,10 @@ function Split-OrdersMain()
             Write-Verbose "[*] Writing $($orders_not_created_csv) file now."
             $orders_not_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT| Sort -Property ORDER_COUNT | Export-Csv "$($orders_not_created_csv)" -NoTypeInformation -Force
         }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
@@ -663,20 +674,18 @@ function Split-OrdersCertificate()
 	
     #cls
 
-    $total_to_parse_orders_cert_files = @($files_orders_c_prt).Count
-
-    $orders_created = @()
-    $orders_not_created = @()
-
-    $orders_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_created_cert.csv"
-    $orders_not_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_created_cert.csv"
-
-    $out_directory = $($cof_directory_working)
-
-    if($total_to_parse_orders_cert_files -gt '0')
+    if($($files_orders_c_prt).Count -gt '0')
     {
         $count_orders = 0
         $count_files = 0
+
+        $orders_created = @()
+        $orders_not_created = @()
+
+        $orders_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_created_cert.csv"
+        $orders_not_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_created_cert.csv"
+
+        $out_directory = $($cof_directory_working)
 
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
@@ -791,6 +800,10 @@ function Split-OrdersCertificate()
             Write-Verbose "[*] Writing $($orders_not_created_csv) file now."
             $orders_not_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT| Sort -Property ORDER_COUNT | Export-Csv "$($orders_not_created_csv)" -NoTypeInformation -Force
         }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
@@ -811,22 +824,22 @@ function Edit-OrdersMain()
 	 
     #cls 
 
-    $total_to_edit_orders_main = (Get-ChildItem -Path "$($mof_directory_working)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Length
+    $total_to_edit_orders_main = Get-ChildItem -Path "$($mof_directory_working)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }
 
-    if($($total_to_edit_orders_main) -gt '0')
+    if($($total_to_edit_orders_main.Count) -gt '0')
     {
-        $start_time = Get-Date
-        Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
-        Write-Verbose "[#] Start time: $($start_time)."
-
-        Write-Log -log_file $log_file -message "[#] Total to edit: $($total_to_edit_orders_main)."
-        Write-Verbose "[#] Total to edit: $($total_to_edit_orders_main)."
-
         $orders_edited = @()
         $orders_not_edited = @()
 
         $orders_edited_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_edited_main.csv"
         $orders_not_edited_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_edited_main.csv"
+
+        $start_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
+        Write-Verbose "[#] Start time: $($start_time)."
+
+        Write-Log -log_file $log_file -message "[#] Total to edit: $($total_to_edit_orders_main.Count)."
+        Write-Verbose "[#] Total to edit: $($total_to_edit_orders_main.Count)."
 
         foreach($file in (Get-ChildItem -Path "$($mof_directory_working)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof'}))
         {
@@ -1081,11 +1094,11 @@ function Edit-OrdersMain()
             }
 
 	        $status = "Editing '*m.prt' files."
-	        $activity = "Processing file $($orders_edited.Count) of $($total_to_edit_orders_main). $($orders_not_edited.Count) of $($total_to_edit_orders_main) not edited."
-	        $percent_complete = (($($orders_edited.Count)/$($total_to_edit_orders_main)) * 100)
-	        $current_operation = "$("{0:N2}" -f ((($($orders_edited.Count)/$($total_to_edit_orders_main)) * 100),2))% Complete"
+	        $activity = "Processing file $($orders_edited.Count) of $($total_to_edit_orders_main.Count). $($orders_not_edited.Count) of $($total_to_edit_orders_main.Count) not edited."
+	        $percent_complete = (($($orders_edited.Count)/$($total_to_edit_orders_main.Count)) * 100)
+	        $current_operation = "$("{0:N2}" -f ((($($orders_edited.Count)/$($total_to_edit_orders_main.Count)) * 100),2))% Complete"
 	        $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-	        $seconds_remaining = ($seconds_elapsed / ($($orders_edited.Count) / $total_to_edit_orders_main)) - $seconds_elapsed
+	        $seconds_remaining = ($seconds_elapsed / ($($orders_edited.Count) / $($total_to_edit_orders_main.Count))) - $seconds_elapsed
             $ts =  [timespan]::fromseconds($seconds_remaining)
             $ts = $ts.ToString("hh\:mm\:ss")
 
@@ -1114,11 +1127,15 @@ function Edit-OrdersMain()
             Write-Verbose "[*] Writing $($orders_not_edited_csv) file now."
             $orders_not_edited | Select FILE, ROUND, STATUS, REASON | Sort -Property FILE | Export-Csv "$($orders_not_edited_csv)" -NoTypeInformation -Force
         }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
-        Write-Log -level [WARN] -log_file $log_file -message "[!] Total to edit: $($total_to_edit_orders_main). No .mof files in $($mof_directory_working). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
-        Write-Warning -Message "[!] Total to edit: $($total_to_edit_orders_main). No .mof files in $($mof_directory_working)." -RecommendedAction "Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
+        Write-Log -level [WARN] -log_file $log_file -message "[!] Total to edit: $($total_to_edit_orders_main.Count). No .mof files in $($mof_directory_working). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
+        Write-Warning -Message "[!] Total to edit: $($total_to_edit_orders_main.Count). No .mof files in $($mof_directory_working)." -RecommendedAction "Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
     }
 }
 
@@ -1134,16 +1151,16 @@ function Edit-OrdersCertificate()
 
     #cls
 
-    $total_to_edit_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Length
+    $total_to_edit_orders_cert = Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }
 
-    if($($total_to_edit_orders_cert) -gt '0')
+    if($($total_to_edit_orders_cert.Count) -gt '0')
     {
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
         Write-Verbose "[#] Start time: $($start_time)."
 
-        Write-Log -log_file $log_file -message "[#] Total to edit: $($total_to_edit_orders_cert)."
-        Write-Verbose "[#] Total to edit: $($total_to_edit_orders_cert)."
+        Write-Log -log_file $log_file -message "[#] Total to edit: $($total_to_edit_orders_cert.Count)."
+        Write-Verbose "[#] Total to edit: $($total_to_edit_orders_cert.Count)."
 
         $orders_edited = @()
         $orders_not_edited = @()
@@ -1239,11 +1256,11 @@ function Edit-OrdersCertificate()
             }
 
 	        $status = "Editing '*c.prt' files."
-	        $activity = "Processing file $($orders_edited.Count) of $($total_to_edit_orders_cert). $($orders_not_edited.Count) of $($total_to_edit_orders_cert) not edited."
-	        $percent_complete = (($($orders_edited.Count)/$($total_to_edit_orders_cert)) * 100)
-	        $current_operation = "$("{0:N2}" -f ((($($orders_edited.Count)/$($total_to_edit_orders_cert)) * 100),2))% Complete"
+	        $activity = "Processing file $($orders_edited.Count) of $($total_to_edit_orders_cert.Count). $($orders_not_edited.Count) of $($total_to_edit_orders_cert.Count) not edited."
+	        $percent_complete = (($($orders_edited.Count)/$($total_to_edit_orders_cert.Count)) * 100)
+	        $current_operation = "$("{0:N2}" -f ((($($orders_edited.Count)/$($total_to_edit_orders_cert.Count)) * 100),2))% Complete"
 	        $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-	        $seconds_remaining = ($seconds_elapsed / ($($orders_edited.Count) / $total_to_edit_orders_cert)) - $seconds_elapsed
+	        $seconds_remaining = ($seconds_elapsed / ($($orders_edited.Count) / $($total_to_edit_orders_cert.Count))) - $seconds_elapsed
             $ts =  [timespan]::fromseconds($seconds_remaining)
             $ts = $ts.ToString("hh\:mm\:ss")
 
@@ -1272,11 +1289,15 @@ function Edit-OrdersCertificate()
             Write-Verbose "[*] Writing $($orders_not_edited_csv) file now."
             $orders_not_edited | Select FILE, STATUS | Sort -Property FILE | Export-Csv "$($orders_not_edited_csv)" -NoTypeInformation -Force
         }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
-        Write-Log -level [WARN] -log_file $log_file -message "[!] Total to edit: $($total_to_edit_orders_cert). No .cof files in $($cof_directory_working). Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
-        Write-Warning -Message "[!] Total to edit: $($total_to_edit_orders_cert). No .cof files in $($cof_directory_working)." -RecommendedAction "Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
+        Write-Log -level [WARN] -log_file $log_file -message "[!] Total to edit: $($total_to_edit_orders_cert.Count). No .cof files in $($cof_directory_working). Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
+        Write-Warning -Message "[!] Total to edit: $($total_to_edit_orders_cert.Count). No .cof files in $($cof_directory_working)." -RecommendedAction "Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
     }
 }
 
@@ -1293,8 +1314,6 @@ function Combine-OrdersMain()
  
     $total_to_combine_orders_main = Get-ChildItem -Path "$($mof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }
 
-    $orders_combined_csv = "$($log_file_directory)\$($run_date)_combined_orders_main.csv"
-
     if($($($total_to_combine_orders_main.Count)) -gt '0')
     {
         $start_time = Get-Date
@@ -1302,6 +1321,7 @@ function Combine-OrdersMain()
         Write-Verbose "[#] Start time: $($start_time)."
 
         $orders_combined = @()
+        $orders_combined_csv = "$($log_file_directory)\$($run_date)_combined_orders_main.csv"
 
         $out_file = "$($log_directory_working)\$($run_date)\$($run_date)_orders_combined_main.txt"
         New-Item -ItemType File $out_file -Force > $null
@@ -1357,6 +1377,10 @@ function Combine-OrdersMain()
             Write-Verbose "[*] Writing $($orders_combined_csv) file now."
             $orders_combined | Select FILE, STATUS | Sort -Property FILE | Export-Csv "$($orders_combined_csv)" -NoTypeInformation -Force
         }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
@@ -1377,8 +1401,6 @@ function Combine-OrdersCertificate()
 
     $total_to_combine_orders_cert = Get-ChildItem -Path "$($cof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }
 
-    $orders_combined_csv = "$($log_directory_working)\$($run_date)\$($run_date)_combined_orders_cert.csv"
-
     if($($($total_to_combine_orders_cert.Count)) -gt '0')
     {
         $start_time = Get-Date
@@ -1386,6 +1408,7 @@ function Combine-OrdersCertificate()
         Write-Verbose "[#] Start time: $($start_time)."
 
         $orders_combined = @()
+        $orders_combined_csv = "$($log_directory_working)\$($run_date)\$($run_date)_combined_orders_cert.csv"
 
         $out_file = "$($log_directory_working)\$($run_date)\$($run_date)_orders_combined_cert.txt"
         New-Item -ItemType File $out_file -Force > $null
@@ -1441,6 +1464,10 @@ function Combine-OrdersCertificate()
             Write-Verbose "[*] Writing $($orders_combined_csv) file now."
             $orders_combined | Select FILE, STATUS | Sort -Property FILE | Export-Csv "$($orders_combined_csv)" -NoTypeInformation -Force
         }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
@@ -1463,9 +1490,9 @@ function Parse-OrdersMain()
 	  
     #cls
 
-    $total_to_create_orders_main = (Get-ChildItem -Path $($mof_directory_working) | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }).Length
+    $total_to_create_orders_main = Get-ChildItem -Path $($mof_directory_working) | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }
 
-    if($($total_to_create_orders_main) -gt '0')
+    if($($total_to_create_orders_main.Count) -gt '0')
     {
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
@@ -1477,8 +1504,8 @@ function Parse-OrdersMain()
         $orders_created_main_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_created_main.csv"
         $orders_not_created_main_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_created_main.csv"
 
-        Write-Log -log_file $log_file -message "[#] Total to create: $($total_to_create_orders_main)."
-        Write-Verbose "[#] Total to create: $($total_to_create_orders_main)."
+        Write-Log -log_file $log_file -message "[#] Total to create: $($total_to_create_orders_main.Count)."
+        Write-Verbose "[#] Total to create: $($total_to_create_orders_main.Count)."
 
         foreach($file in (Get-ChildItem -Path "$($mof_directory_working)" -Filter "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories }))
             {
@@ -2703,11 +2730,11 @@ function Parse-OrdersMain()
                 }
 
 	            $status = "Working magic on '*m.prt' files."
-	            $activity = "Processing file $($orders_created_main.Count) of $($total_to_create_orders_main). $($orders_not_created_main.Count) of $($total_to_create_orders_main) not created."
-	            $percent_complete = (($($orders_created_main.Count)/$($total_to_create_orders_main)) * 100)
-	            $current_operation = "$("{0:N2}" -f ((($($orders_created_main.Count)/$($total_to_create_orders_main)) * 100),2))% Complete"
+	            $activity = "Processing file $($orders_created_main.Count) of $($total_to_create_orders_main.Count). $($orders_not_created_main.Count) of $($total_to_create_orders_main.Count) not created."
+	            $percent_complete = (($($orders_created_main.Count)/$($total_to_create_orders_main.Count)) * 100)
+	            $current_operation = "$("{0:N2}" -f ((($($orders_created_main.Count)/$($total_to_create_orders_main.Count)) * 100),2))% Complete"
 	            $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-	            $seconds_remaining = ($seconds_elapsed / ($($orders_created_main.Count) / $total_to_create_orders_main)) - $seconds_elapsed
+	            $seconds_remaining = ($seconds_elapsed / ($($orders_created_main.Count) / $($total_to_create_orders_main.Count))) - $seconds_elapsed
                 $ts =  [timespan]::fromseconds($seconds_remaining)
                 $ts = $ts.ToString("hh\:mm\:ss")
 
@@ -2736,11 +2763,15 @@ function Parse-OrdersMain()
                 Write-Verbose "[*] Writing $($orders_not_created_main_csv) file now."
                 $orders_not_created_main | Select FILE, ERROR_CODE, ERROR_INFO | Sort -Property ERROR_CODE | Export-Csv "$($orders_not_created_main_csv)" -NoTypeInformation -Force
             }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
-        Write-Log -level [WARN] -log_file $log_file -message "[!] Total to create: ($($total_to_create_orders_main)). No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
-        Write-Warning -Message "[!] Total to create: ($($total_to_create_orders_main)). No .mof files in $($mof_directory_working) to work magic on." -RecommendedAction "Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
+        Write-Log -level [WARN] -log_file $log_file -message "[!] Total to create: ($($total_to_create_orders_main.Count)). No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
+        Write-Warning -Message "[!] Total to create: ($($total_to_create_orders_main.Count)). No .mof files in $($mof_directory_working) to work magic on." -RecommendedAction "Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
     }
 }
 
@@ -2752,9 +2783,9 @@ function Parse-OrdersCertificate()
         [Parameter(mandatory = $true)] $exclude_directories
     )
 	  
-    $total_to_create_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" -Filter "*.cof" -Include "*_edited.cof" -Exclude $($exclude_directories) -Recurse).Length
+    $total_to_create_orders_cert = Get-ChildItem -Path "$($cof_directory_working)" -Filter "*.cof" -Include "*_edited.cof" -Exclude $($exclude_directories) -Recurse
     
-    if($($total_to_create_orders_cert) -gt '0')
+    if($($total_to_create_orders_cert.Count) -gt '0')
     {
         $sw = New-Object System.Diagnostics.Stopwatch
         $sw.start()
@@ -2773,8 +2804,8 @@ function Parse-OrdersCertificate()
         $soldiers = @(Get-ChildItem -Path "$($uics_directory_output)" -Exclude "__PERMISSIONS" -Recurse -Include "*.txt" | % { Split-Path  -Path $_  -Parent })
         $name_ssn = @{}
 
-        Write-Log -log_file $log_file -message "[#] Total to create: $($total_to_create_orders_cert). Populating name_ssn hash table now."
-        Write-Verbose "[#] Total to create: $($total_to_create_orders_cert). Populating name_ssn hash table now."
+        Write-Log -log_file $log_file -message "[#] Total to create: $($total_to_create_orders_cert.Count). Populating name_ssn hash table now."
+        Write-Verbose "[#] Total to create: $($total_to_create_orders_cert.Count). Populating name_ssn hash table now."
 
         foreach($s in $soldiers)
         {
@@ -2786,7 +2817,7 @@ function Parse-OrdersCertificate()
 
             if(!($name_ssn.ContainsKey($name)))
             {
-                Write-Log -level [INFO] -log_file $log_file -message "[#] $($name) not in hash table. Adding $($name) to hash table now."
+                Write-Log -log_file $log_file -message "[#] $($name) not in hash table. Adding $($name) to hash table now."
                 Write-Verbose "[#] $($name) not in hash table. Adding $($name) to hash table now."
 
                 $name_ssn.Add($name, $ssn)
@@ -2979,11 +3010,11 @@ function Parse-OrdersCertificate()
                 }
 
 	            $status = "Working magic on '*c.prt' files."
-	            $activity = "Processing file $($orders_created_cert.Count) of $($total_to_create_orders_cert). $($orders_not_created_cert.Count) of $($total_to_create_orders_cert) not created."
-	            $percent_complete = (($($orders_created_cert.Count)/$($total_to_create_orders_cert)) * 100)
-	            $current_operation = "$("{0:N2}" -f ((($($orders_created_cert.Count)/$($total_to_create_orders_cert)) * 100),2))% Complete"
+	            $activity = "Processing file $($orders_created_cert.Count) of $($total_to_create_orders_cert.Count). $($orders_not_created_cert.Count) of $($total_to_create_orders_cert.Count) not created."
+	            $percent_complete = (($($orders_created_cert.Count)/$($total_to_create_orders_cert.Count)) * 100)
+	            $current_operation = "$("{0:N2}" -f ((($($orders_created_cert.Count)/$($total_to_create_orders_cert.Count)) * 100),2))% Complete"
 	            $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-	            $seconds_remaining = ($seconds_elapsed / ($($orders_created_cert.Count) / $total_to_create_orders_cert)) - $seconds_elapsed
+	            $seconds_remaining = ($seconds_elapsed / ($($orders_created_cert.Count) / $($total_to_create_orders_cert.Count))) - $seconds_elapsed
                 $ts =  [timespan]::fromseconds($seconds_remaining)
                 $ts = $ts.ToString("hh\:mm\:ss")
 
@@ -3013,11 +3044,15 @@ function Parse-OrdersCertificate()
                 Write-Verbose "[*] Writing $($orders_not_created_cert_csv) file now."
                 $orders_not_created_cert | Select FORMAT, ORDER_NUMBER, LAST_NAME, FIRST_NAME, MIDDLE_INITIAL, SSN, UIC, PERIOD_FROM_YEAR, PERIOD_FROM_MONTH, PERIOD_FROM_DAY, PERIOD_TO_YEAR, PERIOD_TO_MONTH, PERIOD_TO_DAY | Sort -Property ORDER_NUMBER | Export-Csv -NoTypeInformation -Path "$($orders_not_created_cert_csv)"
             }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
-        Write-Log -level [WARN] -logfile $logfile -message "[!] Total to create: $($total_to_create_orders_cert). No .cof files in $($cof_directory_working) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
-        Write-Warning -Message "[!] Total to create: $($total_to_create_orders_cert). No .cof files in $($cof_directory_working) to work magic on." -RecommendedAction "Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
+        Write-Log -level [WARN] -logfile $logfile -message "[!] Total to create: $($total_to_create_orders_cert.Count). No .cof files in $($cof_directory_working) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
+        Write-Warning -Message "[!] Total to create: $($total_to_create_orders_cert.Count). No .cof files in $($cof_directory_working) to work magic on." -RecommendedAction "Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
     }
 }
 
@@ -3161,24 +3196,24 @@ function Clean-OrdersMain()
         [Parameter(mandatory = $true)] $exclude_directories
     )
 
-    $total_to_clean_main_files = @(Get-ChildItem -Path "$($mof_directory_working)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }).Count
+    $total_to_clean_main_files = Get-ChildItem -Path "$($mof_directory_working)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }
 
-    if($($total_to_clean_main_files) -gt '0')
+    if($($total_to_clean_main_files.Count) -gt '0')
     {
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
         Write-Verbose "[#] Start time: $($start_time)."
 
-        Write-Log -log_file $log_file -message "[#] Total .mof files to clean in $($mof_directory_working): $($total_to_clean_main_files)"
-        Write-Verbose "[#] Total .mof files to clean in $($mof_directory_working): $($total_to_clean_main_files)"
+        Write-Log -log_file $log_file -message "[#] Total .mof files to clean in $($mof_directory_working): $($total_to_clean_main_files.Count)"
+        Write-Verbose "[#] Total .mof files to clean in $($mof_directory_working): $($total_to_clean_main_files.Count)"
         Remove-Item -Path "$($mof_directory_working)" -Recurse -Force
 
         if($?)
         {
-            Write-Log -log_file $log_file -message "[*] $($mof_directory_working) removed successfully. Cleaned: $($total_to_clean_main_files) .mof files from $($mof_directory_working)."
+            Write-Log -log_file $log_file -message "[*] $($mof_directory_working) removed successfully. Cleaned: $($total_to_clean_main_files.Count) .mof files from $($mof_directory_working)."
             New-Item -ItemType Directory -Path "$($mof_directory_working)" -Force > $null
             Start-Sleep -Milliseconds 250
-            Write-Verbose "[*] $($mof_directory_working) removed successfully. Cleaned: $($total_to_clean_main_files) .mof files from $($mof_directory_working)."
+            Write-Verbose "[*] $($mof_directory_working) removed successfully. Cleaned: $($total_to_clean_main_files.Count) .mof files from $($mof_directory_working)."
             Start-Sleep -Milliseconds 250
             New-Item -ItemType Directory -Path "$($mof_directory_working)" -Force > $null
             Start-Sleep -Milliseconds 250
@@ -3189,11 +3224,15 @@ function Clean-OrdersMain()
             Write-Log -level [ERROR] -log_file $log_file -message "[!] Failed to remove $($mof_directory_working). Make sure you don't have any files in the directory open still."
             Write-Error -Message "[!] Failed to remove $($mof_directory_working)." -RecommendedAction "Make sure you don't have any files in the directory open still."
         }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
-        Write-Log -level [WARN] -log_file $log_file -message "[!] Total .mof files to clean: $($total_to_clean_main_files). No .mof files in $($mof_directory_working) to clean up."
-        Write-Warning "[!] Total .mof files to clean: $($total_to_clean_main_files). No .mof files in $($mof_directory_working) to clean up."
+        Write-Log -level [WARN] -log_file $log_file -message "[!] Total .mof files to clean: $($total_to_clean_main_files.Count). No .mof files in $($mof_directory_working) to clean up."
+        Write-Warning "[!] Total .mof files to clean: $($total_to_clean_main_files.Count). No .mof files in $($mof_directory_working) to clean up."
     }
 }
 
@@ -3205,22 +3244,22 @@ function Clean-OrdersCertificate()
         [Parameter(mandatory = $true)] $exclude_directories
     )
 	  
-    $total_to_clean_cert_files = @(Get-ChildItem -Path "$($cof_directory_working)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }).Count
+    $total_to_clean_cert_files = Get-ChildItem -Path "$($cof_directory_working)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }
 
-    if($($total_to_clean_cert_files) -gt '0')
+    if($($total_to_clean_cert_files.Count) -gt '0')
     {
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
         Write-Verbose "[#] Start time: $($start_time)."
 
-        Write-Log -log_file $log_file -message "[#] Total .cof files to clean in $($cof_directory_working): $($total_to_clean_cert_files)"
-        Write-Verbose "[#] Total .cof files to clean in $($cof_directory_working): $($total_to_clean_cert_files)"
+        Write-Log -log_file $log_file -message "[#] Total .cof files to clean in $($cof_directory_working): $($total_to_clean_cert_files.Count)"
+        Write-Verbose "[#] Total .cof files to clean in $($cof_directory_working): $($total_to_clean_cert_files.Count)"
         Remove-Item -Path "$($cof_directory_working)" -Recurse -Force
 
         if($?)
         {
-            Write-Log -log_file $log_file -message "[*] $($cof_directory_working) removed successfully. Cleaned: $($total_to_clean_cert_files) .cof files from $($cof_directory_working)."
-            Write-Verbose "[*] $($cof_directory_working) removed successfully. Cleaned: $($total_to_clean_cert_files) .cof files from $($cof_directory_working)."
+            Write-Log -log_file $log_file -message "[*] $($cof_directory_working) removed successfully. Cleaned: $($total_to_clean_cert_files.Count) .cof files from $($cof_directory_working)."
+            Write-Verbose "[*] $($cof_directory_working) removed successfully. Cleaned: $($total_to_clean_cert_files.Count) .cof files from $($cof_directory_working)."
             Start-Sleep -Milliseconds 250
             New-Item -ItemType Directory -Path "$($cof_directory_working)" -Force > $null
             Start-Sleep -Milliseconds 250
@@ -3232,11 +3271,15 @@ function Clean-OrdersCertificate()
             Write-Log -level [ERROR] -log_file $log_file -message "[!] Failed to remove $($cof_directory_working)." -RecommendedAction "Make sure you don't have any files in $($cof_directory_working) open still."
             Write-Error -Message "[!] Failed to remove $($cof_directory_working)." -RecommendedAction "Make sure you don't have any files in $($cof_directory_working) open still."
         }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
-        Write-Log -level [WARN] -log_file $log_file -message "[!] Total .cof files to clean: $($total_to_clean_cert_files). No .cof files in $($cof_directory_working) to clean up."
-        Write-Warning "[!] Total .cof files to clean: $($total_to_clean_cert_files). No .cof files in $($cof_directory_working) to clean up."
+        Write-Log -level [WARN] -log_file $log_file -message "[!] Total .cof files to clean: $($total_to_clean_cert_files.Count). No .cof files in $($cof_directory_working) to clean up."
+        Write-Warning "[!] Total .cof files to clean: $($total_to_clean_cert_files.Count). No .cof files in $($cof_directory_working) to clean up."
     }
 }
 
@@ -3247,22 +3290,22 @@ function Clean-UICS()
         [Parameter(mandatory = $true)] $uics_directory_output
     )
 
-    $total_to_clean_uics_directories = @(Get-ChildItem -Path "$($uics_directory_output)").Count
+    $total_to_clean_uics_directories = Get-ChildItem -Path "$($uics_directory_output)"
 
-    if($($total_to_clean_uics_directories) -gt '0')
+    if($($total_to_clean_uics_directories.Count) -gt '0')
     {
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
         Write-Verbose "[#] Start time: $($start_time)."
 
-        Write-Log -log_file $log_file -message "[#] Total UICS directories to clean in $($uics_directory_output): $($total_to_clean_uics_directories)."
-        Write-Verbose "[#] Total UICS directories to clean in $($uics_directory_output): $($total_to_clean_uics_directories)."
-        Remove-Item -Path "$($uics_directory_output)" -Recurse -Force
+        Write-Log -log_file $log_file -message "[#] Total UICS directories to clean in $($uics_directory_output): $($total_to_clean_uics_directories.Count)."
+        Write-Verbose "[#] Total UICS directories to clean in $($uics_directory_output): $($total_to_clean_uics_directories.Count)."
+        Remove-Item -Recurse -Force -Path "$($uics_directory_output)"
 
         if($?)
         {
-            Write-Log -log_file $log_file -message "[*] $($uics_directory_output) removed successfully. Cleaned: $($total_to_clean_uics_directories) directories from $($uics_directory_output)."
-            Write-Verbose "[*] $($uics_directory_output) removed successfully. Cleaned: $($total_to_clean_uics_directories) directories from $($uics_directory_output)."
+            Write-Log -log_file $log_file -message "[*] $($uics_directory_output) removed successfully. Cleaned: $($total_to_clean_uics_directories.Count) directories from $($uics_directory_output)."
+            Write-Verbose "[*] $($uics_directory_output) removed successfully. Cleaned: $($total_to_clean_uics_directories.Count) directories from $($uics_directory_output)."
             New-Item -ItemType Directory -Path "$($uics_directory_output)" -Force > $null
         }
         else
@@ -3270,11 +3313,15 @@ function Clean-UICS()
             Write-Log -level [ERROR] -log_file $log_file -message "[!] Failed to remove $($uics_directory_output)." -RecommendedAction "Make sure you don't have any files in $($uics_directory_output) open still."
             Write-Error -Message "[!] Failed to remove $($uics_directory_output)." -RecommendedAction "Make sure you don't have any files in $($uics_directory_output) open still."
         }
+
+        $end_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
+        Write-Verbose "[#] End time: $($end_time)."
     }
     else
     {
-        Write-Log -level [WARN] -log_file $log_file -message "[!] Total directories to clean: $($total_to_clean_uics_directories). No directories in $($uics_directory_output) to clean up."
-        Write-Warning -Message "[!] Total directories to clean: $($total_to_clean_uics_directories). No directories in $($uics_directory_output) to clean up."
+        Write-Log -level [WARN] -log_file $log_file -message "[!] Total directories to clean: $($total_to_clean_uics_directories.Count). No directories in $($uics_directory_output) to clean up."
+        Write-Warning -Message "[!] Total directories to clean: $($total_to_clean_uics_directories.Count). No directories in $($uics_directory_output) to clean up."
     }
 }
 
@@ -3286,48 +3333,51 @@ function Get-Permissions()
     )
 
     $uics_directory = "$($uics_directory_output)\UICS"
-    $permissions_reports_directory = "$($uics_directory_output)\__PERMISSIONS"
-    $uics_directory = $uics_directory.Split('\')
-    $uics_directory = $uics_directory[-1]
 
-    $html_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.html"
-    $csv_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.csv"
-    $txt_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.txt"
-
-    $start_time = Get-Date
-    Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
-    Write-Verbose "[#] Start time: $($start_time)."
-
-    if(!(Test-Path "$($permissions_reports_directory)\$($run_date)"))
+    if(Test-Path $($uics_directory))
     {
-        Write-Log -log_file $log_file -message "[#] $($permissions_reports_directory)\$($run_date) not created. Creating now."
-        Write-Verbose "[#] $($permissions_reports_directory)\$($run_date) not created. Creating now."
-        New-Item -ItemType Directory -Path "$($permissions_reports_directory)\$($run_date)" > $null
+        $permissions_reports_directory = "$($uics_directory_output)\__PERMISSIONS"
+        $uics_directory = $uics_directory.Split('\')
+        $uics_directory = $uics_directory[-1]
 
+        $html_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.html"
+        $csv_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.csv"
+        $txt_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.txt"
+
+        $start_time = Get-Date
+        Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
+        Write-Verbose "[#] Start time: $($start_time)."
+
+        if(!(Test-Path "$($permissions_reports_directory)\$($run_date)"))
+        {
+            Write-Log -log_file $log_file -message "[#] $($permissions_reports_directory)\$($run_date) not created. Creating now."
+            Write-Verbose "[#] $($permissions_reports_directory)\$($run_date) not created. Creating now."
+            New-Item -ItemType Directory -Path "$($permissions_reports_directory)\$($run_date)" > $null
+
+            if($?)
+            {
+                Write-Log -log_file $log_file -message "$($permissions_reports_directory)\$($run_date) created successfully."
+                Write-Verbose "$($permissions_reports_directory)\$($run_date) created successfully."
+            }
+        }
+
+        Write-Log -log_file $log_file -message "[#] Writing permissions of $($uics_directory_output) to .csv file now."
+        Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .csv file now."
+
+        Get-ChildItem -Recurse -Path $($uics_directory_output) | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Export-Csv -Force -NoTypeInformation $($csv_report)
         if($?)
         {
-            Write-Log -log_file $log_file -message "$($permissions_reports_directory)\$($run_date) created successfully."
-            Write-Verbose "$($permissions_reports_directory)\$($run_date) created successfully."
+            Write-Log -log_file $log_file -message "[*] $($uics_directory_output) permissions writing to .csv finished successfully."
+            Write-Verbose "[*] $($uics_directory_output) permissions writing to .csv finished successfully."
         }
-    }
+        else
+        {
+            Write-Log -level [ERROR] -log_file $log_file -message "[!] $($uics_directory_output) permissions writing to .csv failed."
+            Write-Error -Message "[!] $($uics_directory_output) permissions writing to .csv failed."
+        }
 
-    Write-Log -log_file $log_file -message "[#] Writing permissions of $($uics_directory_output) to .csv file now."
-    Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .csv file now."
-
-    Get-ChildItem -Recurse -Path $($uics_directory_output) | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Export-Csv -Force -NoTypeInformation $($csv_report)
-    if($?)
-    {
-        Write-Log -log_file $log_file -message "[*] $($uics_directory_output) permissions writing to .csv finished successfully."
-        Write-Verbose "[*] $($uics_directory_output) permissions writing to .csv finished successfully."
-    }
-    else
-    {
-        Write-Log -level [ERROR] -log_file $log_file -message "[!] $($uics_directory_output) permissions writing to .csv failed."
-        Write-Error -Message "[!] $($uics_directory_output) permissions writing to .csv failed."
-    }
-
-    Write-Log -log_file $log_file -message "[#] Writing permissions of $($uics_directory_output) to .html file now."
-    Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .html file now."
+        Write-Log -log_file $log_file -message "[#] Writing permissions of $($uics_directory_output) to .html file now."
+        Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .html file now."
 $css = 
 @"
 <style>
@@ -3340,30 +3390,36 @@ tr:nth-child(even) { background: #dae5f4; }
 tr:nth-child(odd) { background: #b8d1f3; }
 </style>
 "@
-    Get-ChildItem -Recurse -Path $($uics_directory_output)  | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | ConvertTo-Html -Title "$($uics_directory_output) Permissions Report" -Head $($css) -Body "<h1>$($uics_directory_output) Permissions Report</h1> <h5> Generated on $(Get-Date -UFormat "%Y-%m-%d @ %H-%M-%S")" | Out-File $($html_report)
-    if($?)
-    {
-        Write-Log -log_file $log_file -message "[*] $($uics_directory_output) permissions writing to .html finished successfully."
-        Write-Verbose "[*] $($uics_directory_output) permissions writing to .html finished successfully."
-    }
-    else
-    {
-        Write-Log -level [ERROR] -log_file $log_file -message "[!] $($uics_directory_output) permissions writing to .html failed."
-        Write-Error -Message "[!] $($uics_directory_output) permissions writing to .html failed."
-    }
+        Get-ChildItem -Recurse -Path $($uics_directory_output)  | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | ConvertTo-Html -Title "$($uics_directory_output) Permissions Report" -Head $($css) -Body "<h1>$($uics_directory_output) Permissions Report</h1> <h5> Generated on $(Get-Date -UFormat "%Y-%m-%d @ %H-%M-%S")" | Out-File $($html_report)
+        if($?)
+        {
+            Write-Log -log_file $log_file -message "[*] $($uics_directory_output) permissions writing to .html finished successfully."
+            Write-Verbose "[*] $($uics_directory_output) permissions writing to .html finished successfully."
+        }
+        else
+        {
+            Write-Log -level [ERROR] -log_file $log_file -message "[!] $($uics_directory_output) permissions writing to .html failed."
+            Write-Error -Message "[!] $($uics_directory_output) permissions writing to .html failed."
+        }
 
-    Write-Log -log_file $log_file -message "[#] Writing permissions of $($uics_directory_output) to .txt file now."
-    Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .txt file now."
-    Get-ChildItem -Recurse -Path $($uics_directory_output)  | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Format-Table -AutoSize -Wrap | Out-File $($txt_report)
-    if($?)
-    {
-        Write-Log -log_file $log_file -message "[*] $($uics_directory_output) permissions writing to .txt finished successfully."
-        Write-Verbose "[*] $($uics_directory_output) permissions writing to .txt finished successfully."
+        Write-Log -log_file $log_file -message "[#] Writing permissions of $($uics_directory_output) to .txt file now."
+        Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .txt file now."
+        Get-ChildItem -Recurse -Path $($uics_directory_output)  | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Format-Table -AutoSize -Wrap | Out-File $($txt_report)
+        if($?)
+        {
+            Write-Log -log_file $log_file -message "[*] $($uics_directory_output) permissions writing to .txt finished successfully."
+            Write-Verbose "[*] $($uics_directory_output) permissions writing to .txt finished successfully."
+        }
+        else
+        {
+            Write-Log -level [ERROR] -log_file $log_file -message "[!] $($uics_directory_output) permissions writing to .txt failed."
+            Write-Error -Message "[!] $($uics_directory_output) permissions writing to .txt failed."
+        }
     }
     else
     {
-        Write-Log -level [ERROR] -log_file $log_file -message "[!] $($uics_directory_output) permissions writing to .txt failed."
-        Write-Error -Message "[!] $($uics_directory_output) permissions writing to .txt failed."
+        Write-Log -level [ERROR] -log_file $log_file -message "[!] $($uics_directory) does not exist. Make sure to run $($script_name) -d -o '\\path\to\desired\output' and try again."
+        Write-Error -Message "[!] $($uics_directory) does not exist. Make sure to run $($script_name) -d -o '\\path\to\desired\output' and try again."
     }
 }
 
@@ -3434,6 +3490,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3469,6 +3526,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3505,6 +3563,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3540,6 +3599,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3575,6 +3635,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3610,6 +3671,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3645,6 +3707,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3680,6 +3743,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3715,6 +3779,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3750,6 +3815,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3785,6 +3851,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3820,6 +3887,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3855,6 +3923,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3890,6 +3959,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3925,6 +3995,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3960,6 +4031,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -3995,6 +4067,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -4030,6 +4103,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -4065,6 +4139,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -4100,6 +4175,7 @@ function Validate-Variables()
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] Value '$($value)' from '$($key)' failed validation."
 	                    Write-Error "[!] Value '$($value)' from '$($key)' failed validation."
+                        throw "[!] Value '$($value)' from '$($key)' failed validation."
 	
                         $status = "fail"
 
@@ -4135,9 +4211,9 @@ Function Write-Log
 {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory=$False)][ValidateSet("[INFO]","[WARN]","[ERROR]","[FATAL]","[DEBUG]")][String]$level = "[INFO]",
-        [Parameter(Mandatory=$True)][string]$message,
-        [Parameter(Mandatory=$False)][string]$log_file
+        [Parameter(Mandatory=$false)][ValidateSet("[INFO]","[WARN]","[ERROR]","[FATAL]","[DEBUG]")][String]$level = "[INFO]",
+        [Parameter(Mandatory=$true)][string]$message,
+        [Parameter(Mandatory=$false)][string]$log_file
     )
 
     if(!(Test-Path $log_file))
@@ -4171,25 +4247,124 @@ function Process-DevCommands()
 
         if(($key.modifiers -band [consolemodifiers]"control") -and ($key.key -eq "P"))
         {
-            Write-Verbose "[-] Pausing at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
+            Write-Log -level [INFO] -log_file $($log_file) -message "[-] Pausing at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
+            Write-Host "[-] Pausing at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
             $sw.Stop()
 
-            Pause
+            Write-Host "Press any key to continue..."
+            [void][System.Console]::ReadKey($true)
 
-		    Write-Verbose "[-] Resuming at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
+            Write-Log -level [INFO] -log_file $($log_file) -message "[-] Resuming at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
+            Write-Host "[-] Resuming at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
             $sw.Start()
         }
         elseif(($key.modifiers -band [consolemodifiers]"control") -and ($key.key -eq "Q" ))
         {
             $sw.Stop()
-            $response = Read-Host -Prompt "Are you sure you want to exit? [ (Y|y) / (N|n) ]"
-            
-            switch($response)
+
+            Do 
             {
-                { @("y", "Y") -contains $_ } { "Terminating at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd) by user."; exit 0 }
-                { @("n", "N") -contains $_ } { $sw.Start(); continue }
-                default { Write-Warning "Response not determined." }
+                $response = Read-Host -Prompt "Are you sure you want to exit? [Y/N]"
+
+                if($response -eq "Y") 
+                {
+                    Write-Log -level [INFO] -log_file $($log_file) -message "Terminating at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd) by user."
+                    exit 0  
+                }
+                elseif($response -eq "N")
+                {
+                    Write-Log -level [INFO] -log_file $($log_file) -message "[-] Resuming at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
+                    Write-Host "[-] Resuming at $(Get-Date -Format hh:mm:ss) on $(Get-Date -Format yyyy-M-dd)."
+                    $sw.Start()
+                    continue
+                }
+                else
+                {
+                    Write-Log -level [WARN] -log_file $($log_file) -message "[!] Response not determined."
+                    Write-Warning "[!] Response not determined. Try again with proper input."
+                }
             }
+            Until ($response -eq "N")
+        }
+    }
+}
+
+function Present-Outcome()
+{
+    [cmdletbinding()]
+    Param(
+        [Parameter(mandatory = $true)][ValidateSet("GO", "NOGO")] $outcome
+    )
+
+$success =
+@"
+
+:::     ::: ::::::::::: :::::::: ::::::::::: ::::::::  :::::::::  :::   ::: 
+:+:     :+:     :+:    :+:    :+:    :+:    :+:    :+: :+:    :+: :+:   :+: 
++:+     +:+     +:+    +:+           +:+    +:+    +:+ +:+    +:+  +:+ +:+  
++#+     +:+     +#+    +#+           +#+    +#+    +:+ +#++:++#:    +#++:   
+ +#+   +#+      +#+    +#+           +#+    +#+    +#+ +#+    +#+    +#+    
+  #+#+#+#       #+#    #+#    #+#    #+#    #+#    #+# #+#    #+#    #+#    
+    ###     ########### ########     ###     ########  ###    ###    ###    
+
+"@
+
+$fail = 
+@"
+
+::::::::::   :::     ::::::::::: :::       :::    ::: :::::::::  :::::::::: 
+:+:        :+: :+:       :+:     :+:       :+:    :+: :+:    :+: :+:        
++:+       +:+   +:+      +:+     +:+       +:+    +:+ +:+    +:+ +:+        
+:#::+::# +#++:++#++:     +#+     +#+       +#+    +:+ +#++:++#:  +#++:++#   
++#+      +#+     +#+     +#+     +#+       +#+    +#+ +#+    +#+ +#+        
+#+#      #+#     #+#     #+#     #+#       #+#    #+# #+#    #+# #+#        
+###      ###     ### ########### ########## ########  ###    ### ########## 
+
+"@
+
+$unknown = 
+@"
+
+"@
+
+    if($outcome -eq 'GO')
+    {
+        Write-Log -log_file $($log_file) -message "VICTORY"
+
+        foreach ($line in $success -split "`n")
+        {
+            foreach ($char in $line.tochararray())
+            {
+                if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
+                {
+                    Write-Host -ForegroundColor Black $char -NoNewline
+                }
+                else
+                {
+                    Write-Host -ForegroundColor Green $char -NoNewline
+                }
+            }
+            write-host ""
+        }
+    }
+    elseif($outcome -eq 'NOGO')
+    {
+        Write-Log -level '[ERROR]' -log_file $($log_file) -message "FAILURE"
+
+        foreach ($line in $fail -split "`n")
+        {
+            foreach ($char in $line.tochararray())
+            {
+                if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
+                {
+                    Write-Host -ForegroundColor Red $char -NoNewline
+                }
+                else
+                {
+                    Write-Host -ForegroundColor White $char -NoNewline
+                }
+            }
+            write-host ""
         }
     }
 }
@@ -4343,7 +4518,7 @@ if($($ParametersPassed) -gt '0')
                 Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
 		        if($?) 
 		        { 
-			        Write-Host "[^] Magic on .mof files finished. Did you expect anything less?" -ForegroundColor Cyan 
+			        Write-Host "[^] Magic on .mof files finished." -ForegroundColor Cyan 
                 }
             }
 
@@ -4359,7 +4534,7 @@ if($($ParametersPassed) -gt '0')
 		        Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
 		        if($?) 
 		        { 
-			        Write-Host "[^] Magic on .cof files finished. Did you expect anything less?" -ForegroundColor Cyan 
+			        Write-Host "[^] Magic on .cof files finished." -ForegroundColor Cyan 
 		        } 	
             }
 
@@ -4415,69 +4590,78 @@ if($($ParametersPassed) -gt '0')
             }
 
             "all" 
-            {                  	            
-				Write-Host "[^] Creating required directories." -ForegroundColor Cyan
-		        Create-RequiredDirectories -directories $($directories) -log_file $($log_file)
-		        if($?) 
-		        {
-			        Write-Host "[^] Creating directories finished." -ForegroundColor Cyan
-		        } 
+            { 
+                try
+                {
+				    Write-Host "[^] Creating required directories. Step [1/9]." -ForegroundColor Cyan
+		            Create-RequiredDirectories -directories $($directories) -log_file $($log_file)
+		            if($?) 
+		            {
+			            Write-Host "[^] Creating directories finished." -ForegroundColor Cyan
+		            } 
 
-		        Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor Cyan	
-		        Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
-		        if($?)
-		        {
-			        Write-Host "[^] Splitting '*m.prt' order file(s) finished." -ForegroundColor Cyan
-		        }
+		            Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files. Step [2/9]." -ForegroundColor Cyan
+		            Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
+		            if($?)
+		            {
+			            Write-Host "[^] Splitting '*m.prt' order file(s) finished." -ForegroundColor Cyan
+		            }
 
-		        Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor Cyan
-		        Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
-		        if($?) 
-		        {
-			        Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished." -ForegroundColor Cyan
-		        } 	     
+		            Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files. Step [3/9]." -ForegroundColor Cyan
+		            Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
+		            if($?) 
+		            {
+			            Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished." -ForegroundColor Cyan
+		            } 	     
                        
-		        Write-Host "[^] Editing orders '*m.prt' files." -ForegroundColor Cyan
-		        Edit-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working)
-		        if($?) 
-		        { 
-			        Write-Host "[^] Editing orders '*m.prt' files finished." -ForegroundColor Cyan 
-		        } 
+		            Write-Host "[^] Editing orders '*m.prt' files. Step [4/9]." -ForegroundColor Cyan
+		            Edit-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Editing orders '*m.prt' files finished." -ForegroundColor Cyan 
+		            } 
 
-		        Write-Host "[^] Editing orders '*c.prt' files." -ForegroundColor Cyan
-		        Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working)
-		        if($?)
-		        { 
-			        Write-Host "[^] Editing orders '*c.prt' files finished." -ForegroundColor Cyan
-		        } 
+		            Write-Host "[^] Editing orders '*c.prt' files. Step [5/9]." -ForegroundColor Cyan
+		            Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working)
+		            if($?)
+		            { 
+			            Write-Host "[^] Editing orders '*c.prt' files finished." -ForegroundColor Cyan
+		            } 
 
-		        Write-Host "[^] Combining .mof orders files." -ForegroundColor Cyan
-		        Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -run_date $($run_date)
-		        if($?) 
-		        { 
-			        Write-Host "[^] Combining .mof orders files finished." -ForegroundColor Cyan 
-		        } 	
+		            Write-Host "[^] Combining .mof orders files. Step [6/9]." -ForegroundColor Cyan
+		            Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -run_date $($run_date)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Combining .mof orders files finished." -ForegroundColor Cyan 
+		            } 	
 
-		        Write-Host "[^] Combining .cof orders files." -ForegroundColor Cyan
-		        Combine-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date)
-		        if($?) 
-		        { 
-			        Write-Host "[^] Combining .cof orders files finished." -ForegroundColor Cyan 
-		        } 	
+		            Write-Host "[^] Combining .cof orders files. Step [7/9]." -ForegroundColor Cyan
+		            Combine-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Combining .cof orders files finished." -ForegroundColor Cyan 
+		            } 	
 
-                Write-Host "[^ Working magic on .mof files now." -ForegroundColor Cyan
-                Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
-		        if($?) 
-		        { 
-			        Write-Host "[^] Magic on .mof files finished. Did you expect anything less?" -ForegroundColor Cyan 
-		        }	
+                    Write-Host "[^] Working magic on .mof files now. Step [8/9]." -ForegroundColor Cyan
+                    Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Magic on .mof files finished." -ForegroundColor Cyan 
+		            }	
 
-		        Write-Host "[^] Working magic on .cof files." -ForegroundColor Cyan
-		        Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
-		        if($?) 
-		        { 
-			        Write-Host "[^] Magic on .cof files finished. Did you expect anything less?" -ForegroundColor Cyan 
-		        } 
+		            Write-Host "[^] Working magic on .cof files. Step [9/9]." -ForegroundColor Cyan
+		            Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
+		            if($?) 
+		            { 
+			            Write-Host "[^] Magic on .cof files finished." -ForegroundColor Cyan 
+		            }
+
+                    Present-Outcome -outcome GO
+                }
+                catch
+                {
+                    Present-Outcome -outcome NOGO
+                }              	            
             }
 
             "Verbose" 
