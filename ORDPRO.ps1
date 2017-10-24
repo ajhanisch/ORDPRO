@@ -212,6 +212,7 @@ $sw.start()
 
 if(Test-Path variable:global:psISE)
 {
+    Write-Log -level [WARN] -log_file $($log_file) -message "[#] Working in PowerShell ISE. Unable to use administrative commands while using PowerShell ISE."
     Write-Warning "[#] Working in PowerShell ISE. Unable to use administrative commands while using PowerShell ISE."
 }
 else
@@ -232,8 +233,6 @@ function Create-RequiredDirectories()
 
     if($($directories.Count) -gt 0)
     {
-        #cls
-
         $total_directories_created = 0
         $total_directories_not_created = 0
 
@@ -314,8 +313,6 @@ function Move-OriginalToArchive()
         [Parameter(mandatory = $true)] $ordregisters_output,
         [Parameter(mandatory = $true)] $archive_directory_working
     )
-
-    #cls
 
     $total_files_to_move = @(Get-ChildItem -Path $($current_directory_working) | Where { ! $_.PSIsContainer } | Where { $_.Name -eq "*m.prt" -or $_.Name -eq "*c.prt" -or $_.Name -eq "*r.prt" -or $_.Name -eq "*r.reg*" -or $_.Extension -ne '.ps1' }).Count
     
@@ -522,8 +519,6 @@ function Split-OrdersMain()
         [Parameter(mandatory = $true)] $regex_beginning_m_split_orders_main
     )
 
-    #cls
-
     if($($files_orders_m_prt).Count -gt '0')
     {
         $count_orders = 0
@@ -671,8 +666,6 @@ function Split-OrdersCertificate()
         [Parameter(mandatory = $true)] $files_orders_c_prt,
         [Parameter(mandatory = $true)] $regex_end_cert
     )
-	
-    #cls
 
     if($($files_orders_c_prt).Count -gt '0')
     {
@@ -821,8 +814,6 @@ function Edit-OrdersMain()
         [Parameter(mandatory = $true)] $regex_old_fouo_3_edit_orders_main,
         [Parameter(mandatory = $true)] $mof_directory_original_splits_working
     )
-	 
-    #cls 
 
     $total_to_edit_orders_main = Get-ChildItem -Path "$($mof_directory_working)" -Exclude "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' }
 
@@ -1149,8 +1140,6 @@ function Edit-OrdersCertificate()
         [Parameter(mandatory = $true)] $cof_directory_original_splits_working
     )
 
-    #cls
-
     $total_to_edit_orders_cert = Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }
 
     if($($total_to_edit_orders_cert.Count) -gt '0')
@@ -1309,9 +1298,7 @@ function Combine-OrdersMain()
         [Parameter(mandatory = $true)] $run_date,
         [Parameter(mandatory = $true)] $exclude_directories
     )
-	 
-    #cls
- 
+
     $total_to_combine_orders_main = Get-ChildItem -Path "$($mof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }
 
     if($($($total_to_combine_orders_main.Count)) -gt '0')
@@ -1396,8 +1383,6 @@ function Combine-OrdersCertificate()
         [Parameter(mandatory = $true)] $cof_directory_working,
         [Parameter(mandatory = $true)] $run_date
     )
-	  
-    #cls
 
     $total_to_combine_orders_cert = Get-ChildItem -Path "$($cof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }
 
@@ -1487,8 +1472,6 @@ function Parse-OrdersMain()
         [Parameter(mandatory = $true)] $regex_uic_parse_orders_main,
         [Parameter(mandatory = $true)] $regex_pertaining_to_parse_orders_main
     )
-	  
-    #cls
 
     $total_to_create_orders_main = Get-ChildItem -Path $($mof_directory_working) | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }
 
@@ -2790,8 +2773,6 @@ function Parse-OrdersCertificate()
         $sw = New-Object System.Diagnostics.Stopwatch
         $sw.start()
 
-        #cls
-
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "[#] Start time: $($start_time)."
         Write-Verbose "[#] Start time: $($start_time)."
@@ -3081,6 +3062,7 @@ function Work-Magic()
     {
         Write-Log -log_file $log_file -message "[#] $($uic_directory) not created. Creating now."
         Write-Verbose "[#] $($uic_directory) not created. Creating now."
+
         New-Item -ItemType Directory -Path "$($uics_directory_output)\$($uic)" > $null
 
         if($?)
@@ -3104,6 +3086,7 @@ function Work-Magic()
     {
         Write-Log -log_file $log_file -message "[#] $($soldier_directory_uics) not created. Creating now."
         Write-Verbose "[#] $($soldier_directory_uics) not created. Creating now."
+
         New-Item -ItemType Directory -Path "$($soldier_directory_uics)" > $null
 
         if($?)
@@ -3127,6 +3110,7 @@ function Work-Magic()
     {
         Write-Log -log_file $log_file -message "[#] $($soldier_directory_uics)\$($uic_soldier_order_file_name) not created. Creating now."
         Write-Verbose "[#] $($soldier_directory_uics)\$($uic_soldier_order_file_name) not created. Creating now."
+
         New-Item -ItemType File -Path $($soldier_directory_uics) -Name $($uic_soldier_order_file_name) -Value $($uic_soldier_order_file_content) > $null
 
         if($?)
@@ -3150,6 +3134,7 @@ function Work-Magic()
     {
         Write-Log -log_file $log_file -message "[#] $($soldier_directory_ord_managers) not created. Creating now."
         Write-Verbose "[#] $($soldier_directory_ord_managers) not created. Creating now."
+
         New-Item -ItemType Directory -Path "$($soldier_directory_ord_managers)" > $null
 
         if($?)
@@ -3173,6 +3158,7 @@ function Work-Magic()
     {
         Write-Log -log_file $log_file -message "[#] $($soldier_directory_ord_managers)\$($uic_soldier_order_file_name) not created. Creating now."
         Write-Verbose "[#] $($soldier_directory_ord_managers)\$($uic_soldier_order_file_name) not created. Creating now."
+
         New-Item -ItemType File -Path $($soldier_directory_ord_managers) -Name $($uic_soldier_order_file_name) -Value $($uic_soldier_order_file_content) > $null
 
         if($?)
@@ -3472,8 +3458,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\w{5}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3508,8 +3493,7 @@ function Validate-Variables()
                 {
                     if($value -match "^[a-zA-Z'-]{1,20}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3545,8 +3529,7 @@ function Validate-Variables()
                 {
                     if($value -match "^[a-zA-Z'-]{1,20}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3581,8 +3564,7 @@ function Validate-Variables()
                 {
                     if($value -match "^[A-Z]{1,3}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3617,8 +3599,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2,4}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3653,8 +3634,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3689,8 +3669,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3725,8 +3704,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{3}-\d{2}-\d{4}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3761,8 +3739,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2,4}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3797,8 +3774,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3833,8 +3809,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3869,8 +3844,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2,4}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3905,8 +3879,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3941,8 +3914,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{2}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -3977,8 +3949,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{1,4}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -4013,8 +3984,7 @@ function Validate-Variables()
                 {
                     if($value -match "^[A-Z]{4,6}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -4049,8 +4019,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{3}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -4085,8 +4054,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{3}-\d{3}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -4121,8 +4089,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{3}-\d{3}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
@@ -4157,8 +4124,7 @@ function Validate-Variables()
                 {
                     if($value -match "^\d{3}-\d{3}$")
                     { 
-                        Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
-	                    Write-Verbose "[*] Value '$($value)' from '$($key)' passed validation."
+                        #Write-Log -log_file $log_file -message "[*] Value '$($value)' from '$($key)' passed validation."
     
                         $status = "pass"
 
