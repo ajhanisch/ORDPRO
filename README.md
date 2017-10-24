@@ -67,4 +67,6 @@ Options:
 - [ ] Implement web front end and/or database backend to store, query, and present split, edited, parsed, and moved output to users from central controlled location
 - [ ] Implement a checkpoint system
 - [ ] Implement parallel processing
+- [ ] Extract all functions and create individual module files to be called from main script
+- [ ] Implement a configuration .xml file for script settings
   
