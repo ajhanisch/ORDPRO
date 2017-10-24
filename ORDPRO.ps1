@@ -155,7 +155,6 @@ $known_bad_strings = @(
 "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}"
 )
 
-
 <#
 HASH TABLES
 #>
@@ -198,7 +197,7 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
-$version_info = "1.3"
+$version_info = "1.4"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $script_name = $($MyInvocation.MyCommand.Name)
 $exclude_directories = '$($mof_directory_original_splits_working)|$($cof_directory_original_splits_working)'
@@ -208,6 +207,7 @@ $files_orders_c_prt = (Get-ChildItem -Path $current_directory_working -Filter "*
 $log_file = "$($log_directory_working)\$($run_date)\$($run_date)_ORDPRO.log"
 $log_file_directory = "$($log_directory_working)\$($run_date)"
 $sw = New-Object System.Diagnostics.Stopwatch
+
 $sw.start()
 
 if(Test-Path variable:global:psISE)
@@ -495,12 +495,11 @@ function Move-OriginalToArchive()
             Write-Verbose "[*] Writing $($files_not_moved_to_archive_csv) file now."
             $total_files_not_moved | Select FILE, TYPE, STATUS, DESTINATION | Sort -Property STATUS | Export-Csv "$($files_not_moved_to_archive_csv)" -NoTypeInformation -Force
         }
-	}
 
         $end_time = Get-Date
         Write-Log -log_file $log_file -message "[#] End time: $($end_time)."
         Write-Verbose "[#] End time: $($end_time)."
-
+	}
     else
     {
         Write-Log -level [WARN] -log_file $log_file -message "[!] Total to move: $($total_to_move_files). No files to move. Make sure to have the required '*m.prt', '*c.prt', '*r.prt', '*r.reg' files in the current directory and try again."
@@ -4288,11 +4287,6 @@ $fail =
 
 "@
 
-$unknown = 
-@"
-
-"@
-
     if($outcome -eq 'GO')
     {
         Write-Log -log_file $($log_file) -message "VICTORY"
@@ -4333,6 +4327,26 @@ $unknown =
             write-host ""
         }
     }
+}
+
+function Archive-Directory
+{
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory=$true)][String]$source,
+        [Parameter(Mandatory=$true)][string]$destination
+    )
+
+    if(Test-path $destination) 
+    {
+        Remove-item $destination
+    }
+
+    Write-Log -level [INFO] -log_file $($log_file) -message "[#] Zipping up $($source) to $($destination) now."
+    Write-Verbose "[#] Zipping up $($source) to $($destination) now."
+
+    Add-Type -assembly "system.io.compression.filesystem"
+    [io.compression.zipfile]::CreateFromDirectory($source, $destination)
 }
 
 
@@ -4539,6 +4553,7 @@ if($($ParametersPassed) -gt '0')
 			        Write-Host "[^] Cleaning up UICS folder finished." -ForegroundColor Cyan 
 		        } 	
             }
+
             "permissions" 
             { 
                 if(!($($output_dir)))
@@ -4559,68 +4574,75 @@ if($($ParametersPassed) -gt '0')
             { 
                 try
                 {
-				    Write-Host "[^] Creating required directories. Step [1/9]." -ForegroundColor Cyan
+				    Write-Host "[^] Creating required directories. Step [1/10]." -ForegroundColor Cyan
 		            Create-RequiredDirectories -directories $($directories) -log_file $($log_file)
 		            if($?) 
 		            {
 			            Write-Host "[^] Creating directories finished." -ForegroundColor Cyan
 		            } 
 
-		            Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files. Step [2/9]." -ForegroundColor Cyan
+		            Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files. Step [2/10]." -ForegroundColor Cyan
 		            Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
 		            if($?)
 		            {
 			            Write-Host "[^] Splitting '*m.prt' order file(s) finished." -ForegroundColor Cyan
 		            }
 
-		            Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files. Step [3/9]." -ForegroundColor Cyan
+		            Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files. Step [3/10]." -ForegroundColor Cyan
 		            Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
 		            if($?) 
 		            {
 			            Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished." -ForegroundColor Cyan
 		            } 	     
                        
-		            Write-Host "[^] Editing orders '*m.prt' files. Step [4/9]." -ForegroundColor Cyan
+		            Write-Host "[^] Editing orders '*m.prt' files. Step [4/10]." -ForegroundColor Cyan
 		            Edit-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Editing orders '*m.prt' files finished." -ForegroundColor Cyan 
 		            } 
 
-		            Write-Host "[^] Editing orders '*c.prt' files. Step [5/9]." -ForegroundColor Cyan
+		            Write-Host "[^] Editing orders '*c.prt' files. Step [5/10]." -ForegroundColor Cyan
 		            Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working)
 		            if($?)
 		            { 
 			            Write-Host "[^] Editing orders '*c.prt' files finished." -ForegroundColor Cyan
 		            } 
 
-		            Write-Host "[^] Combining .mof orders files. Step [6/9]." -ForegroundColor Cyan
+		            Write-Host "[^] Combining .mof orders files. Step [6/10]." -ForegroundColor Cyan
 		            Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -run_date $($run_date)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Combining .mof orders files finished." -ForegroundColor Cyan 
 		            } 	
 
-		            Write-Host "[^] Combining .cof orders files. Step [7/9]." -ForegroundColor Cyan
+		            Write-Host "[^] Combining .cof orders files. Step [7/10]." -ForegroundColor Cyan
 		            Combine-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Combining .cof orders files finished." -ForegroundColor Cyan 
 		            } 	
 
-                    Write-Host "[^] Working magic on .mof files now. Step [8/9]." -ForegroundColor Cyan
+                    Write-Host "[^] Working magic on .mof files now. Step [8/10]." -ForegroundColor Cyan
                     Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Magic on .mof files finished." -ForegroundColor Cyan 
 		            }	
 
-		            Write-Host "[^] Working magic on .cof files. Step [9/9]." -ForegroundColor Cyan
+		            Write-Host "[^] Working magic on .cof files. Step [9/10]." -ForegroundColor Cyan
 		            Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Magic on .cof files finished." -ForegroundColor Cyan 
 		            }
+
+                    Write-Host "[^] Zipping log directory now. Step [10/10]." -ForegroundColor Cyan
+                    Archive-Directory -source $($log_file_directory) -destination "$($log_directory_working)\$($run_date)_archive.zip"
+                    if($?)
+                    {
+                        Write-Host "[^] Zipping log directory finished." -ForegroundColor Cyan
+                    }
 
                     Present-Outcome -outcome GO
                 }
