@@ -28,25 +28,16 @@ $duplicates = ( $soldiers | Group-Object NAME | Where { $_.Count -gt 1 })
 
 foreach($n in $duplicates)
 {
-    $most_recent_time = ''
-    $most_recent_uic = ''
-
-    foreach($g in $n.Group)
+    $all_directories = @(Get-ChildItem -Path "C:\temp\OUTPUT\UICS\*" -Exclude "__PERMISSIONS" | Where { $_.Name -match $n.NAME } | Sort-Object LastWriteTime  -Descending)
+    $most_recent_directory = @(Get-ChildItem -Path "C:\temp\OUTPUT\UICS\*" -Exclude "__PERMISSIONS" | Where { $_.Name -match $n.NAME } | Sort-Object LastWriteTime  -Descending | Select-Object -First 1)
+    
+    Write-Host "All directories for $($n.NAME) are: "
+    foreach($d in $all_directories)
     {
-        Write-Host "Name: $($g.NAME). UIC: $($g.UIC). LastWriteTime: $($g.LASTWRITETIME)."
-        
-        if($g.LASTWRITETIME -gt $most_recent)
-        {
-            $most_recent_time = $($g.LASTWRITETIME)
-            $most_recent_uic = $($g.UIC)
-
-            Write-Host "Most Recent UIC: $($most_recent_uic). Most Recent Time: $($most_recent_time)."
-
-            Read-Host -Prompt "Enter to continue"
-        }
-        else
-        {
-            Write-Host "$($g.UIC) for $($n.NAME) is not newer than $($most_recent_time) for $($most_recent_uic). Continuing."
-        }
+        Write-Host "$($d)"
     }
+
+    Write-Host "Most recent UIC directory for $($n.NAME) is: $($most_recent_directory)."
+
+    Read-Host -Prompt "Enter to continue"
 }
