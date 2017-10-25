@@ -2010,7 +2010,7 @@ function Parse-OrdersMain()
                     Write-Log -log_file $log_file -message "[*] Found 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "[*] Found 'last, first, mi, ssn' in $($file)."
 
-                    Write-Debug "File: $($file). Order Number: $($order_number). Published Year: $($published_year). UIC: $(uic). Order Amended: $($order_amended). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). Format $($format)."
+                    Write-Debug "File: $($file). Order Number: $($order_number). Published Year: $($published_year). UIC: $($uic). Order Amended: $($order_amended). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). Format $($format)."
 
                     $validation_results = Validate-Variables -order_number $($order_number) -published_year $($published_year) -uic $($uic) -order_amended $($order_amended) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -format $($format)
 
@@ -2180,7 +2180,7 @@ function Parse-OrdersMain()
                     Write-Log -log_file $log_file -message "[*] Found 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "[*] Found 'last, first, mi, ssn' in $($file)."
 
-                    Write-Debug "File: $($file). Order Number: $($order_number). Published Year: $($published_year). UIC: $(uic). Order Revoked: $($order_revoke). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). Format $($format)."
+                    Write-Debug "File: $($file). Order Number: $($order_number). Published Year: $($published_year). UIC: $($uic). Order Revoked: $($order_revoke). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). Format $($format)."
 
                     $validation_results = Validate-Variables -order_number $($order_number) -published_year $($published_year) -uic $($uic) -order_revoke $($order_revoke) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -format $($format)
 
@@ -4632,13 +4632,6 @@ if($($ParametersPassed) -gt '0')
 			            Write-Host "[^] Combining .mof orders files finished." -ForegroundColor Cyan 
 		            } 	
 
-		            Write-Host "[^] Combining .cof orders files. Step [7/10]." -ForegroundColor Cyan
-		            Combine-OrdersCertificate -cof_directory_working $($cof_directory_working) -run_date $($run_date)
-		            if($?) 
-		            { 
-			            Write-Host "[^] Combining .cof orders files finished." -ForegroundColor Cyan 
-		            } 	
-
                     Write-Host "[^] Working magic on .mof files now. Step [8/10]." -ForegroundColor Cyan
                     Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
 		            if($?) 
@@ -4664,6 +4657,8 @@ if($($ParametersPassed) -gt '0')
                 }
                 catch
                 {
+                    $_
+
                     Present-Outcome -outcome NOGO
                 }              	            
             }
