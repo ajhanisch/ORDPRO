@@ -21,18 +21,32 @@ foreach($s in $array)
     $soldier | Add-Member -MemberType NoteProperty -Name UIC_FOLDER -Value $($uic_folder)
     $soldier | Add-Member -MemberType NoteProperty -Name LASTWRITETIME -Value $($lastwritetime)
 
-    if($soldiers -match $soldier.NAME)
-    {
-        Write-Host "$($soldier.NAME) exists in array already."
-        #Read-Host -Prompt "Enter to continue."
-        $soldiers += $soldier
-    }
-    else
-    {
-        Write-Host "$($soldier.NAME) does not exist in array yet. Adding now."
-        $soldiers += $soldier
-    }
+    $soldiers += $soldier
 }
 
-$soldiers = $soldiers | Sort -Property NAME, LASTWRITETIME| Format-Table -AutoSize
-$soldiers
+$duplicates = ( $soldiers | Group-Object NAME | Where { $_.Count -gt 1 })
+
+foreach($n in $duplicates)
+{
+    $most_recent_time = ''
+    $most_recent_uic = ''
+
+    foreach($g in $n.Group)
+    {
+        Write-Host "Name: $($g.NAME). UIC: $($g.UIC). LastWriteTime: $($g.LASTWRITETIME)."
+        
+        if($g.LASTWRITETIME -gt $most_recent)
+        {
+            $most_recent_time = $($g.LASTWRITETIME)
+            $most_recent_uic = $($g.UIC)
+
+            Write-Host "Most Recent UIC: $($most_recent_uic). Most Recent Time: $($most_recent_time)."
+
+            Read-Host -Prompt "Enter to continue"
+        }
+        else
+        {
+            Write-Host "$($g.UIC) for $($n.NAME) is not newer than $($most_recent_time) for $($most_recent_uic). Continuing."
+        }
+    }
+}
