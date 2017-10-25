@@ -9,6 +9,8 @@
    Version information. Alias: 'v'. This parameter tells ORDPRO you want to check its version number.
 .PARAMETER output_dir
    Version information. Alias: 'o'. This parameter tells ORDPRO where you want the output to go. Give it the full UNC path to the directory you want output to land and it will do the rest.
+.PARAMETER input_dir
+   Version information. Alias: 'i'. This parameter tells ORDPRO where you want the input files to come from. Give it the full UNC path to the directory containing the '*m.prt', '*c.prt', '*r.prt', and the '*r.reg*' files and it will do the rest.
 .PARAMETER dir_create
    Directory creation. Alias: 'd'. This parameter tells ORDPRO to create the required directories for ORDPRO to process in working directory and output to land given the 'o' parameter.
 .PARAMETER backups
@@ -94,6 +96,7 @@ param(
     [alias('h')][switch]$help,
     [alias('v')][switch]$version,
     [alias('o')][string]$output_dir,
+    [alias('i')][string]$input_dir,
     [alias('d')][switch]$dir_create,
     [alias('b')][switch]$backups,
     [alias('sm')][switch]$split_main,
@@ -197,13 +200,13 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
-$version_info = "1.4"
+$version_info = "1.5"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $script_name = $($MyInvocation.MyCommand.Name)
 $exclude_directories = '$($mof_directory_original_splits_working)|$($cof_directory_original_splits_working)'
-$files_orders_original = (Get-ChildItem -Path $current_directory_working -Filter "*.prt" -File)
-$files_orders_m_prt = (Get-ChildItem -Path $current_directory_working -Filter "*m.prt" -File)
-$files_orders_c_prt = (Get-ChildItem -Path $current_directory_working -Filter "*c.prt" -File)
+$files_orders_original = (Get-ChildItem -Path $input_dir -Filter "*.prt" -File)
+$files_orders_m_prt = (Get-ChildItem -Path $input_dir -Filter "*m.prt" -File)
+$files_orders_c_prt = (Get-ChildItem -Path $input_dir -Filter "*c.prt" -File)
 $log_file = "$($log_directory_working)\$($run_date)\$($run_date)_ORDPRO.log"
 $log_file_directory = "$($log_directory_working)\$($run_date)"
 $sw = New-Object System.Diagnostics.Stopwatch
@@ -263,7 +266,7 @@ function Create-RequiredDirectories()
                 {
                     $total_directories_not_created ++
                     Write-Log -level [ERROR] -log_file $log_file -message "[!] $($directory) creation failed. Check the error logs at $($error_path). Reach out to ORDPRO support."
-                    Write-Error -Message "[!] $($directory) creation failed. Check the error logs at $($error_path)." -RecommendedAction "Reach out to ORDPRO support."
+                    Write-Error -Message "[!] $($directory) creation failed. Check the error logs at $($error_path). Reach out to ORDPRO support." 
                 }
             }
             else
@@ -301,7 +304,7 @@ function Create-RequiredDirectories()
     else
     {
         Write-Log -level [WARN] -log_file $log_file -message "[!] Total to create: $($($directories.Count)). No directories to create. Support: Make sure the directories array is populated with your desired directories to create."
-        Write-Warning -Message "[!] Total to create: $($($directories.Count)). No directories to create." -RecommendedAction "Support: Make sure the directories array is populated with your desired directories to create."
+        Write-Warning -Message "[!] Total to create: $($($directories.Count)). No directories to create. Support: Make sure the directories array is populated with your desired directories to create."
     }
 }
 
@@ -314,7 +317,7 @@ function Move-OriginalToArchive()
         [Parameter(mandatory = $true)] $archive_directory_working
     )
 
-    $total_files_to_move = @(Get-ChildItem -Path $($current_directory_working) | Where { ! $_.PSIsContainer } | Where { $_.Name -eq "*m.prt" -or $_.Name -eq "*c.prt" -or $_.Name -eq "*r.prt" -or $_.Name -eq "*r.reg*" -or $_.Extension -ne '.ps1' }).Count
+    $total_files_to_move = @(Get-ChildItem -Path $($input_dir) | Where { ! $_.PSIsContainer } | Where { $_.Name -eq "*m.prt" -or $_.Name -eq "*c.prt" -or $_.Name -eq "*r.prt" -or $_.Name -eq "*r.reg*" -or $_.Extension -ne '.ps1' }).Count
     
 	if($total_files_to_move -gt 0)
 	{
@@ -322,10 +325,10 @@ function Move-OriginalToArchive()
         $year_orders_archive_directory = "$($archive_directory_working)\$($year_suffix)_orders"
         $year_orders_registry_directory = "$($ordregisters_output)\$($year_suffix)_orders"
 
-        $orders_file_m_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*m.prt" -File
-        $orders_file_c_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*c.prt" -File
-        $orders_file_r_prt = Get-ChildItem -Path $($current_directory_working) -Filter "*r.prt" -File
-        $orders_file_r_reg = Get-ChildItem -Path $($current_directory_working) -Filter "*r.reg*" -File
+        $orders_file_m_prt = Get-ChildItem -Path $($input_dir) -Filter "*m.prt" -File
+        $orders_file_c_prt = Get-ChildItem -Path $($input_dir) -Filter "*c.prt" -File
+        $orders_file_r_prt = Get-ChildItem -Path $($input_dir) -Filter "*r.prt" -File
+        $orders_file_r_reg = Get-ChildItem -Path $($input_dir) -Filter "*r.reg*" -File
 	
 	    $archive_directories = @(
 		    "$($year_orders_archive_directory)",
@@ -503,7 +506,7 @@ function Move-OriginalToArchive()
     else
     {
         Write-Log -level [WARN] -log_file $log_file -message "[!] Total to move: $($total_to_move_files). No files to move. Make sure to have the required '*m.prt', '*c.prt', '*r.prt', '*r.reg' files in the current directory and try again."
-        Write-Warning -Message "[!] Total to move: $($total_to_move_files). No files to move." -RecommendedAction "Make sure to have the required '*m.prt', '*c.prt', '*r.prt', '*r.reg' files in the current directory and try again."
+        Write-Warning -Message "[!] Total to move: $($total_to_move_files). No files to move. Make sure to have the required '*m.prt', '*c.prt', '*r.prt', '*r.reg' files in the current directory and try again."
     }
 }
 
@@ -511,7 +514,7 @@ function Split-OrdersMain()
 {
     [cmdletbinding()]
     Param(
-        [Parameter(mandatory = $true)] $current_directory_working,
+        [Parameter(mandatory = $true)] $input_dir,
         [Parameter(mandatory = $true)] $mof_directory_working,
         [Parameter(mandatory = $true)] $run_date,
         [Parameter(mandatory = $true)] $files_orders_m_prt,
@@ -553,15 +556,20 @@ function Split-OrdersMain()
                 Write-Error "[!] $($out_directory) creation failed."
             }
         }
+        else
+        {
+            Write-Log -log_file $log_file -message "[*] $($out_directory) already created."
+            Write-Verbose "[*] $($out_directory) already created."
+        }
 
         foreach ($file in $files_orders_m_prt)
         {
 	        $count_files ++
-	        $content = (Get-Content $($file) -ErrorAction SilentlyContinue | Out-String)
+	        $content = (Get-Content "$($input_dir)\$($file)" | Out-String)
 	        $orders = [regex]::Match($content,'(?<=STATE OF SOUTH DAKOTA).+(?=The Adjutant General)',"singleline").Value -split "$($regex_beginning_m_split_orders_main)"
 
-            Write-Log -log_file $log_file -message "[#] Parsing $($file) now."
-	        Write-Verbose "[#] Parsing $($file) now."
+            Write-Log -log_file $log_file -message "[#] Parsing $($input_dir)\$($file) now."
+	        Write-Verbose "[#] Parsing $($input_dir)\$($file) now."
 
 	        foreach($order in $orders)
 	        {
@@ -584,7 +592,7 @@ function Split-OrdersMain()
 				        Write-Verbose "[*] $($out_file) file created successfully."
 
 				        $hash = @{
-					        'ORIGINAL_FILE' = $($file)
+					        'ORIGINAL_FILE' = "$($input_dir)\$($file)"
 					        'OUT_FILE' = $($out_file)
 					        'ORDER_COUNT' = $($count_orders)
 				        }
@@ -598,7 +606,7 @@ function Split-OrdersMain()
 				        Write-Error "[!] $($out_file) file creation failed."
 
 				        $hash = @{
-					        'ORIGINAL_FILE' = $($file)
+					        'ORIGINAL_FILE' = "$($input_dir)\$($file)"
 					        'OUT_FILE' = $($out_file)
 					        'ORDER_COUNT' = $($count_orders)
 				        }
@@ -650,8 +658,8 @@ function Split-OrdersMain()
     }
     else
     {
-        Write-Log -level [WARN] -log_file $log_file -message "[!] $($current_directory_working) '*m.prt' files to split. No '*m.prt' files to split. Make sure to have the required '*m.prt' files in the current directory and try again."
-        Write-Warning -Message "[!] $($current_directory_working) '*m.prt' files to split. No '*m.prt' files to split." -RecommendedAction "Make sure to have the required '*m.prt' files in the current directory and try again."
+        Write-Log -level [WARN] -log_file $log_file -message "[!] $($input_dir) '*m.prt' files to split. No '*m.prt' files to split. Make sure to have the required '*m.prt' files in the current directory and try again."
+        Write-Warning -Message "[!] $($input_dir) '*m.prt' files to split. No '*m.prt' files to split. Make sure to have the required '*m.prt' files in the current directory and try again."
     }
 }
 
@@ -659,7 +667,7 @@ function Split-OrdersCertificate()
 {
     [cmdletbinding()]
     Param(
-        [Parameter(mandatory = $true)] $current_directory_working,
+        [Parameter(mandatory = $true)] $input_dir,
         [Parameter(mandatory = $true)] $cof_directory_working,
         [Parameter(mandatory = $true)] $run_date,
         [Parameter(mandatory = $true)] $files_orders_c_prt,
@@ -701,15 +709,20 @@ function Split-OrdersCertificate()
                 Write-Error "[!] $($out_directory) creation failed."
             }
         }
+        else
+        {
+            Write-Log -log_file $log_file -message "[*] $($out_directory) already created."
+            Write-Verbose "[*] $($out_directory) already created."
+        }
 
         foreach($file in $files_orders_c_prt)
         {
 	        $count_files ++
-	        $content = (Get-Content $($file) -ErrorAction SilentlyContinue | Out-String)
+	        $content = (Get-Content "$($input_dir)\$($file)" | Out-String)
 	        $orders = [regex]::Match($content,'(?<=FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=Automated NGB Form 102-10A  dtd  12 AUG 96)',"singleline").Value -split "$($regex_end_cert)"
             
-            Write-Log -log_file $log_file -message "[#] Parsing $($file) now."
-	        Write-Verbose "[#] Parsing $($file) now."
+            Write-Log -log_file $log_file -message "[#] Parsing $($input_dir)\$($file) now."
+	        Write-Verbose "[#] Parsing $($input_dir)\$($file) now."
 
 	        foreach($order in $orders)
 	        {
@@ -732,7 +745,7 @@ function Split-OrdersCertificate()
 				        Write-Verbose "[*] $($out_file) file created successfully."
 
 				        $hash = @{
-					        'ORIGINAL_FILE' = $($file)
+					        'ORIGINAL_FILE' = "$($input_dir)\$($file)"
 					        'OUT_FILE' = $($out_file)
 					        'ORDER_COUNT' = $($count_orders)
 				        }
@@ -747,7 +760,7 @@ function Split-OrdersCertificate()
 				        Write-Error "[!] $($out_file) file creation failed."
 
 				        $hash = @{
-					        'ORIGINAL_FILE' = $($file)
+					        'ORIGINAL_FILE' = "$($input_dir)\$($file)"
 					        'OUT_FILE' = $($out_file)
 					        'ORDER_COUNT' = $($count_orders)
 				        }
@@ -799,8 +812,8 @@ function Split-OrdersCertificate()
     }
     else
     {
-        Write-Log -level [WARN] -log_file $log_file -message "[!] $($current_directory_working) '*c.prt' files to split. No '*c.prt' files to split. Make sure to have the required '*c.prt' files in the current directory and try again."
-        Write-Warning -Message "[!] $($current_directory_working) '*c.prt' files to split. No '*c.prt' files to split." -RecommendedAction "Make sure to have the required '*c.prt' files in the current directory and try again."
+        Write-Log -level [WARN] -log_file $log_file -message "[!] $($input_dir) '*c.prt' files to split. No '*c.prt' files to split. Make sure to have the required '*c.prt' files in the current directory and try again."
+        Write-Warning -Message "[!] $($input_dir) '*c.prt' files to split. No '*c.prt' files to split. Make sure to have the required '*c.prt' files in the current directory and try again."
     }
 }
 
@@ -836,9 +849,9 @@ function Edit-OrdersMain()
             Process-DevCommands -sw $($sw)
 
             $following_request = "Following Request is" # Disapproved || Approved
-            $following_request_exists = (Select-String -Path "$($file)" -Pattern $($following_request) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+            $following_request_exists = (Select-String -Path "$($file)" -Pattern $($following_request) -AllMatches | Select -First 1)
             $following_order = "Following order is." # Amendment order. $($format.Length) -eq 4
-            $following_order_exists = (Select-String -Path "$($file)" -Pattern $($following_order) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+            $following_order_exists = (Select-String -Path "$($file)" -Pattern $($following_order) -AllMatches | Select -First 1)
 
             if(!((Get-Item "$($file)") -is [System.IO.DirectoryInfo]))
             {
@@ -1125,7 +1138,7 @@ function Edit-OrdersMain()
     else
     {
         Write-Log -level [WARN] -log_file $log_file -message "[!] Total to edit: $($total_to_edit_orders_main.Count). No .mof files in $($mof_directory_working). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
-        Write-Warning -Message "[!] Total to edit: $($total_to_edit_orders_main.Count). No .mof files in $($mof_directory_working)." -RecommendedAction "Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
+        Write-Warning -Message "[!] Total to edit: $($total_to_edit_orders_main.Count). No .mof files in $($mof_directory_working). Make sure to split *m.prt files first. Use '$($script_name) -sm' first, then try again."
     }
 }
 
@@ -1285,7 +1298,7 @@ function Edit-OrdersCertificate()
     else
     {
         Write-Log -level [WARN] -log_file $log_file -message "[!] Total to edit: $($total_to_edit_orders_cert.Count). No .cof files in $($cof_directory_working). Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
-        Write-Warning -Message "[!] Total to edit: $($total_to_edit_orders_cert.Count). No .cof files in $($cof_directory_working)." -RecommendedAction "Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
+        Write-Warning -Message "[!] Total to edit: $($total_to_edit_orders_cert.Count). No .cof files in $($cof_directory_working). Make sure to split '*c.prt' files first. Use '$($script_name) -sc' first, then try again."
     }
 }
 
@@ -1371,7 +1384,7 @@ function Combine-OrdersMain()
     else
     {
         Write-Log -level [WARN] -log_file $log_file -message "[!] Total to combine: $($total_to_combine_orders_main.Count). No .mof files in $($mof_directory_working) to combine. Make sure to split and edit '*m.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
-        Write-Warning -Message "[!] Total to combine: $($total_to_combine_orders_main.Count). No .mof files in $($mof_directory_working) to combine." -RecommendedAction "Make sure to split and edit '*m.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
+        Write-Warning -Message "[!] Total to combine: $($total_to_combine_orders_main.Count). No .mof files in $($mof_directory_working) to combine. Make sure to split and edit '*m.prt' files first. Use '$($script_name) -sm' first, then use '$($script_name) -em', then try again."
     }
 }
 
@@ -1456,7 +1469,7 @@ function Combine-OrdersCertificate()
     else
     {
         Write-Log -level [WARN] -log_file $log_file -message "[!] Total to combine: $($total_to_combine_orders_cert.Count). No .cof files in $($cof_directory_working) to combine. Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
-        Write-Warning -Message "[!] Total to combine: $($total_to_combine_orders_cert.Count). No .cof files in $($cof_directory_working) to combine." -RecommendedAction "Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
+        Write-Warning -Message "[!] Total to combine: $($total_to_combine_orders_cert.Count). No .cof files in $($cof_directory_working) to combine. Make sure to split and edit '*c.prt' files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
     }
 }
 
@@ -1495,21 +1508,21 @@ function Parse-OrdersMain()
 
                 # Check for different 700 forms.
                 $following_request = "Following Request is" # Disapproved || Approved
-                $following_request_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($following_request) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $following_request_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($following_request) -AllMatches | Select -First 1)
                 $following_order = "Following order is amended as indicated." # Amendment order. $($format.Length) -eq 4
-                $following_order_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($following_order) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $following_order_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($following_order) -AllMatches | Select -First 1)
 
                 # Check for bad 282 forms.
                 $following_request = "Following Request is" # Disapproved || Approved
-                $following_request_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($following_request) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $following_request_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($following_request) -AllMatches | Select -First 1)
 
                 # Check for "Memorandum for record" file that does not have format number, order number, period, basically nothing
                 $memorandum_for_record = "MEMORANDUM FOR RECORD"
-                $memorandum_for_record_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($memorandum_for_record) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $memorandum_for_record_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($memorandum_for_record) -AllMatches | Select -First 1)
 
                 Write-Log -log_file $log_file -message "[#] Looking for 'format' in $($file)."
                 Write-Verbose "[#] Looking for 'format' in $($file)."
-                $format = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_format_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                $format = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_format_parse_orders_main) -AllMatches | Select -First 1)
                 if($($format))
                 {
                     $format = $format.ToString()
@@ -1562,7 +1575,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for order number in $($file)."
                     Write-Verbose "[#] Looking for order number in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     Write-Log -log_file $log_file -message "[*] Found 'order number' in $($file)."
@@ -1579,7 +1592,7 @@ function Parse-OrdersMain()
                     Write-Verbose "[*] Found 'published year' in $($file)."
                     $order_number = $order_number[1]
 
-                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "You are ordered to" -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | 
+                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "You are ordered to" -AllMatches -Context 5,0 | 
                     Select -First 1 | 
                     ConvertFrom-String | 
                     Select P3, P4, P5, P6 ) # MI (3 = last, 4 = first, 5 = MI, 6 = SSN) // NO MI ( 3 = last, 4 = first, 5 = ssn, 6 = rank )
@@ -1607,7 +1620,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'period from year, month, day' in $($file)."
                     Write-Verbose "[#] Looking for 'period from year, month, day' in $($file)."
-                    $period_from = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "REPORT TO " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $period_from = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "REPORT TO " -AllMatches | Select -First 1)
                     $period_from = $period_from.ToString()
                     $period_from = $period_from.Split(' ')
                     $period_from_day = $period_from[4]
@@ -1622,7 +1635,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'period to year, month, day' in $($file)."
                     Write-Verbose "[#] Looking for 'period to year, month, day' in $($file)."
-                    $period_to = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "Period of active duty: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $period_to = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "Period of active duty: " -AllMatches | Select -First 1)
                     $period_to = $period_to.ToString()
                     $period_to = $period_to.Split(' ')
                     $period_to_number = $period_to[-2]
@@ -1633,7 +1646,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'uic' in $($file)."
                     Write-Verbose "[#] Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
                     Write-Log -log_file $log_file -message "[*] Found 'uic' in $($file)."
@@ -1711,7 +1724,7 @@ function Parse-OrdersMain()
 	                        $orders_not_created_main += $order_info   
 
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values." 
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."   
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."   
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                         }
                         elseif($total_validation_fails -eq 1)
@@ -1742,7 +1755,7 @@ function Parse-OrdersMain()
 	                        $orders_not_created_main += $order_info   
                             
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values." 
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."     
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."                     
                         }
                     }
@@ -1754,7 +1767,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'order number' in $($file)."
                     Write-Verbose "[#] Looking for 'order number' in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -1772,7 +1785,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "[#] Looking for 'last, first, mi, ssn' in $($file)."
-                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | Select -First 1)
+                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 | Select -First 1)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
@@ -1793,7 +1806,7 @@ function Parse-OrdersMain()
                     
                     Write-Log -log_file $log_file -message "[#] Looking for 'period from year, month, day' in $($file)."
                     Write-Verbose "[#] Looking for 'period from year, month, day' in $($file)."
-                    $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "Active duty commitment: " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "Active duty commitment: " -AllMatches | Select -First 1)
                     $period = $period.ToString()
                     $period = $period.Split(' ')
                     $period_from_day = $period[3]
@@ -1831,7 +1844,7 @@ function Parse-OrdersMain()
                     
                     Write-Log -log_file $log_file -message "[#] Looking for 'uic' in $($file)."
                     Write-Verbose "[#] Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
                     Write-Log -log_file $log_file -message "[*] Found 'uic' in $($file)."
@@ -1912,7 +1925,7 @@ function Parse-OrdersMain()
 	                        $orders_not_created_main += $order_info   
 
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
@@ -1944,7 +1957,7 @@ function Parse-OrdersMain()
 	                        $orders_not_created_main += $order_info   
 
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
 	                    }
                     }
@@ -1956,7 +1969,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'order number' in $($file)."
                     Write-Verbose "[#] Looking for 'order number' in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -1974,7 +1987,7 @@ function Parse-OrdersMain()
                     
                     Write-Log -log_file $log_file -message "[#] Looking for 'uic' in $($file)."
                     Write-Verbose "[#] Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
                     Write-Log -log_file $log_file -message "[*] Found 'uic' in $($file)."
@@ -1982,7 +1995,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'order amended' in $($file)."
                     Write-Verbose "[#] Looking for 'order amended' in $($file)."
-                    $order_amended = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "So much of:" -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_amended = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "So much of:" -AllMatches | Select -First 1)
                     $order_amended = $order_amended.ToString()
                     $order_amended = $order_amended.Split(' ')
                     $order_amended = $order_amended[5]
@@ -2083,7 +2096,7 @@ function Parse-OrdersMain()
                             $orders_not_created_main += $order_info   
 
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
@@ -2114,7 +2127,7 @@ function Parse-OrdersMain()
                             $orders_not_created_main += $order_info   
 
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
 	                    }
                     }
@@ -2126,7 +2139,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'order number' in $($file)."
                     Write-Verbose "[#] Looking for 'order number' in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -2144,7 +2157,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'uic' in $($file)."
                     Write-Verbose "[#] Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
                     Write-Log -log_file $log_file -message "[*] Found 'uic' in $($file)."
@@ -2152,7 +2165,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'order revoke' in $($file)."
                     Write-Verbose "[#] Looking for 'order revoke' in $($file)."
-                    $order_revoke = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "So much of:" -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_revoke = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "So much of:" -AllMatches | Select -First 1)
                     $order_revoke = $order_revoke.ToString()
                     $order_revoke = $order_revoke.Split(' ')
                     $order_revoke = $order_revoke[5]
@@ -2253,7 +2266,7 @@ function Parse-OrdersMain()
                             $orders_not_created_main += $order_info   
 
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
@@ -2284,7 +2297,7 @@ function Parse-OrdersMain()
                             $orders_not_created_main += $order_info   
 
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
 	                    }
                     }
@@ -2296,7 +2309,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'order number' in $($file)."
                     Write-Verbose "[#] Looking for 'order number' in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -2314,7 +2327,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "[#] Looking for 'last, first, mi, ssn' in $($file)."
-                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "By order of the Secretary of the Army" -AllMatches -Context 5,0 -ErrorAction SilentlyContinue)
+                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "By order of the Secretary of the Army" -AllMatches -Context 5,0)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
@@ -2334,7 +2347,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'period from year, month, day' in $($file)."
                     Write-Verbose "[#] Looking for 'period from year, month, day' in $($file)."
-                    $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches | Select -First 1)
                     $period = $period.ToString()
                     $period = $period.Split(' ')        
                     $period_status = $($period[1])
@@ -2370,7 +2383,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'uic' in $($file)."
                     Write-Verbose "[#] Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | Select -First 1)
                     $uic = $uic.ToString()
                     $uic = $uic.Split(' ')
                     $uic = $uic[0]
@@ -2457,7 +2470,7 @@ function Parse-OrdersMain()
                             $orders_not_created_main += $order_info   
 
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
@@ -2489,7 +2502,7 @@ function Parse-OrdersMain()
                             $orders_not_created_main += $order_info   
 
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
 	                    }
                     }
@@ -2501,7 +2514,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'order number' in $($file)."
                     Write-Verbose "[#] Looking for 'order number' in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -2520,7 +2533,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "[#] Looking for 'last, first, mi, ssn' in $($file)."
-                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 -ErrorAction SilentlyContinue | Select -First 1)
+                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 | Select -First 1)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
@@ -2541,7 +2554,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "[#] Looking for 'period from year, month, day' in $($file)."
                     Write-Verbose "[#] Looking for 'period from year, month, day' in $($file)."
-                    $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches | Select -First 1)
                     $period = $period.ToString()
                     $period = $period.Split(' ')
                     $period_status = $($period[1])
@@ -2577,7 +2590,7 @@ function Parse-OrdersMain()
                     
                     Write-Log -log_file $log_file -message "[#] Looking for 'uic' in $($file)."
                     Write-Verbose "[#] Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches -ErrorAction SilentlyContinue | Select -First 1)
+                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | Select -First 1)
                     $uic = $uic.ToString()
                     $uic = $uic.Split(' ')
                     $uic = $uic[0]
@@ -2664,7 +2677,7 @@ function Parse-OrdersMain()
                             $orders_not_created_main += $order_info   
 
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
 	                    }
 	                    elseif($total_validation_fails -eq 1)
@@ -2696,7 +2709,7 @@ function Parse-OrdersMain()
                             $orders_not_created_main += $order_info   
 
                             Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
-                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
+                            Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
                             throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_main_csv) file. Look for variables that do not have any values."
 	                    }
                     }
@@ -2763,7 +2776,7 @@ function Parse-OrdersMain()
     else
     {
         Write-Log -level [WARN] -log_file $log_file -message "[!] Total to create: ($($total_to_create_orders_main.Count)). No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
-        Write-Warning -Message "[!] Total to create: ($($total_to_create_orders_main.Count)). No .mof files in $($mof_directory_working) to work magic on." -RecommendedAction "Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
+        Write-Warning -Message "[!] Total to create: ($($total_to_create_orders_main.Count)). No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
     }
 }
 
@@ -2855,7 +2868,7 @@ function Parse-OrdersCertificate()
 
                 Write-Log -log_file $log_file -message "[#] Looking for 'last, first, mi' in $($file)."
                 Write-Verbose "[#] Looking for 'last, first, mi' in $($file)."
-                $name = (Select-String -Path "$($file)" -Pattern $($regex_name_parse_orders_cert) -ErrorAction SilentlyContinue  | Select -First 1)
+                $name = (Select-String -Path "$($file)" -Pattern $($regex_name_parse_orders_cert)  | Select -First 1)
                 $name = $name.ToString()
                 $name = $name.Split(' ')
                 $last_name = $name[5]
@@ -2875,7 +2888,7 @@ function Parse-OrdersCertificate()
 
                 Write-Log -log_file $log_file -message "[#] Looking for 'order number' in $($file)."
                 Write-Verbose "[#] Looking for 'order number' in $($file)."
-                $order_number = (Select-String -Path "$($file)" -Pattern $($regex_order_number_parse_orders_cert) -ErrorAction SilentlyContinue | Select -First 1)
+                $order_number = (Select-String -Path "$($file)" -Pattern $($regex_order_number_parse_orders_cert) | Select -First 1)
                 $order_number = $order_number.ToString()
                 $order_number = $order_number.Split(' ')
                 $order_number = $($order_number[2])
@@ -2885,7 +2898,7 @@ function Parse-OrdersCertificate()
 
                 Write-Log -log_file $log_file -message "[#] Looking for 'period from year, month, day' in $($file)."
                 Write-Verbose "[#] Looking for 'period from year, month, day' in $($file)."
-                $period = (Select-String -Path "$($file)" -Pattern $($regex_period_parse_orders_cert) -ErrorAction SilentlyContinue | Select -First 1)
+                $period = (Select-String -Path "$($file)" -Pattern $($regex_period_parse_orders_cert) | Select -First 1)
                 $period = $period.ToString()
                 $period = $period.Split(' ')
                 $period_from = $period[3]
@@ -2971,7 +2984,7 @@ function Parse-OrdersCertificate()
 	                    $orders_not_created_cert += $order_info
 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_cert_csv) file. Look for variables that do not have any values."
-		                Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_cert_csv) file. Look for variables that do not have any values."
+		                Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_cert_csv) file. Look for variables that do not have any values."
                         #throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_cert_csv) file. Look for variables that do not have any values."
 	                }
 	                elseif($total_validation_fails -eq 1)
@@ -2996,7 +3009,7 @@ function Parse-OrdersCertificate()
 	                    $orders_not_created_cert += $order_info
 
                         Write-Log -level [ERROR] -log_file $log_file -message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_cert_csv) file. Look for variables that do not have any values."
-		                Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation." -RecommendedAction "Check the $($orders_not_created_cert_csv) file. Look for variables that do not have any values."
+		                Write-Error -Message "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_cert_csv) file. Look for variables that do not have any values."
                         #throw "[!] $($total_validation_fails) variables for $($file) failed validation. Check the $($orders_not_created_cert_csv) file. Look for variables that do not have any values."
 	                }
                 }
@@ -3043,8 +3056,8 @@ function Parse-OrdersCertificate()
     }
     else
     {
-        Write-Log -level [WARN] -logfile $logfile -message "[!] Total to create: $($total_to_create_orders_cert.Count). No .cof files in $($cof_directory_working) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
-        Write-Warning -Message "[!] Total to create: $($total_to_create_orders_cert.Count). No .cof files in $($cof_directory_working) to work magic on." -RecommendedAction "Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
+        Write-Log -level [WARN] -log_file $log_file -message "[!] Total to create: $($total_to_create_orders_cert.Count). No .cof files in $($cof_directory_working) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
+        Write-Warning -Message "[!] Total to create: $($total_to_create_orders_cert.Count). No .cof files in $($cof_directory_working) to work magic on. Make sure to split and edit *c.prt files first. Use '$($script_name) -sc' first, then use '$($script_name) -ec', then try again."
     }
 }
 
@@ -3211,15 +3224,32 @@ function Clean-OrdersMain()
             New-Item -ItemType Directory -Path "$($mof_directory_working)" -Force > $null
             Start-Sleep -Milliseconds 250
             Write-Verbose "[*] $($mof_directory_working) removed successfully. Cleaned: $($total_to_clean_main_files.Count) .mof files from $($mof_directory_working)."
+
+            Write-Log -log_file $log_file -message "[#] Creating $($mof_directory_working) now."
+            Write-Verbose "[#] Creating $($mof_directory_working) now."
             Start-Sleep -Milliseconds 250
             New-Item -ItemType Directory -Path "$($mof_directory_working)" -Force > $null
+            if($?)
+            {
+                Write-Log -log_file $log_file -message "[*] $($mof_directory_working) created successfully."
+                Write-Verbose "[*] $($mof_directory_working) created successfully."
+            }
+
+
+            Write-Log -log_file $log_file -message "[#] Creating $($mof_directory_original_splits_working) now."
+            Write-Verbose "[#] Creating $($mof_directory_original_splits_working) now."
             Start-Sleep -Milliseconds 250
             New-Item -ItemType Directory -Path "$($mof_directory_original_splits_working)" -Force > $null
+            if($?)
+            {
+                Write-Log -log_file $log_file -message "[*] $($mof_directory_original_splits_working) created successfully."
+                Write-Verbose "[*] $($mof_directory_original_splits_working) created successfully."
+            }
         }
         else
         {
             Write-Log -level [ERROR] -log_file $log_file -message "[!] Failed to remove $($mof_directory_working). Make sure you don't have any files in the directory open still."
-            Write-Error -Message "[!] Failed to remove $($mof_directory_working)." -RecommendedAction "Make sure you don't have any files in the directory open still."
+            Write-Error -Message "[!] Failed to remove $($mof_directory_working). Make sure you don't have any files in the directory open still."
         }
 
         $end_time = Get-Date
@@ -3257,16 +3287,30 @@ function Clean-OrdersCertificate()
         {
             Write-Log -log_file $log_file -message "[*] $($cof_directory_working) removed successfully. Cleaned: $($total_to_clean_cert_files.Count) .cof files from $($cof_directory_working)."
             Write-Verbose "[*] $($cof_directory_working) removed successfully. Cleaned: $($total_to_clean_cert_files.Count) .cof files from $($cof_directory_working)."
+            Write-Log -log_file $log_file -message "[#] Creating $($cof_directory_working) now."
+            Write-Verbose "[#] Creating $($cof_directory_working) now."
             Start-Sleep -Milliseconds 250
             New-Item -ItemType Directory -Path "$($cof_directory_working)" -Force > $null
+            if($?)
+            {
+                Write-Log -log_file $log_file -message "[*] $($cof_directory_working) created successfully."
+                Write-Verbose "[*] $($cof_directory_working) created successfully."
+            }
+
+            Write-Log -log_file $log_file -message "[#] Creating $($cof_directory_original_splits_working) now."
+            Write-Verbose "[#] Creating $($cof_directory_original_splits_working) now."
             Start-Sleep -Milliseconds 250
             New-Item -ItemType Directory -Path "$($cof_directory_original_splits_working)" -Force > $null
-            Start-Sleep -Milliseconds 250
+            if($?)
+            {
+                Write-Log -log_file $log_file -message "[*] $($cof_directory_original_splits_working) created successfully."
+                Write-Verbose "[*] $($cof_directory_original_splits_working) created successfully."
+            }
         }
         else
         {
-            Write-Log -level [ERROR] -log_file $log_file -message "[!] Failed to remove $($cof_directory_working)." -RecommendedAction "Make sure you don't have any files in $($cof_directory_working) open still."
-            Write-Error -Message "[!] Failed to remove $($cof_directory_working)." -RecommendedAction "Make sure you don't have any files in $($cof_directory_working) open still."
+            Write-Log -level [ERROR] -log_file $log_file -message "[!] Failed to remove $($cof_directory_working). Make sure you don't have any files in $($cof_directory_working) open still."
+            Write-Error -Message "[!] Failed to remove $($cof_directory_working). Make sure you don't have any files in $($cof_directory_working) open still."
         }
 
         $end_time = Get-Date
@@ -3303,12 +3347,22 @@ function Clean-UICS()
         {
             Write-Log -log_file $log_file -message "[*] $($uics_directory_output) removed successfully. Cleaned: $($total_to_clean_uics_directories.Count) directories from $($uics_directory_output)."
             Write-Verbose "[*] $($uics_directory_output) removed successfully. Cleaned: $($total_to_clean_uics_directories.Count) directories from $($uics_directory_output)."
+
+            Write-Log -log_file $log_file -message "[#] Creating $($uics_directory_output) now."
+            Write-Verbose "[#] Creating $($uics_directory_output) now."
+
             New-Item -ItemType Directory -Path "$($uics_directory_output)" -Force > $null
+            if($?)
+            {
+                Write-Log -log_file $log_file -message "[*] $($uics_directory_output) created successfully."
+                Write-Verbose "[*] $($uics_directory_output) created successfully."
+            }
+
         }
         else
         {
-            Write-Log -level [ERROR] -log_file $log_file -message "[!] Failed to remove $($uics_directory_output)." -RecommendedAction "Make sure you don't have any files in $($uics_directory_output) open still."
-            Write-Error -Message "[!] Failed to remove $($uics_directory_output)." -RecommendedAction "Make sure you don't have any files in $($uics_directory_output) open still."
+            Write-Log -level [ERROR] -log_file $log_file -message "[!] Failed to remove $($uics_directory_output). Make sure you don't have any files in $($uics_directory_output) open still."
+            Write-Error -Message "[!] Failed to remove $($uics_directory_output). Make sure you don't have any files in $($uics_directory_output) open still."
         }
 
         $end_time = Get-Date
@@ -3329,12 +3383,10 @@ function Get-Permissions()
         [Parameter(mandatory = $true)] $uics_directory_output
     )
 
-    $uics_directory = "$($uics_directory_output)\UICS"
-
-    if(Test-Path $($uics_directory))
+    if(Test-Path $($uics_directory_output))
     {
         $permissions_reports_directory = "$($uics_directory_output)\__PERMISSIONS"
-        $uics_directory = $uics_directory.Split('\')
+        $uics_directory = $uics_directory_output.Split('\')
         $uics_directory = $uics_directory[-1]
 
         $html_report = "$($permissions_reports_directory)\$($run_date)\$($uics_directory)_permissions_report.html"
@@ -3361,7 +3413,9 @@ function Get-Permissions()
         Write-Log -log_file $log_file -message "[#] Writing permissions of $($uics_directory_output) to .csv file now."
         Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .csv file now."
 
-        Get-ChildItem -Recurse -Path $($uics_directory_output) | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Export-Csv -Force -NoTypeInformation $($csv_report)
+        Get-ChildItem -Path $($uics_directory_output) | Where { $_.FullName -notmatch '__PERMISSIONS' -and $_.PSIsContainer  } | 
+            Select-Object Name, LastWriteTime, @{Label="Owner";Expression={(Get-Acl $_.FullName).Owner}} | 
+            Export-Csv -Force -NoTypeInformation $($csv_report)
         if($?)
         {
             Write-Log -log_file $log_file -message "[*] $($uics_directory_output) permissions writing to .csv finished successfully."
@@ -3387,7 +3441,11 @@ tr:nth-child(even) { background: #dae5f4; }
 tr:nth-child(odd) { background: #b8d1f3; }
 </style>
 "@
-        Get-ChildItem -Recurse -Path $($uics_directory_output)  | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | ConvertTo-Html -Title "$($uics_directory_output) Permissions Report" -Head $($css) -Body "<h1>$($uics_directory_output) Permissions Report</h1> <h5> Generated on $(Get-Date -UFormat "%Y-%m-%d @ %H-%M-%S")" | Out-File $($html_report)
+        Get-ChildItem -Path $($uics_directory_output)  | 
+            Where { $_.FullName -notmatch '__PERMISSIONS' -and $_.PSIsContainer  } | 
+            Select-Object Name, LastWriteTime, @{Label="Owner";Expression={(Get-Acl $_.FullName).Owner}} | 
+            ConvertTo-Html -Title "$($uics_directory_output) Permissions Report" -Head $($css) -Body "<h1>$($uics_directory_output) Permissions Report</h1> <h5> Generated on $(Get-Date -UFormat "%Y-%m-%d @ %H-%M-%S")" | 
+            Out-File $($html_report)
         if($?)
         {
             Write-Log -log_file $log_file -message "[*] $($uics_directory_output) permissions writing to .html finished successfully."
@@ -3401,7 +3459,11 @@ tr:nth-child(odd) { background: #b8d1f3; }
 
         Write-Log -log_file $log_file -message "[#] Writing permissions of $($uics_directory_output) to .txt file now."
         Write-Verbose "[#] Writing permissions of $($uics_directory_output) to .txt file now."
-        Get-ChildItem -Recurse -Path $($uics_directory_output)  | Where { $_.FullName -notmatch '__PERMISSIONS' } | ForEach-Object { $_ | Add-Member -Name "Owner" -MemberType NoteProperty -Value (Get-Acl $_.FullName).Owner} | Sort-Object FullName | Select FullName,CreationTime,LastWriteTime,Length,Owner | Format-Table -AutoSize -Wrap | Out-File $($txt_report)
+        Get-ChildItem -Path $($uics_directory_output)  | 
+            Where { $_.FullName -notmatch '__PERMISSIONS' -and $_.PSIsContainer  } | 
+            Select-Object Name, LastWriteTime, @{Label="Owner";Expression={(Get-Acl $_.FullName).Owner}} |
+            Format-Table -AutoSize -Wrap | 
+            Out-File $($txt_report)
         if($?)
         {
             Write-Log -log_file $log_file -message "[*] $($uics_directory_output) permissions writing to .txt finished successfully."
@@ -3415,8 +3477,8 @@ tr:nth-child(odd) { background: #b8d1f3; }
     }
     else
     {
-        Write-Log -level [ERROR] -log_file $log_file -message "[!] $($uics_directory) does not exist. Make sure to run $($script_name) -d -o '\\path\to\desired\output' and try again."
-        Write-Error -Message "[!] $($uics_directory) does not exist. Make sure to run $($script_name) -d -o '\\path\to\desired\output' and try again."
+        Write-Log -level [ERROR] -log_file $log_file -message "[!] $($uics_directory_output) does not exist. Make sure to run $($script_name) -d -o '\\path\to\desired\output' and try again."
+        Write-Error -Message "[!] $($uics_directory_output) does not exist. Make sure to run $($script_name) -d -o '\\path\to\desired\output' and try again."
     }
 }
 
@@ -4438,7 +4500,7 @@ if($($ParametersPassed) -gt '0')
             "split_main" 
             { 
 		        Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor Cyan	
-		        Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
+		        Split-OrdersMain -input_dir $($input_dir) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
 
 		        if($?)
 		        {
@@ -4449,7 +4511,7 @@ if($($ParametersPassed) -gt '0')
             "split_cert"
             { 
 		        Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor Cyan
-		        Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
+		        Split-OrdersCertificate -input_dir $($input_dir) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
 
 		        if($?) 
 		        {
@@ -4585,6 +4647,10 @@ if($($ParametersPassed) -gt '0')
 			        Write-Host "[^] Getting permissions of UICS folder finished." -ForegroundColor Cyan 
 		        } 	
             }
+            "input_dir"
+            {
+                Write-Host "[^] Input directory is $($input_dir)." -ForegroundColor Cyan
+            }
 
             "all" 
             { 
@@ -4598,14 +4664,14 @@ if($($ParametersPassed) -gt '0')
 		            } 
 
 		            Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files. Step [2/10]." -ForegroundColor Cyan
-		            Split-OrdersMain -current_directory_working $($current_directory_working) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
+		            Split-OrdersMain -input_dir $($input_dir) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
 		            if($?)
 		            {
 			            Write-Host "[^] Splitting '*m.prt' order file(s) finished." -ForegroundColor Cyan
 		            }
 
 		            Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files. Step [3/10]." -ForegroundColor Cyan
-		            Split-OrdersCertificate -current_directory_working $($current_directory_working) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
+		            Split-OrdersCertificate -input_dir $($input_dir) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
 		            if($?) 
 		            {
 			            Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished." -ForegroundColor Cyan
