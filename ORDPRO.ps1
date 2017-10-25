@@ -4498,6 +4498,12 @@ if($($ParametersPassed) -gt '0')
 
             "split_main" 
             { 
+                if(!($($input_dir)))
+                {
+                    Write-Error " No input directory specified. Try again with '-i <input_directory>' parameter included."
+                    exit 1
+                }
+
 		        Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files." -ForegroundColor Cyan	
 		        Split-OrdersMain -input_dir $($input_dir) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
 
@@ -4509,6 +4515,12 @@ if($($ParametersPassed) -gt '0')
 
             "split_cert"
             { 
+                if(!($($input_dir)))
+                {
+                    Write-Error " No input directory specified. Try again with '-i <input_directory>' parameter included."
+                    exit 1
+                }
+
 		        Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files." -ForegroundColor Cyan
 		        Split-OrdersCertificate -input_dir $($input_dir) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
 
