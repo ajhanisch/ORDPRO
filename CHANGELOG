@@ -7,6 +7,7 @@ CHANGES
 - added input directory parameter to be used instead of having files in working directory
 - fixed various lingering variable declarations causing issues during errors
 - removed use of RecommendedAction during warning uses
+- fixed get-permissions functionality
 ------------------------------------
 VERSION: 1.4
 DATE: 10/24/2017
