@@ -32,7 +32,7 @@ Running the tool:
 .\ORDPRO.ps1 [options]
   
 Typical Usage Example:  
-.\ORDPRO.ps1 -a -o "\\\path\to\desired\output\directory"
+.\ORDPRO.ps1 -a -i "\\\path\to\input" -o "\\\path\to\output"
   
 Options:   
   
