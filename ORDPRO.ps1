@@ -120,6 +120,7 @@ DIRECTORIES OUTPUT
 #>
 $ordmanagers_directory_output = "$($output_dir)\ORD_MANAGERS"
 $ordmanagers_orders_by_soldier_output = "$($ordmanagers_directory_output)\ORDERS_BY_SOLDIER"
+$ordmanagers_iperms_integrator_output = "$($ordmanagers_directory_output)\IPERMS_INTEGRATOR"
 $ordregisters_output = "$($output_dir)\ORD_REGISTERS"
 $uics_directory_output = "$($output_dir)\UICS"
 
@@ -130,9 +131,9 @@ $current_directory_working = (Get-Item -Path ".\" -Verbose).FullName
 $tmp_directory_working = "$($current_directory_working)\TMP"
 $archive_directory_working = "$($current_directory_working)\ARCHIVE"
 $mof_directory_working = "$($tmp_directory_working)\MOF"
-$mof_directory_original_splits_working = "$($mof_directory_working)\ORIGINAL_SPLITS"
+$mof_directory_original_splits_working = "$($mof_directory_working)\ORIGINAL_EDITS"
 $cof_directory_working = "$($tmp_directory_working)\COF"
-$cof_directory_original_splits_working = "$($cof_directory_working)\ORIGINAL_SPLITS"
+$cof_directory_original_splits_working = "$($cof_directory_working)\ORIGINAL_EDITS"
 $log_directory_working = "$($tmp_directory_working)\LOGS"
 
 <#
@@ -141,6 +142,7 @@ ARRAYS
 $directories = @(
 "$($ordmanagers_directory_output)", 
 "$($ordmanagers_orders_by_soldier_output)", 
+"$($ordmanagers_iperms_integrator_output)",
 "$($ordregisters_output)", 
 "$($uics_directory_output)", 
 "$($tmp_directory_working)", 
@@ -1308,10 +1310,11 @@ function Combine-OrdersMain()
     Param(
         [Parameter(mandatory = $true)] $mof_directory_working,
         [Parameter(mandatory = $true)] $run_date,
-        [Parameter(mandatory = $true)] $exclude_directories
+        [Parameter(mandatory = $true)] $exclude_directories,
+        [Parameter(mandatory = $true)] $iperms_integrator
     )
 
-    $total_to_combine_orders_main = Get-ChildItem -Path "$($mof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }
+    $total_to_combine_orders_main = @(Get-ChildItem -Path $($mof_directory_working) | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" })
 
     if($($($total_to_combine_orders_main.Count)) -gt '0')
     {
@@ -1319,63 +1322,71 @@ function Combine-OrdersMain()
         Write-Log -log_file $log_file -message "Start time: $($start_time)."
         Write-Verbose "Start time: $($start_time)."
 
-        $orders_combined = @()
-        $orders_combined_csv = "$($log_file_directory)\$($run_date)_combined_orders_main.csv"
-
-        $out_file = "$($log_directory_working)\$($run_date)\$($run_date)_orders_combined_main.txt"
-        New-Item -ItemType File $out_file -Force > $null
-
         Write-Log -log_file $log_file -message "Total to combine: $($total_to_combine_orders_main.Count). Combining .mof files now."
         Write-Verbose "Total to combine: $($total_to_combine_orders_main.Count). Combining .mof files now."
 
-        foreach($file in $total_to_combine_orders_main)
-        {
+        $order_files = @(
+        Get-ChildItem -Path $($mof_directory_working) -File | 
+        Where { $_.Extension -eq '.mof' -and $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof"} | 
+        Sort-Object { [regex]::Replace($_.Name, '\d+', { $args[0].Value.PadLeft(20) }) } | 
+        Select -First 250 | 
+        Select FullName
+        )
+
+        $order_files_count = $($order_files).Count
+
+        $start = 1
+        $end = $order_files.Count
+
+        do{
             Process-DevCommands -sw $($sw)
-
-            Get-Content "$($mof_directory_working)\$file" | Add-Content $out_file
-            if($?)
-            {
-                $hash = @{
-                    'FILE' = $($file.FullName)
-                    'STATUS' = 'SUCCESS'
-                }
-
-                $order_combined = New-Object -TypeName PSObject -Property $hash
-                $orders_combined += $order_combined
-
-	            $status = "Combining '*m.prt' files."
-	            $activity = "Processing file $($orders_combined.Count) of $($total_to_combine_orders_main.Count)."
-	            $percent_complete = (($($orders_combined.Count)/$($total_to_combine_orders_main.Count)) * 100)
-	            $current_operation = "$("{0:N2}" -f ((($($orders_combined.Count)/$($total_to_combine_orders_main.Count)) * 100),2))% Complete"
-	            $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-	            $seconds_remaining = ($seconds_elapsed / ($($orders_combined.Count) / $total_to_combine_orders_main.Count)) - $seconds_elapsed
-                $ts =  [timespan]::fromseconds($seconds_remaining)
-                $ts = $ts.ToString("hh\:mm\:ss")
-
-                if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
-                {
-                    Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                    Write-Verbose "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                }
             
+            $out_file = "$($ordmanagers_iperms_integrator_output)\$($run_date)\$($start)-$($end).txt"
+
+            if(!(Test-Path "$($ordmanagers_iperms_integrator_output)\$($run_date)"))
+            {
+                Write-Log -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) not created. Creating now."
+                Write-Verbose "$($ordmanagers_iperms_integrator_output)\$($run_date) not created. Creating now."
+                New-Item -ItemType Directory -Path "$($ordmanagers_iperms_integrator_output)\$($run_date)" -Force > $null
+                
+                if($?)
+                {
+                    Write-Log -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) created successfully."
+                    Write-Verbose "$($ordmanagers_iperms_integrator_output)\$($run_date) created successfully."                        
+                }
                 else
                 {
-                    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
-                }                    
+                    Write-Log -level [ERROR] -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed."
+                    Write-Error "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed."    
+                    throw "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed."
+                }
             }
-            else
-            {
-                Write-Log -level [ERROR] -log_file $log_file -message " Combining .mof files failed."
-                Write-Error " Combining .mof files failed."
-            }
-        }
+            
+            # Set outfile name for each batch
+            Write-Log -log_file $log_file -message "Name of outfile is $($out_file)."
+            Write-Verbose "Name of outfile is $($out_file)."
 
-        if($orders_combined.Count -gt 0)
-        {
-            Write-Log -log_file $log_file -message "Writing $($orders_combined_csv) file now."
-            Write-Verbose "Writing $($orders_combined_csv) file now."
-            $orders_combined | Select FILE, STATUS | Sort -Property FILE | Export-Csv "$($orders_combined_csv)" -NoTypeInformation -Force
+            New-Item -ItemType File $out_file -Force > $null
+
+            # Combine 250 files into batch
+            Write-Log -log_file $log_file -message "Combining $($start) - $($end) files into $($out_file)."
+            Write-Verbose "Combining $($start) - $($end) files into $($out_file)."
+            $order_files | % { Get-Content $_.FullName | Add-Content $($out_file) }
+
+            # Move files out
+            Write-Log -log_file $log_file -message "Moving original $($start) - $($end) files into $($mof_directory_original_splits_working)\$($_.Name)."
+            Write-Verbose "Moving original $($start) - $($end) files into $($mof_directory_original_splits_working)\$($_.Name)."
+            $order_files | % { Move-Item $_.FullName "$($mof_directory_original_splits_working)\$($_.Name)" }
+
+            # Repopulate array
+            $order_files = @(Get-ChildItem -Path "$($mof_directory_working)" -File | Where { $_.Extension -eq '.mof' } | Sort-Object { [regex]::Replace($_.Name, '\d+', { $args[0].Value.PadLeft(20) }) } | Select -First 250 | Select FullName)
+            $order_files_count = $($order_files).Count
+
+            $start = $end + 1
+            $end = $start + $($order_files_count) - 1
         }
+        While($order_files_count -ne 0)
+
 
         $end_time = Get-Date
         Write-Log -log_file $log_file -message "End time: $($end_time)."
@@ -1477,7 +1488,7 @@ function Parse-OrdersMain()
 {
     [cmdletbinding()]
     Param(
-        [Parameter(mandatory = $true)] $mof_directory_working,
+        [Parameter(mandatory = $true)] $mof_directory_original_splits_working,
         [Parameter(mandatory = $true)] $exclude_directories,
         [Parameter(mandatory = $true)] $regex_format_parse_orders_main,
         [Parameter(mandatory = $true)] $regex_order_number_parse_orders_main,
@@ -1485,7 +1496,7 @@ function Parse-OrdersMain()
         [Parameter(mandatory = $true)] $regex_pertaining_to_parse_orders_main
     )
 
-    $total_to_create_orders_main = Get-ChildItem -Path $($mof_directory_working) | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }
+    $total_to_create_orders_main = Get-ChildItem -Path $($mof_directory_original_splits_working) | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" }
 
     if($($total_to_create_orders_main.Count) -gt '0')
     {
@@ -1502,27 +1513,27 @@ function Parse-OrdersMain()
         Write-Log -log_file $log_file -message "Total to create: $($total_to_create_orders_main.Count)."
         Write-Verbose "Total to create: $($total_to_create_orders_main.Count)."
 
-        foreach($file in (Get-ChildItem -Path "$($mof_directory_working)" -Filter "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories }))
+        foreach($file in (Get-ChildItem -Path "$($mof_directory_original_splits_working)" -Filter "*_edited.mof" | Where { $_.FullName -notmatch $exclude_directories }))
             {
                 Process-DevCommands -sw $($sw)
 
                 # Check for different 700 forms.
                 $following_request = "Following Request is" # Disapproved || Approved
-                $following_request_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($following_request) -AllMatches | Select -First 1)
+                $following_request_exists = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($following_request) -AllMatches | Select -First 1)
                 $following_order = "Following order is amended as indicated." # Amendment order. $($format.Length) -eq 4
-                $following_order_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($following_order) -AllMatches | Select -First 1)
+                $following_order_exists = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($following_order) -AllMatches | Select -First 1)
 
                 # Check for bad 282 forms.
                 $following_request = "Following Request is" # Disapproved || Approved
-                $following_request_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($following_request) -AllMatches | Select -First 1)
+                $following_request_exists = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($following_request) -AllMatches | Select -First 1)
 
                 # Check for "Memorandum for record" file that does not have format number, order number, period, basically nothing
                 $memorandum_for_record = "MEMORANDUM FOR RECORD"
-                $memorandum_for_record_exists = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($memorandum_for_record) -AllMatches | Select -First 1)
+                $memorandum_for_record_exists = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($memorandum_for_record) -AllMatches | Select -First 1)
 
                 Write-Log -log_file $log_file -message "Looking for 'format' in $($file)."
                 Write-Verbose "Looking for 'format' in $($file)."
-                $format = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_format_parse_orders_main) -AllMatches | Select -First 1)
+                $format = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_format_parse_orders_main) -AllMatches | Select -First 1)
                 if($($format))
                 {
                     $format = $format.ToString()
@@ -1575,7 +1586,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for order number in $($file)."
                     Write-Verbose "Looking for order number in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     Write-Log -log_file $log_file -message "Found 'order number' in $($file)."
@@ -1592,7 +1603,7 @@ function Parse-OrdersMain()
                     Write-Verbose "Found 'published year' in $($file)."
                     $order_number = $order_number[1]
 
-                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "You are ordered to" -AllMatches -Context 5,0 | 
+                    $anchor = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "You are ordered to" -AllMatches -Context 5,0 | 
                     Select -First 1 | 
                     ConvertFrom-String | 
                     Select P3, P4, P5, P6 ) # MI (3 = last, 4 = first, 5 = MI, 6 = SSN) // NO MI ( 3 = last, 4 = first, 5 = ssn, 6 = rank )
@@ -1620,7 +1631,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'period from year, month, day' in $($file)."
                     Write-Verbose "Looking for 'period from year, month, day' in $($file)."
-                    $period_from = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "REPORT TO " -AllMatches | Select -First 1)
+                    $period_from = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "REPORT TO " -AllMatches | Select -First 1)
                     $period_from = $period_from.ToString()
                     $period_from = $period_from.Split(' ')
                     $period_from_day = $period_from[4]
@@ -1635,7 +1646,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'period to year, month, day' in $($file)."
                     Write-Verbose "Looking for 'period to year, month, day' in $($file)."
-                    $period_to = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "Period of active duty: " -AllMatches | Select -First 1)
+                    $period_to = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "Period of active duty: " -AllMatches | Select -First 1)
                     $period_to = $period_to.ToString()
                     $period_to = $period_to.Split(' ')
                     $period_to_number = $period_to[-2]
@@ -1646,7 +1657,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'uic' in $($file)."
                     Write-Verbose "Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
                     Write-Log -log_file $log_file -message "Found 'uic' in $($file)."
@@ -1664,7 +1675,7 @@ function Parse-OrdersMain()
                         $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
                         $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
                         $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
-                        $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
+                        $uic_soldier_order_file_content = (Get-Content "$($mof_directory_original_splits_working)\$($file)" -Raw)
                         
                         Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
                         
@@ -1767,7 +1778,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -1785,7 +1796,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "Looking for 'last, first, mi, ssn' in $($file)."
-                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 | Select -First 1)
+                    $anchor = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 | Select -First 1)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
@@ -1806,7 +1817,7 @@ function Parse-OrdersMain()
                     
                     Write-Log -log_file $log_file -message "Looking for 'period from year, month, day' in $($file)."
                     Write-Verbose "Looking for 'period from year, month, day' in $($file)."
-                    $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "Active duty commitment: " -AllMatches | Select -First 1)
+                    $period = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "Active duty commitment: " -AllMatches | Select -First 1)
                     $period = $period.ToString()
                     $period = $period.Split(' ')
                     $period_from_day = $period[3]
@@ -1844,7 +1855,7 @@ function Parse-OrdersMain()
                     
                     Write-Log -log_file $log_file -message "Looking for 'uic' in $($file)."
                     Write-Verbose "Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
                     Write-Log -log_file $log_file -message "Found 'uic' in $($file)."
@@ -1863,7 +1874,7 @@ function Parse-OrdersMain()
 	                    $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
                         $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
 	                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
-	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
+	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_original_splits_working)\$($file)" -Raw)
 	
 	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
 
@@ -1969,7 +1980,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -1987,7 +1998,7 @@ function Parse-OrdersMain()
                     
                     Write-Log -log_file $log_file -message "Looking for 'uic' in $($file)."
                     Write-Verbose "Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
                     Write-Log -log_file $log_file -message "Found 'uic' in $($file)."
@@ -1995,7 +2006,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'order amended' in $($file)."
                     Write-Verbose "Looking for 'order amended' in $($file)."
-                    $order_amended = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "So much of:" -AllMatches | Select -First 1)
+                    $order_amended = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "So much of:" -AllMatches | Select -First 1)
                     $order_amended = $order_amended.ToString()
                     $order_amended = $order_amended.Split(' ')
                     $order_amended = $order_amended[5]
@@ -2003,7 +2014,7 @@ function Parse-OrdersMain()
                     Write-Log -log_file $log_file -message "Found 'order amended' in $($file)."
                     Write-Verbose "Found 'order amended' in $($file)."
 
-                    $pertaining_to = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_pertaining_to_parse_orders_main) -AllMatches -Context 0,3 | Select -First 1)
+                    $pertaining_to = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_pertaining_to_parse_orders_main) -AllMatches -Context 0,3 | Select -First 1)
                     $pertaining_to = $pertaining_to | ConvertFrom-String -PropertyNames GreaterThan, Pertaining, to, Colon_1, Colon_2, DutyCode, For, LastName, FirstName, MiddleInitial, SSN | Select LastName, FirstName, MiddleInitial, SSN
 
                     Write-Log -log_file $log_file -message "Looking for 'last, first, mi, ssn' in $($file)."
@@ -2036,7 +2047,7 @@ function Parse-OrdersMain()
                         $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
                         $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
                         $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($order_amended)___$($format).txt"
-                        $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
+                        $uic_soldier_order_file_content = (Get-Content "$($mof_directory_original_splits_working)\$($file)" -Raw)
 	
 	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
 
@@ -2139,7 +2150,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -2157,7 +2168,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'uic' in $($file)."
                     Write-Verbose "Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
+                    $uic = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | % { $_.Matches } | % {$_ -replace "[:\(\)./]","" })
                     $uic = $uic.Split("-")
                     $uic = $($uic[0])
                     Write-Log -log_file $log_file -message "Found 'uic' in $($file)."
@@ -2165,7 +2176,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'order revoke' in $($file)."
                     Write-Verbose "Looking for 'order revoke' in $($file)."
-                    $order_revoke = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "So much of:" -AllMatches | Select -First 1)
+                    $order_revoke = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "So much of:" -AllMatches | Select -First 1)
                     $order_revoke = $order_revoke.ToString()
                     $order_revoke = $order_revoke.Split(' ')
                     $order_revoke = $order_revoke[5]
@@ -2175,7 +2186,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "Looking for 'last, first, mi, ssn' in $($file)."
-                    $pertaining_to = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_pertaining_to_parse_orders_main) -AllMatches -Context 0,3 | Select -First 1)
+                    $pertaining_to = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_pertaining_to_parse_orders_main) -AllMatches -Context 0,3 | Select -First 1)
                     $pertaining_to = $pertaining_to | ConvertFrom-String -PropertyNames GreaterThan, Pertaining, to, Colon_1, Colon_2, DutyCode, For, LastName, FirstName, MiddleInitial, SSN | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name. Currently untested for revoke section.
@@ -2206,7 +2217,7 @@ function Parse-OrdersMain()
 	                    $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
                         $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
 	                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($order_revoke)___$($format).txt"
-	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
+	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_original_splits_working)\$($file)" -Raw)
 
 	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
 
@@ -2309,7 +2320,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -2327,7 +2338,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "Looking for 'last, first, mi, ssn' in $($file)."
-                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "By order of the Secretary of the Army" -AllMatches -Context 5,0)
+                    $anchor = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "By order of the Secretary of the Army" -AllMatches -Context 5,0)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
@@ -2347,7 +2358,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'period from year, month, day' in $($file)."
                     Write-Verbose "Looking for 'period from year, month, day' in $($file)."
-                    $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches | Select -First 1)
+                    $period = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches | Select -First 1)
                     $period = $period.ToString()
                     $period = $period.Split(' ')        
                     $period_status = $($period[1])
@@ -2383,7 +2394,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'uic' in $($file)."
                     Write-Verbose "Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | Select -First 1)
+                    $uic = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | Select -First 1)
                     $uic = $uic.ToString()
                     $uic = $uic.Split(' ')
                     $uic = $uic[0]
@@ -2408,7 +2419,7 @@ function Parse-OrdersMain()
 	                    $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
                         $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
 	                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
-	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
+	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_original_splits_working)\$($file)" -Raw)
 
 	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
 
@@ -2514,7 +2525,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
-                    $order_number = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
+                    $order_number = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
                     $order_number = $order_number.ToString()
                     $order_number = $order_number.Split(' ')
                     $published_day = $order_number[-3]
@@ -2533,7 +2544,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "Looking for 'last, first, mi, ssn' in $($file)."
-                    $anchor = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 | Select -First 1)
+                    $anchor = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_name_parse_orders_main) -AllMatches -Context 5,0 | Select -First 1)
                     $anchor = $anchor | ConvertFrom-String -PropertyNames Blank_1, Orders, OrdersNumber, PublishedDay, PublishedMonth, PublishedYear, Blank_2, LastName, FirstName, MiddleInitial, SSN  | Select LastName, FirstName, MiddleInitial, SSN
 
                     # Code to fix people that have no middle name.
@@ -2554,7 +2565,7 @@ function Parse-OrdersMain()
 
                     Write-Log -log_file $log_file -message "Looking for 'period from year, month, day' in $($file)."
                     Write-Verbose "Looking for 'period from year, month, day' in $($file)."
-                    $period = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches | Select -First 1)
+                    $period = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_period_parse_orders_main) -AllMatches | Select -First 1)
                     $period = $period.ToString()
                     $period = $period.Split(' ')
                     $period_status = $($period[1])
@@ -2590,7 +2601,7 @@ function Parse-OrdersMain()
                     
                     Write-Log -log_file $log_file -message "Looking for 'uic' in $($file)."
                     Write-Verbose "Looking for 'uic' in $($file)."
-                    $uic = (Select-String -Path "$($mof_directory_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | Select -First 1)
+                    $uic = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($regex_uic_parse_orders_main) -AllMatches | Select -First 1)
                     $uic = $uic.ToString()
                     $uic = $uic.Split(' ')
                     $uic = $uic[0]
@@ -2615,7 +2626,7 @@ function Parse-OrdersMain()
 	                    $soldier_directory_uics = "$($uics_directory_output)\$($uic)\$($name)___$($ssn)"
                         $soldier_directory_ord_managers = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)"
 	                    $uic_soldier_order_file_name = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt"
-	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_working)\$($file)" -Raw)
+	                    $uic_soldier_order_file_content = (Get-Content "$($mof_directory_original_splits_working)\$($file)" -Raw)
 
 	                    Work-Magic -uic_directory $($uic_directory) -soldier_directory_uics $($soldier_directory_uics) -uic_soldier_order_file_name $($uic_soldier_order_file_name) -uic_soldier_order_file_content $($uic_soldier_order_file_content) -uic $($uic) -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -soldier_directory_ord_managers $($soldier_directory_ord_managers)
 
@@ -2775,8 +2786,8 @@ function Parse-OrdersMain()
     }
     else
     {
-        Write-Log -level [WARN] -log_file $log_file -message " Total to create: ($($total_to_create_orders_main.Count)). No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
-        Write-Warning -Message " Total to create: ($($total_to_create_orders_main.Count)). No .mof files in $($mof_directory_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
+        Write-Log -level [WARN] -log_file $log_file -message " Total to create: ($($total_to_create_orders_main.Count)). No .mof files in $($mof_directory_original_splits_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
+        Write-Warning -Message " Total to create: ($($total_to_create_orders_main.Count)). No .mof files in $($mof_directory_original_splits_working) to work magic on. Make sure to split and edit *m.prt files first. Use '$($script_name) -sm -em' then try again."
     }
 }
 
@@ -3236,14 +3247,14 @@ function Clean-OrdersMain()
             }
 
 
-            Write-Log -log_file $log_file -message "Creating $($mof_directory_original_splits_working) now."
-            Write-Verbose "Creating $($mof_directory_original_splits_working) now."
+            Write-Log -log_file $log_file -message "Creating $($mof_directory_working) now."
+            Write-Verbose "Creating $($mof_directory_working) now."
             Start-Sleep -Milliseconds 250
-            New-Item -ItemType Directory -Path "$($mof_directory_original_splits_working)" -Force > $null
+            New-Item -ItemType Directory -Path "$($mof_directory_working)" -Force > $null
             if($?)
             {
-                Write-Log -log_file $log_file -message "$($mof_directory_original_splits_working) created successfully."
-                Write-Verbose "$($mof_directory_original_splits_working) created successfully."
+                Write-Log -log_file $log_file -message "$($mof_directory_working) created successfully."
+                Write-Verbose "$($mof_directory_working) created successfully."
             }
         }
         else
@@ -4534,7 +4545,7 @@ if($($ParametersPassed) -gt '0')
             "edit_main" 
             { 
 		        Write-Host "[^] Editing orders '*m.prt' files." -ForegroundColor Cyan
-		        Edit-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working)
+		        Edit-OrdersMain -mof_directory_original_splits_working $($mof_directory_original_splits_working) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_working $($mof_directory_working)
 
 		        if($?) 
 		        { 
@@ -4557,8 +4568,7 @@ if($($ParametersPassed) -gt '0')
             "combine_main" 
             { 
 		        Write-Host "[^] Combining .mof orders files." -ForegroundColor Cyan
-		        Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -run_date $($run_date)
-
+		        Combine-OrdersMain -exclude_directories $($exclude_directories) -run_date $($run_date) -mof_directory_working $($mof_directory_working) -iperms_integrator $($ordmanagers_iperms_integrator_output)
 		        if($?) 
 		        { 
 			        Write-Host "[^] Combining .mof orders files finished." -ForegroundColor Cyan 
@@ -4584,7 +4594,7 @@ if($($ParametersPassed) -gt '0')
                 }
 
                 Write-Host "[^ Working magic on .mof files now." -ForegroundColor Cyan
-                Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
+                Parse-OrdersMain -mof_directory_original_splits_working $($mof_directory_original_splits_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
 		        if($?) 
 		        { 
 			        Write-Host "[^] Magic on .mof files finished." -ForegroundColor Cyan 
@@ -4667,63 +4677,63 @@ if($($ParametersPassed) -gt '0')
             { 
                 try
                 {
-				    Write-Host "[^] Creating required directories. Step [1/10]." -ForegroundColor Cyan
+				    Write-Host "[^] Creating required directories. Step [1/9]." -ForegroundColor Cyan
 		            Create-RequiredDirectories -directories $($directories) -log_file $($log_file)
 		            if($?) 
 		            {
 			            Write-Host "[^] Creating directories finished." -ForegroundColor Cyan
 		            } 
 
-		            Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files. Step [2/10]." -ForegroundColor Cyan
+		            Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files. Step [2/9]." -ForegroundColor Cyan
 		            Split-OrdersMain -input_dir $($input_dir) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
 		            if($?)
 		            {
 			            Write-Host "[^] Splitting '*m.prt' order file(s) finished." -ForegroundColor Cyan
 		            }
 
-		            Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files. Step [3/10]." -ForegroundColor Cyan
+		            Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files. Step [3/9]." -ForegroundColor Cyan
 		            Split-OrdersCertificate -input_dir $($input_dir) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
 		            if($?) 
 		            {
 			            Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished." -ForegroundColor Cyan
 		            } 	     
                        
-		            Write-Host "[^] Editing orders '*m.prt' files. Step [4/10]." -ForegroundColor Cyan
-		            Edit-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_original_splits_working $($mof_directory_original_splits_working)
+		            Write-Host "[^] Editing orders '*m.prt' files. Step [4/9]." -ForegroundColor Cyan
+		            Edit-OrdersMain -mof_directory_original_splits_working $($mof_directory_original_splits_working) -exclude_directories $($exclude_directories) -regex_old_fouo_3_edit_orders_main $($regex_old_fouo_3_edit_orders_main) -mof_directory_working $($mof_directory_working)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Editing orders '*m.prt' files finished." -ForegroundColor Cyan 
 		            } 
 
-		            Write-Host "[^] Editing orders '*c.prt' files. Step [5/10]." -ForegroundColor Cyan
+		            Write-Host "[^] Editing orders '*c.prt' files. Step [5/9]." -ForegroundColor Cyan
 		            Edit-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories) -regex_end_cert $($regex_end_cert) -cof_directory_original_splits_working $($cof_directory_original_splits_working)
 		            if($?)
 		            { 
 			            Write-Host "[^] Editing orders '*c.prt' files finished." -ForegroundColor Cyan
 		            } 
 
-		            Write-Host "[^] Combining .mof orders files. Step [6/10]." -ForegroundColor Cyan
-		            Combine-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -run_date $($run_date)
+		            Write-Host "[^] Combining .mof orders files. Step [6/9]." -ForegroundColor Cyan
+		            Combine-OrdersMain -exclude_directories $($exclude_directories) -run_date $($run_date) -mof_directory_working $($mof_directory_working) -iperms_integrator $($ordmanagers_iperms_integrator_output)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Combining .mof orders files finished." -ForegroundColor Cyan 
 		            } 	
 
-                    Write-Host "[^] Working magic on .mof files now. Step [8/10]." -ForegroundColor Cyan
-                    Parse-OrdersMain -mof_directory_working $($mof_directory_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
+                    Write-Host "[^] Working magic on .mof files now. Step [7/9]." -ForegroundColor Cyan
+                    Parse-OrdersMain -mof_directory_original_splits_working $($mof_directory_original_splits_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Magic on .mof files finished." -ForegroundColor Cyan 
 		            }	
 
-		            Write-Host "[^] Working magic on .cof files. Step [9/10]." -ForegroundColor Cyan
+		            Write-Host "[^] Working magic on .cof files. Step [8/9]." -ForegroundColor Cyan
 		            Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Magic on .cof files finished." -ForegroundColor Cyan 
 		            }
 
-                    Write-Host "[^] Zipping log directory now. Step [10/10]." -ForegroundColor Cyan
+                    Write-Host "[^] Zipping log directory now. Step [9/9]." -ForegroundColor Cyan
                     Archive-Directory -source $($log_file_directory) -destination "$($log_directory_working)\$($run_date)_archive.zip"
                     if($?)
                     {
