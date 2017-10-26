@@ -8,6 +8,7 @@ CHANGES
 - fixed various lingering variable declarations causing issues during errors
 - removed use of RecommendedAction during warning uses
 - fixed get-permissions functionality
+- modified main orders combining to combine orders in batch files of 1-250 orders per file and move them to specific folder for use by other sections
 ------------------------------------
 VERSION: 1.4
 DATE: 10/24/2017
