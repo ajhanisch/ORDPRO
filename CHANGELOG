@@ -1,6 +1,12 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 1.6
+DATE: 10/26/2017
+CHANGES
+- separated out each function (20) into it's own file going from a single 5,000+ line file to 1 main file for variables and parameter handling and 20 supporting function files to be called when needed
+- added more output to be randomly selected upon '-a' completion
+------------------------------------
 VERSION: 1.5
 DATE: 10/25/2017
 CHANGES
