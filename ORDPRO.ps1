@@ -39,6 +39,8 @@
    Cleanup UICS directory. Alias: 'xu'. This parameter tells ORDPRO to cleanup the output UICS directory of all UICS directories. This parameter is NOT used when 'all' is used. This is typically only for development and administrative use. The 'o' parameter is required for use with the parameter as it cleans up the UICS directory in the output directory.
 .PARAMETER permissions
    Get permissions of the output UICS directory recursively. Alias: 'p'. This parameter tells ORDPRO to recursively get the permissions of each file and directory in the UICS directory. Output includes a .csv file, .html report, and a .txt file.
+.PARAMETER set_permissions
+   Set permissions of the output UICS directory recursively to 'READ' for each UIC parsed. Alias: 'sp'.
 .PARAMETER all
    All parameters. Alias: 'a'. This parameter tells ORDPRO to run all required parameters needed to be successful. Most common parameter to those new to using ORDPRO.
 .INPUTS
@@ -46,17 +48,17 @@
 .OUTPUTS
    ORDPRO automatically creates required output directory structure, splits, edits, and moves orders to their appropiate location in the created structure. Output includes detailed results of success and failure of each parameter to .csv files in the '.\LOGS\<RUN_DATE>' directory to be viewed during troubleshooting and future reporting purposes as well as detailed logging of all parameter use when any parameter is combined with the 'Verbose' paramter. 
 .EXAMPLE
-    .\ORDPRO.ps1 -all -output_dir "\\path\to\your\desired\output\directory" -Verbose
+    .\ORDPRO.ps1 -all -i "\\path\to\input" -output_dir "\\path\to\output" -Verbose
 
     Run all required parameters for success while including detailed verbosity output.
 
-    Short version of command would be .\ORDPRO.ps1 -a -o "\\path\to\your\desired\output\directory" -Verbose
+    Short version of command would be .\ORDPRO.ps1 -a -i "\\path\to\input" -o "\\path\to\output" -Verbose
 .EXAMPLE
-    .\ORDPRO.ps1 -all -output_dir "\\path\to\your\desired\output\directory"
+    .\ORDPRO.ps1 -all -i "\\path\to\input" -output_dir "\\path\to\your\desired\output\directory"
 
     Run all required parameters for success showing detailed progress bar information.
 
-    Short version of command would be .\ORDPRO.ps1 -a -o "\\path\to\your\desired\output\directory"
+    Short version of command would be .\ORDPRO.ps1 -a -i "\\path\to\input" -o "\\path\to\output"
 .EXAMPLE
     .\ORDPRO.ps1 [options] -Verbose
     
@@ -111,6 +113,7 @@ param(
     [alias('xc')][switch]$clean_cert,
     [alias('xu')][switch]$clean_uics,
     [alias('p')][switch]$permissions,
+    [alias('sp')][switch]$set_permissions,
     [alias('a')][switch]$all
 )
 
@@ -119,26 +122,27 @@ param(
 REQUIRED SCRIPTS
 #>
 try {
-    . ("..\FUNCTIONS\Archive-Directory.ps1")
-    . ("..\FUNCTIONS\Clean-OrdersCertificate.ps1")
-    . ("..\FUNCTIONS\Clean-OrdersMain.ps1")
-    . ("..\FUNCTIONS\Clean-UICS.ps1")
-    . ("..\FUNCTIONS\Combine-OrdersCertificate.ps1")
-    . ("..\FUNCTIONS\Combine-OrdersMain.ps1")
-    . ("..\FUNCTIONS\Create-RequiredDirectories.ps1")
-    . ("..\FUNCTIONS\Edit-OrdersCertificate.ps1")
-    . ("..\FUNCTIONS\Edit-OrdersMain.ps1")
-    . ("..\FUNCTIONS\Get-Permissions.ps1")
-    . ("..\FUNCTIONS\Move-OriginalToArchive.ps1")
-    . ("..\FUNCTIONS\Parse-OrdersCertificate.ps1")
-    . ("..\FUNCTIONS\Parse-OrdersMain.ps1")
-    . ("..\FUNCTIONS\Present-Outcome.ps1")
-    . ("..\FUNCTIONS\Process-KeyboardCommands.ps1")
-    . ("..\FUNCTIONS\Split-OrdersCertificate.ps1")
-    . ("..\FUNCTIONS\Split-OrdersMain.ps1")
-    . ("..\FUNCTIONS\Validate-Variables.ps1")
-    . ("..\FUNCTIONS\Work-Magic.ps1")
-    . ("..\FUNCTIONS\Write-Log.ps1")
+    . (".\__FUNCTIONS\Archive-Directory.ps1")
+    . (".\__FUNCTIONS\Clean-OrdersCertificate.ps1")
+    . (".\__FUNCTIONS\Clean-OrdersMain.ps1")
+    . (".\__FUNCTIONS\Clean-UICS.ps1")
+    . (".\__FUNCTIONS\Combine-OrdersCertificate.ps1")
+    . (".\__FUNCTIONS\Combine-OrdersMain.ps1")
+    . (".\__FUNCTIONS\Create-RequiredDirectories.ps1")
+    . (".\__FUNCTIONS\Edit-OrdersCertificate.ps1")
+    . (".\__FUNCTIONS\Edit-OrdersMain.ps1")
+    . (".\__FUNCTIONS\Get-Permissions.ps1")
+    . (".\__FUNCTIONS\Move-OriginalToArchive.ps1")
+    . (".\__FUNCTIONS\Parse-OrdersCertificate.ps1")
+    . (".\__FUNCTIONS\Parse-OrdersMain.ps1")
+    . (".\__FUNCTIONS\Present-Outcome.ps1")
+    . (".\__FUNCTIONS\Process-KeyboardCommands.ps1")
+    . (".\__FUNCTIONS\Set-Permissions.ps1")
+    . (".\__FUNCTIONS\Split-OrdersCertificate.ps1")
+    . (".\__FUNCTIONS\Split-OrdersMain.ps1")
+    . (".\__FUNCTIONS\Validate-Variables.ps1")
+    . (".\__FUNCTIONS\Work-Magic.ps1")
+    . (".\__FUNCTIONS\Write-Log.ps1")
 }
 catch {
     Write-Host "Error while loading supporting ORDPRO scripts." 
@@ -270,7 +274,7 @@ if($ParametersPassed -eq $TotalParameters)
 }
 elseif($ParametersPassed -eq 1) 
 { 
-    Write-Log -message "1 parameter is being used. `n$($params_results)"  -log_file $($log_file)
+    Write-Log -message "1 parameter is being used. `n$($params_results)" -log_file $($log_file)
     Write-Verbose "1 parameter is being used. `n$($params_results)" 
 }
 else
@@ -502,6 +506,17 @@ if($($ParametersPassed) -gt '0')
 			        Write-Host "[^] Getting permissions of UICS folder finished." -ForegroundColor Cyan 
 		        } 	
             }
+
+            "set_permissions"
+            {
+		        Write-Host "[^] Assigning permissions. Output directory is $($output_dir)." -ForegroundColor Cyan
+		        Set-Permissions -input_path "C:\temp\OUTPUT\UICS"
+		        if($?) 
+		        { 
+			        Write-Host "[^] Assigning permissions of UICS folder finished." -ForegroundColor Cyan 
+		        } 	
+            }
+
             "input_dir"
             {
                 Write-Host "[^] Input directory is $($input_dir)." -ForegroundColor Cyan
