@@ -8,7 +8,7 @@
         [Parameter(mandatory = $true)] $iperms_integrator
     )
 
-    $total_to_combine_orders_main = @(Get-ChildItem -Path $($mof_directory_working) | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof" })
+    $total_to_combine_orders_main = @(Get-ChildItem -Path $($mof_directory_working) -File -Filter "*_edited.mof")
 
     if($($($total_to_combine_orders_main.Count)) -gt '0')
     {
@@ -20,8 +20,7 @@
         Write-Verbose "Total to combine: $($total_to_combine_orders_main.Count). Combining .mof files now."
 
         $order_files = @(
-        Get-ChildItem -Path $($mof_directory_working) -File | 
-        Where { $_.Extension -eq '.mof' -and $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.mof' -and $_.Name -like "*_edited.mof"} | 
+        Get-ChildItem -Path $($mof_directory_working) -File -Filter "*_edited.mof" | 
         Sort-Object { [regex]::Replace($_.Name, '\d+', { $args[0].Value.PadLeft(20) }) } | 
         Select -First 250 | 
         Select FullName
