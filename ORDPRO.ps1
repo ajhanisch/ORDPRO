@@ -149,10 +149,6 @@ catch {
 }
 
 <#
-CREATE SETTINGS HASHTABLE
-#>
-
-<#
 DIRECTORIES OUTPUT
 #>
 $ordmanagers_directory_output = "$($output_dir)\ORD_MANAGERS"
