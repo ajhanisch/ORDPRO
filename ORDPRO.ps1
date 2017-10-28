@@ -137,7 +137,6 @@ try {
     . (".\__FUNCTIONS\Parse-OrdersMain.ps1")
     . (".\__FUNCTIONS\Present-Outcome.ps1")
     . (".\__FUNCTIONS\Process-KeyboardCommands.ps1")
-    . (".\__FUNCTIONS\Set-Permissions.ps1")
     . (".\__FUNCTIONS\Split-OrdersCertificate.ps1")
     . (".\__FUNCTIONS\Split-OrdersMain.ps1")
     . (".\__FUNCTIONS\Validate-Variables.ps1")
