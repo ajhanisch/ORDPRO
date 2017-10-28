@@ -8,7 +8,7 @@
         [Parameter(mandatory = $true)] $cof_directory_original_splits_working
     )
 
-    $total_to_edit_orders_cert = Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }
+    $total_to_edit_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" -Exclude "*_edited.cof" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof'})
 
     if($($total_to_edit_orders_cert.Count) -gt '0')
     {
