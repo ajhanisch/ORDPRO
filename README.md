@@ -70,4 +70,5 @@ Options:
 - [ ] Implement parallel processing
 - [x] Extract all functions and create individual module files to be called from main script
 - [ ] Implement a configuration .xml file for script settings
+- [ ] Implement an undo function to remove results of previously ran sessions
   
