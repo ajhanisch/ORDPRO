@@ -32,7 +32,7 @@
 do
 {
 
-    Show-Menu | Out-GridView -Title "ORDPRO Menu"
+    Show-Menu
     $selection = Read-Host -Prompt "Please make a selection"
     switch($selection)
     {
