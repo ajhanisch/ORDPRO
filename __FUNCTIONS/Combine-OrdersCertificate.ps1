@@ -6,7 +6,7 @@
         [Parameter(mandatory = $true)] $run_date
     )
 
-    $total_to_combine_orders_cert = Get-ChildItem -Path "$($cof_directory_working)" | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' -and $_.Name -like "*_edited.cof" }
+    $total_to_combine_orders_cert = (Get-ChildItem -Path "$($cof_directory_working)" -File -Filter "*_edited.cof")
 
     if($($($total_to_combine_orders_cert.Count)) -gt '0')
     {
