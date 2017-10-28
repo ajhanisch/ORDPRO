@@ -6,7 +6,7 @@
         [Parameter(mandatory = $true)] $exclude_directories
     )
 	  
-    $total_to_clean_cert_files = Get-ChildItem -Path "$($cof_directory_working)" -Recurse | Where { $_.FullName -notmatch $exclude_directories -and $_.Extension -eq '.cof' }
+    $total_to_clean_cert_files = (Get-ChildItem -Path "$($cof_directory_working)" -Recurse -File -Filter "*.cof")
 
     if($($total_to_clean_cert_files.Count) -gt '0')
     {
