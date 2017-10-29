@@ -146,6 +146,7 @@ try {
 catch {
     Write-Host "Error while loading supporting ORDPRO scripts." 
     $_
+    exit 1
 }
 
 <#
@@ -404,6 +405,12 @@ if($($ParametersPassed) -gt '0')
 
             "combine_main" 
             { 
+                if(!($($output_dir)))
+                {
+                    Write-Error " No output directory specified. Try again with '-o <destination_folder>' parameter included."
+                    exit 1
+                }
+
 		        Write-Host "[^] Combining .mof orders files." -ForegroundColor Cyan
 		        Combine-OrdersMain -exclude_directories $($exclude_directories) -run_date $($run_date) -mof_directory_working $($mof_directory_working) -iperms_integrator $($ordmanagers_iperms_integrator_output)
 		        if($?) 
@@ -508,6 +515,12 @@ if($($ParametersPassed) -gt '0')
 
             "set_permissions"
             {
+                if(!($($output_dir)))
+                {
+                    Write-Error " No output directory specified. Try again with '-o <destination_folder>' parameter included."
+                    exit 1
+                }
+
 		        Write-Host "[^] Assigning permissions. Output directory is $($output_dir)." -ForegroundColor Cyan
 		        Set-Permissions -input_path "C:\temp\OUTPUT\UICS"
 		        if($?) 
@@ -524,10 +537,7 @@ if($($ParametersPassed) -gt '0')
             "all" 
             { 
                 try
-                {
-                    Write-Host "[^] " -ForegroundColor Cyan
-                    
-
+                {                   
 				    Write-Host "[^] Creating required directories. Step [1/9]." -ForegroundColor Cyan
 		            Create-RequiredDirectories -directories $($directories) -log_file $($log_file)
 		            if($?) 
@@ -535,6 +545,11 @@ if($($ParametersPassed) -gt '0')
 			            Write-Host "[^] Creating directories finished." -ForegroundColor Cyan
 		            } 
 
+				    if(!($($input_dir)))
+                    {
+                        Write-Error " No input directory specified. Try again with '-i <input_directory>' parameter included."
+                        exit 1
+                    }
 		            Write-Host "[^] Splitting '*m.prt' order file(s) into individual order files. Step [2/9]. Input directory is $($input_dir)." -ForegroundColor Cyan
 		            Split-OrdersMain -input_dir $($input_dir) -mof_directory_working $($mof_directory_working) -run_date $($run_date) -files_orders_m_prt $($files_orders_m_prt) -regex_beginning_m_split_orders_main $($regex_beginning_m_split_orders_main)
 		            if($?)
@@ -542,6 +557,11 @@ if($($ParametersPassed) -gt '0')
 			            Write-Host "[^] Splitting '*m.prt' order file(s) finished." -ForegroundColor Cyan
 		            }
 
+				    if(!($($input_dir)))
+                    {
+                        Write-Error " No input directory specified. Try again with '-i <input_directory>' parameter included."
+                        exit 1
+                    }
 		            Write-Host "[^] Splitting '*c.prt' cerfiticate file(s) into individual certificate files. Step [3/9]. Input directory is $($input_dir)." -ForegroundColor Cyan
 		            Split-OrdersCertificate -input_dir $($input_dir) -cof_directory_working $($cof_directory_working) -run_date $($run_date) -files_orders_c_prt $($files_orders_c_prt) -regex_end_cert $($regex_end_cert)
 		            if($?) 
@@ -563,13 +583,23 @@ if($($ParametersPassed) -gt '0')
 			            Write-Host "[^] Editing orders '*c.prt' files finished." -ForegroundColor Cyan
 		            } 
 
+                    if(!($($output_dir)))
+                    {
+                        Write-Error " No output directory specified. Try again with '-o <destination_folder>' parameter included."
+                        exit 1
+                    }
 		            Write-Host "[^] Combining .mof orders files. Step [6/9]." -ForegroundColor Cyan
 		            Combine-OrdersMain -exclude_directories $($exclude_directories) -run_date $($run_date) -mof_directory_working $($mof_directory_working) -iperms_integrator $($ordmanagers_iperms_integrator_output)
 		            if($?) 
 		            { 
 			            Write-Host "[^] Combining .mof orders files finished." -ForegroundColor Cyan 
 		            } 	
-
+                    
+                    if(!($($output_dir)))
+                    {
+                        Write-Error " No output directory specified. Try again with '-o <destination_folder>' parameter included."
+                        exit 1
+                    }
                     Write-Host "[^] Working magic on .mof files now. Step [7/9]. Output directory is $($output_dir)." -ForegroundColor Cyan
                     Parse-OrdersMain -mof_directory_original_splits_working $($mof_directory_original_splits_working) -exclude_directories $($exclude_directories) -regex_format_parse_orders_main $($regex_format_parse_orders_main) -regex_order_number_parse_orders_main $($regex_order_number_parse_orders_main) -regex_uic_parse_orders_main $($regex_uic_parse_orders_main) -regex_pertaining_to_parse_orders_main $($regex_pertaining_to_parse_orders_main)
 		            if($?) 
@@ -577,6 +607,11 @@ if($($ParametersPassed) -gt '0')
 			            Write-Host "[^] Magic on .mof files finished." -ForegroundColor Cyan 
 		            }	
 
+                    if(!($($output_dir)))
+                    {
+                        Write-Error " No output directory specified. Try again with '-o <destination_folder>' parameter included."
+                        exit 1
+                    }
 		            Write-Host "[^] Working magic on .cof files. Step [8/9]. Output directory is $($output_dir)." -ForegroundColor Cyan
 		            Parse-OrdersCertificate -cof_directory_working $($cof_directory_working) -exclude_directories $($exclude_directories)
 		            if($?) 
@@ -595,8 +630,7 @@ if($($ParametersPassed) -gt '0')
                 }
                 catch
                 {
-                    $_
-
+                    Write-Log -level [ERROR] -log_file $($log_file) -message "$_"
                     Present-Outcome -outcome NOGO
                 }              	            
             }
