@@ -102,6 +102,7 @@ $go_8 =
 (.-./`-'\.-.)(.-./`-'\.-.)(.-./`-'\.-.) (.-./`-'\.-.)(.-./`-'\.-.)(.-./`-'\.-.)
  `-'     `-'  `-'     `-'  `-'     `-'   `-'     `-'  `-'     `-'  `-'     `-' 
 
+
 "@
 
 $go_9 = 
@@ -262,6 +263,17 @@ $nogo_10 =
 _| """ |_|"""""|_|"""""| {======|_|"""""|_|"""""|_|"""""|_|"""""| 
 "`-0-0-'"`-0-0-'"`-0-0-'./o--000'"`-0-0-'"`-0-0-'"`-0-0-'"`-0-0-' 
 
+"@
+
+$nogo_11 = 
+@"
+ROFL:ROFL:ROFL:ROFL"
+         _^___
+ L    __/   [] \    
+LOL===__        \ 
+ L      \________]
+         I   I
+        --------/
 "@
 
     if($outcome -eq 'GO')
@@ -466,7 +478,7 @@ _| """ |_|"""""|_|"""""| {======|_|"""""|_|"""""|_|"""""|_|"""""|
     {
         Write-Log -level '[ERROR]' -log_file $($log_file) -message "FAILURE"
 
-        $nogo_outcome = 1..10 | Get-Random -Count 1
+        $nogo_outcome = 1..11 | Get-Random -Count 1
         switch($nogo_outcome)
         {
             1
@@ -658,22 +670,25 @@ _| """ |_|"""""|_|"""""| {======|_|"""""|_|"""""|_|"""""|_|"""""|
                     write-host ""
                 }
             }
-        }
 
-        foreach ($line in $nogo_outcome -split "`n")
-        {
-            foreach ($char in $line.tochararray())
+            11
             {
-                if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
+                foreach ($line in $($nogo_11) -split "`n")
                 {
-                    Write-Host -ForegroundColor Red $char -NoNewline
-                }
-                else
-                {
-                    Write-Host -ForegroundColor White $char -NoNewline
+                    foreach ($char in $line.tochararray())
+                    {
+                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
+                        {
+                            Write-Host -ForegroundColor Black $char -NoNewline
+                        }
+                        else
+                        {
+                            Write-Host -ForegroundColor Green $char -NoNewline
+                        }
+                    }
+                    write-host ""
                 }
             }
-            write-host ""
         }
     }
 }
