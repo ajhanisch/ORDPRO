@@ -6,7 +6,7 @@
         [Parameter(mandatory = $true)] $exclude_directories
     )
 
-    $total_to_clean_main_files = (Get-ChildItem -Path "$($mof_directory_working)" -File -Filter "*.mof")
+    $total_to_clean_main_files = (Get-ChildItem -Path "$($mof_directory_working)" -Recurse)
 
     if($($total_to_clean_main_files.Count) -gt '0')
     {
