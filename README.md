@@ -10,7 +10,7 @@ Automates splitting, editing, combining, processing, and managing of orders. Inc
 * CLI (Command Line Interface)  
 ![ ] (images/cli.PNG)  
   
-* TUI (Text-based User Interface)  
+* TUI (Text User Interface)  
 ![ ] (images/tui.PNG)
   
 # **DESCRIPTION**  
