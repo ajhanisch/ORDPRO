@@ -14,11 +14,11 @@
         $count_orders = 0
         $count_files = 0
 
-        $orders_created = @()
-        $orders_not_created = @()
+        $orders_split = @()
+        $orders_not_split = @()
 
-        $orders_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_created_main.csv"
-        $orders_not_created_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_created_main.csv"
+        $orders_split_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_split_main.csv"
+        $orders_not_split_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_not_split_main.csv"
 
         $out_directory = $($mof_directory_working)
 
@@ -85,8 +85,8 @@
 					        'ORDER_COUNT' = $($count_orders)
 				        }
 
-				        $order_created = New-Object -TypeName PSObject -Property $hash
-				        $orders_created += $order_created				
+				        $order_split = New-Object -TypeName PSObject -Property $hash
+				        $orders_split += $order_split				
 			        }
 			        else
 			        {
@@ -99,8 +99,8 @@
 					        'ORDER_COUNT' = $($count_orders)
 				        }
 
-				        $order_created = New-Object -TypeName PSObject -Property $hash
-				        $orders_not_created += $order_created
+				        $order_split = New-Object -TypeName PSObject -Property $hash
+				        $orders_not_split += $order_split
 			        }
 		        }
 	        }
@@ -126,18 +126,18 @@
             }
         }
 
-        if($orders_created.Count -gt 0)
+        if($orders_split.Count -gt 0)
         {
-            Write-Log -log_file $log_file -message "Writing $($orders_created_csv) file now."
-            Write-Verbose "Writing $($orders_created_csv) file now."
-            $orders_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT | Sort -Property ORDER_COUNT | Export-Csv "$($orders_created_csv)" -NoTypeInformation -Force
+            Write-Log -log_file $log_file -message "Writing $($orders_split_csv) file now."
+            Write-Verbose "Writing $($orders_split_csv) file now."
+            $orders_split | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT | Sort -Property ORDER_COUNT | Export-Csv "$($orders_split_csv)" -NoTypeInformation -Force
         }
 
-        if($orders_not_created.Count -gt 0)
+        if($orders_not_split.Count -gt 0)
         {
-            Write-Log -log_file $log_file -message "Writing $($orders_not_created_csv) file now."
-            Write-Verbose "Writing $($orders_not_created_csv) file now."
-            $orders_not_created | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT| Sort -Property ORDER_COUNT | Export-Csv "$($orders_not_created_csv)" -NoTypeInformation -Force
+            Write-Log -log_file $log_file -message "Writing $($orders_not_split_csv) file now."
+            Write-Verbose "Writing $($orders_not_split_csv) file now."
+            $orders_not_split | Select ORIGINAL_FILE, OUT_FILE, ORDER_COUNT| Sort -Property ORDER_COUNT | Export-Csv "$($orders_not_split_csv)" -NoTypeInformation -Force
         }
 
         $end_time = Get-Date
