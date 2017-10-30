@@ -276,419 +276,53 @@ LOL===__        \
         --------/
 "@
 
+$go_outcomes = @($($go_1),$($go_2), $($go_3), $($go_4), $($go_5), $($go_6), $($go_7), $($go_7), $($go_8), $($go_9), $($go_10))
+
+$nogo_outcomes = @($($nogo_1),$($nogo_2), $($nogo_3), $($nogo_4), $($nogo_5), $($nogo_6), $($nogo_7), $($nogo_7), $($nogo_8), $($nogo_9), $($nogo_10), $($nogo_11))
+
     if($outcome -eq 'GO')
     {
         Write-Log -log_file $($log_file) -message "VICTORY"
 
-        $go_outcome = 1..10 | Get-Random -Count 1
-        switch($go_outcome)
+        $go_outcome =  $go_outcomes | Get-Random
+
+        foreach ($line in $($go_outcome) -split "`n")
         {
-            1
+            foreach ($char in $line.tochararray())
             {
-                foreach ($line in $($go_1) -split "`n")
+                if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
                 {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
+                    Write-Host -ForegroundColor Black $char -NoNewline
+                }
+                else
+                {
+                    Write-Host -ForegroundColor Green $char -NoNewline
                 }
             }
-            
-            2
-            {
-                foreach ($line in $($go_2) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-            
-            3
-            {
-                foreach ($line in $($go_3) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-            
-            4
-            {
-                foreach ($line in $($go_4) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            5
-            {
-                foreach ($line in $($go_5) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            6
-            {
-                foreach ($line in $($go_6) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            7
-            {
-                foreach ($line in $($go_7) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            8
-            {
-                foreach ($line in $($go_8) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            9
-            {
-                foreach ($line in $($go_9) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            10
-            {
-                foreach ($line in $($go_10) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
+            write-host ""
         }
+
     }
     elseif($outcome -eq 'NOGO')
     {
         Write-Log -level '[ERROR]' -log_file $($log_file) -message "FAILURE"
 
-        $nogo_outcome = 1..11 | Get-Random -Count 1
-        switch($nogo_outcome)
+        $nogo_outcome = $nogo_outcomes | Get-Random
+
+        foreach ($line in $($nogo_1) -split "`n")
         {
-            1
+            foreach ($char in $line.tochararray())
             {
-                foreach ($line in $($nogo_1) -split "`n")
+                if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
                 {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
+                    Write-Host -ForegroundColor Black $char -NoNewline
+                }
+                else
+                {
+                    Write-Host -ForegroundColor Red $char -NoNewline
                 }
             }
-            
-            2
-            {
-                foreach ($line in $($nogo_2) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-            
-            3
-            {
-                foreach ($line in $($nogo_3) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-            
-            4
-            {
-                foreach ($line in $($nogo_4) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            5
-            {
-                foreach ($line in $($nogo_5) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            6
-            {
-                foreach ($line in $($nogo_6) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            7
-            {
-                foreach ($line in $($nogo_7) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            8
-            {
-                foreach ($line in $($nogo_8) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            9
-            {
-                foreach ($line in $($nogo_9) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            10
-            {
-                foreach ($line in $($nogo_10) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
-
-            11
-            {
-                foreach ($line in $($nogo_11) -split "`n")
-                {
-                    foreach ($char in $line.tochararray())
-                    {
-                        if ($([int]$char) -le 9580 -and  $([int]$char) -ge 9552)
-                        {
-                            Write-Host -ForegroundColor Black $char -NoNewline
-                        }
-                        else
-                        {
-                            Write-Host -ForegroundColor Green $char -NoNewline
-                        }
-                    }
-                    write-host ""
-                }
-            }
+            write-host ""
         }
     }
 }
