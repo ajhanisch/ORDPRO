@@ -181,33 +181,6 @@ function Show-Menu-Main
     Write-Host "/ 12: Clean up .\{OUTPUT_DIR}\UICS directory.                                                      /" 
     Write-Host "/ 13: Get permissions of .\{OUTPUT_DIR}\UICS directory.                                            /" 
     Write-Host "/ 14: Archive original '*m.prt', '*c.prt', '*r.reg', and '*r.prt' files.                           /" 
-    Write-Host "/  S: Set input/output directories.                                                                /"
-    Write-Host "/  H: Help                                                                                         /" 
-    Write-Host "/  Q: Exit                                                                                         /" 
-    Write-Host "/                                                                                                  /" 
-    Write-Host "/                     " -NoNewline;Write-Host -NoNewline -ForegroundColor Yellow "$(Get-Date) - Running as $($env:COMPUTERNAME)\$($env:USERNAME)";Write-Host "                    /" 
-    Write-Host "////////////////////////////////////////////////////////////////////////////////////////////////////"
-    Write-Host "Input directory: [$($input_dir)]"
-    Write-Host "Output directory: [$($output_dir)]"
-    Write-Host ""
-}
-
-function Show-Menu-SetVariables
-{
-    $menu =   ' * * * Variable Menu * * * '
-    $system = '  Order Processing System  '
-    $title =  '     ORDPRO by SDNG-SA     '
-
-    cls
-    Write-Host ""
-    Write-Host "////////////////////////////////////////////////////////////////////////////////////////////////////"
-    Write-Host "/                                   " -NoNewline -ForegroundColor Gray;Write-Host -NoNewline -ForegroundColor Gray "$($menu)";Write-Host "                                    /" 
-    Write-Host "/                                   " -NoNewline;Write-Host -NoNewline -ForegroundColor Cyan "$($system)";Write-Host "                                    /"
-    Write-Host "/                                   " -NoNewline;Write-Host -NoNewline -ForegroundColor Green "$($title)";Write-Host "                                    /" 
-    Write-Host "////////////////////////////////////////////////////////////////////////////////////////////////////"
-    Write-Host "/                                                                                                  /" 
-    Write-Host "/  1: Set input directory.                                                                         /" 
-    Write-Host "/  2: Set output directory.                                                                        /"                                                                
     Write-Host "/  H: Help                                                                                         /" 
     Write-Host "/  Q: Exit                                                                                         /" 
     Write-Host "/                                                                                                  /" 
@@ -300,11 +273,15 @@ do
                 }
 
                 Present-Outcome -outcome GO
+
+                Pause
             }
             catch
             {
                     Write-Log -level [ERROR] -log_file $($log_file) -message "$_"
                     Present-Outcome -outcome NOGO
+
+                    Pause
             }
         }
 
@@ -315,7 +292,8 @@ do
 
 		    if($?) 
 		    {
-			    Write-Host "[^] Creating directories finished." -ForegroundColor Cyan 
+			    Write-Host "[^] Creating directories finished." -ForegroundColor Cyan
+                Pause
 		    }
         }
 
@@ -327,6 +305,7 @@ do
 		    if($?)
 		    {
 			    Write-Host "[^] Splitting '*m.prt' order file(s) finished." -ForegroundColor Cyan 
+                Pause
 		    }
         }
 
@@ -338,6 +317,7 @@ do
 		    if($?) 
 		    { 
 			    Write-Host "[^] Editing orders '*m.prt' files finished." -ForegroundColor Cyan 
+                Pause
 		    }
         }
 
@@ -348,6 +328,7 @@ do
 		    if($?) 
 		    { 
 			    Write-Host "[^] Combining .mof orders files finished." -ForegroundColor Cyan 
+                Pause
 		    } 	
         }
 
@@ -358,6 +339,7 @@ do
 		    if($?) 
 		    { 
 			    Write-Host "[^] Magic on .mof files finished." -ForegroundColor Cyan 
+                Pause
             }
         }
 
@@ -369,6 +351,7 @@ do
 		    if($?) 
 		    {
 			    Write-Host "[^] Splitting '*c.prt' certificate file(s) into individual certificate files finished." -ForegroundColor Cyan
+                Pause
 		    } 	
         }
 
@@ -380,7 +363,7 @@ do
 		    if($?)
 		    { 
 			    Write-Host "[^] Editing orders '*c.prt' files finished." -ForegroundColor Cyan 
-                #Stop-Transcript 
+                Pause
 		    } 
         }
 
@@ -391,6 +374,7 @@ do
 		    if($?) 
 		    { 
 			    Write-Host "[^] Magic on .cof files finished." -ForegroundColor Cyan 
+                Pause
 		    } 
         }
 
@@ -401,6 +385,7 @@ do
 		    if($?) 
 		    { 
 			    Write-Host "[^] Cleaning up .mof finished." -ForegroundColor Cyan 
+                Pause
 		    } 	
         }
 
@@ -411,6 +396,7 @@ do
 		    if($?) 
 		    { 
 			    Write-Host "[^] Cleaning up .cof finished." -ForegroundColor Cyan 
+                Pause
 		    } 	
         }
 
@@ -421,6 +407,7 @@ do
 		    if($?)
 		    { 
 			    Write-Host "[^] Cleaning up UICS folder finished." -ForegroundColor Cyan 
+                Pause
 		    } 	
         }
 
@@ -431,6 +418,7 @@ do
 		    if($?) 
 		    { 
 			    Write-Host "[^] Getting permissions of UICS folder finished." -ForegroundColor Cyan 
+                Pause
 		    } 
         }
 
@@ -442,28 +430,8 @@ do
 		    if($?) 
 		    { 
 			    Write-Host "[^] Backing up original orders file finished." -ForegroundColor Cyan 
+                Pause
 		    }
-        }
-
-        'S'
-        {
-            do
-            {
-                Show-Menu-SetVariables
-                $input_dir = Read-Host -Prompt "Enter input directory"
-                Set-Variable -Name input_dir -Value $input_dir -Scope Global -Option Constant -Description "Variable to hold input directory for processing."
-                Show-Menu-SetVariables
-            }
-            until($input_dir -ne $null)
-
-            do
-            {
-                Show-Menu-SetVariables
-                $output_dir = Read-Host -Prompt "Enter output directory"
-                Set-Variable -Name output_dir -Value $output_dir -Scope Global -Option Constant -Description "Variable to hold output directory for processing."
-                Show-Menu-SetVariables
-            }
-            until($output_dir -ne $null)
         }
     
         'Q'
@@ -472,7 +440,5 @@ do
             return
         }
     }
-
-    #Pause
 }
 until($selection -eq 'Q')
