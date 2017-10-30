@@ -650,6 +650,6 @@ if($($ParametersPassed) -gt '0')
 }
 else
 {
-    Write-Log -level [ERROR] -log_file $log_file -message " No parameters passed. Run 'Get-Help $($script_name) -Full' for detailed help information"
-    Write-Error " No parameters passed. Run 'Get-Help $($script_name) -Full' for detailed help information"
+    Write-Log -level [ERROR] -log_file $log_file -message " No parameters passed. Run '.\$($script_name) -h' for detailed help information."
+    Write-Error " No parameters passed. Run '.\$($script_name) -h' for detailed help information."
 }
