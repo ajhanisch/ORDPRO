@@ -19,6 +19,7 @@ try {
     . (".\__FUNCTIONS\Process-KeyboardCommands.ps1")
     . (".\__FUNCTIONS\Split-OrdersCertificate.ps1")
     . (".\__FUNCTIONS\Split-OrdersMain.ps1")
+    . (".\__FUNCTIONS\Undo-PreviousSessions.ps1")
     . (".\__FUNCTIONS\Validate-Variables.ps1")
     . (".\__FUNCTIONS\Work-Magic.ps1")
     . (".\__FUNCTIONS\Write-Log.ps1")
@@ -64,6 +65,7 @@ $mof_directory_original_splits_working = "$($mof_directory_working)\ORIGINAL_EDI
 $cof_directory_working = "$($tmp_directory_working)\COF"
 $cof_directory_original_splits_working = "$($cof_directory_working)\ORIGINAL_EDITS"
 $log_directory_working = "$($tmp_directory_working)\LOGS"
+$remove_directory_working = "$($tmp_directory_working)\REMOVE"
 
 <#
 ARRAYS
@@ -80,7 +82,8 @@ $directories = @(
 "$($mof_directory_original_splits_working)", 
 "$($cof_directory_working)", 
 "$($cof_directory_original_splits_working)", 
-"$($log_directory_working)"
+"$($log_directory_working)",
+"$($remove_directory_working)"
 )
 
 $known_bad_strings = @(
@@ -131,7 +134,7 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
-$version_info = "1.7"
+$version_info = "1.8"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $script_name = $($MyInvocation.MyCommand.Name)
 $exclude_directories = '$($mof_directory_original_splits_working)|$($cof_directory_original_splits_working)'
@@ -181,6 +184,7 @@ function Show-Menu-Main
     Write-Host "/ 12: Clean up .\{OUTPUT_DIR}\UICS directory.                                                      /" 
     Write-Host "/ 13: Get permissions of .\{OUTPUT_DIR}\UICS directory.                                            /" 
     Write-Host "/ 14: Archive original '*m.prt', '*c.prt', '*r.reg', and '*r.prt' files.                           /" 
+    Write-Host "/ 15: Remove unwanted order files.                                                                 /" 
     Write-Host "/  H: Help                                                                                         /" 
     Write-Host "/  Q: Exit                                                                                         /" 
     Write-Host "/                                                                                                  /" 
@@ -432,6 +436,22 @@ do
 			    Write-Host "[^] Backing up original orders file finished." -ForegroundColor Cyan 
                 Pause
 		    }
+        }
+
+        15
+        {
+		    Write-Host "[^] Removing unwanted files. Output directory is $($remove_directory_working)." -ForegroundColor Cyan
+		    Undo-PreviousSessions -input_remove "$($remove_directory_working)" -results_remove "$($remove_directory_working)" -Verbose
+		    if($?) 
+		    { 
+			    Write-Host "[^] Removing unwanted files finished." -ForegroundColor Cyan 
+                Pause
+		    }
+            else
+            {
+                $_
+                Pause
+            }
         }
     
         'Q'
