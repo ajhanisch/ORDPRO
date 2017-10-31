@@ -1,6 +1,11 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 1.8
+DATE: 10/31/2017
+CHANGES
+- added function to remove order files created from any number of previously ran sessions
+------------------------------------
 VERSION: 1.7
 DATE: 10/29/2017
 CHANGES
