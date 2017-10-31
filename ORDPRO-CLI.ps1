@@ -114,6 +114,7 @@ param(
     [alias('xu')][switch]$clean_uics,
     [alias('p')][switch]$permissions,
     [alias('sp')][switch]$set_permissions,
+    [alias('u')][switch]$undo_previous,
     [alias('a')][switch]$all
 )
 
@@ -139,6 +140,7 @@ try {
     . (".\__FUNCTIONS\Process-KeyboardCommands.ps1")
     . (".\__FUNCTIONS\Split-OrdersCertificate.ps1")
     . (".\__FUNCTIONS\Split-OrdersMain.ps1")
+    . (".\__FUNCTIONS\Undo-PreviousSessions.ps1")
     . (".\__FUNCTIONS\Validate-Variables.ps1")
     . (".\__FUNCTIONS\Work-Magic.ps1")
     . (".\__FUNCTIONS\Write-Log.ps1")
@@ -169,6 +171,7 @@ $mof_directory_original_splits_working = "$($mof_directory_working)\ORIGINAL_EDI
 $cof_directory_working = "$($tmp_directory_working)\COF"
 $cof_directory_original_splits_working = "$($cof_directory_working)\ORIGINAL_EDITS"
 $log_directory_working = "$($tmp_directory_working)\LOGS"
+$remove_directory_working = "$($tmp_directory_working)\REMOVE"
 
 <#
 ARRAYS
@@ -185,7 +188,8 @@ $directories = @(
 "$($mof_directory_original_splits_working)", 
 "$($cof_directory_working)", 
 "$($cof_directory_original_splits_working)", 
-"$($log_directory_working)"
+"$($log_directory_working)",
+"$($remove_directory_working)"
 )
 
 $known_bad_strings = @(
@@ -526,6 +530,16 @@ if($($ParametersPassed) -gt '0')
 		        if($?) 
 		        { 
 			        Write-Host "[^] Assigning permissions of UICS folder finished." -ForegroundColor Cyan 
+		        } 	
+            }
+
+            "undo_previous"
+            {
+		        Write-Host "[^] Removing unwanted files. Output directory is $($remove_directory_working)." -ForegroundColor Cyan
+		        Undo-PreviousSessions -input_remove "$($remove_directory_working)" -results_remove "$($remove_directory_working)" -Verbose
+		        if($?) 
+		        { 
+			        Write-Host "[^] Removing unwanted files finished." -ForegroundColor Cyan 
 		        } 	
             }
 
