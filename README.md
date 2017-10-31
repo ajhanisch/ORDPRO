@@ -8,7 +8,7 @@ Author: Ashton J. Hanisch < <ajhanisch@gmail.com> >
 # **SYNOPSIS**  
 Automates splitting, editing, combining, processing, and managing of orders. Includes CLI and TUI verions.  
 * CLI (Command Line Interface)  
-![ ] (images/CLI/cli_typical_useage.PNG)  
+![ ] (images/CLI/cli_typical_usage.PNG)  
   
 * TUI (Text User Interface)  
 ![ ] (images/TUI/tui_main_menu.PNG)
