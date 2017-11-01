@@ -1,4 +1,6 @@
-# **ORDPRO.ps1**  
+# **ORDPRO.ps1**   
+![ ] (images/logo_1.1.PNG)  
+  
 Orders Processor.  
   
 Orders management automation.  
