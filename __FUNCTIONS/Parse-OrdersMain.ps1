@@ -60,7 +60,7 @@
                     $error_info = "File $($file) with no format. Error code $($error_code)."
 
                     Write-Log -log_file $log_file -message "[+] $($error_info)"
-                    Write-Verbose "[+] $($error_info)"
+                    Write-Warning "[+] $($error_info)"
 
                     $hash = @{
                         FILE = $($file)
@@ -1245,7 +1245,7 @@
                     $error_info = "File $($file) with format $($format). This is not currently an unknown and/or handled format. Notify ORDPRO support of this error ASAP. Error code $($error_code)."
 
                     Write-Log -level [WARN] -log_file $log_file -message "[+] $($error_info)"
-                    Write-Verbose "[+] $($error_info)"
+                    Write-Warning "[+] $($error_info)"
                     
                     $hash = @{
                         FILE = $($file)
