@@ -1,19 +1,19 @@
 # Overview
 
-**Summary of problem:**
+**Summary of problem:**  
   
   
-**Steps to Reproduce:**
+**Steps to Reproduce:**  
   
   
-**Expected Results:**
+**Expected Results:**  
   
   
-**Actual Results:**
+**Actual Results:**  
   
   
 # More Info
   
-**ORDPRO Version: **
+**ORDPRO Version:**  
   
-**Server/machine OS:**
+**Server/machine OS:**  
