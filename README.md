@@ -14,16 +14,6 @@ Script designed to assist in management and processing of orders given in the fo
     
 # **FEATURES**  
 Automated parsing, organization, and backup of daily orders published. Detailed verbosity of script processing during runtime. Administrative commands during run time. Detailed logging of all parameters and output. Detailed progress bar information when '-Verbose' parameter is not passed for a cleaner, smoother feel during processing. Detailed reports of failure and successes of each parameter for easier troubleshooting. Single parameter to run all required parameters. All required processes have their own parameter so user can run steps manually if needed to make troubleshooting easier.
-      
-# **CONSIDERATIONS**  
-ORDPRO comes built in with runtime commands to make life of the script user easier. Runtime commands currently built in are as follows.
-
-	+----------------------+--------------+
-	| Keyboard Combination |    Result    |
-	+----------------------+--------------+
-	| CTRL + P             | Pause script |
-	| CTRL + Q             | Quit script  |
-	+----------------------+--------------+  
     
 # **DOCUMENTATION**  
 Check out the README and Wiki page for detailed information.
