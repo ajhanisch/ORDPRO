@@ -41,6 +41,8 @@
    Get permissions of the output UICS directory recursively. Alias: 'p'. This parameter tells ORDPRO to recursively get the permissions of each file and directory in the UICS directory. Output includes a .csv file, .html report, and a .txt file.
 .PARAMETER set_permissions
    Set permissions of the output UICS directory recursively to 'READ' for each UIC parsed. Alias: 'sp'.
+.PARAMETER undo_previous
+   Remove any number of order files given as input from previously ran sessions of ORDPRO. Alias: 'u'. Place the .csv files of previously ran sessions of ORDPRO (the {time_ran}_orders_created_{main,cert}.csv) files into the '.\ORDPRO\TMP\REMOVE' directory and run this parameter. It will look for all of the files in the .csv's given and remove them from the 'UICS' and 'ORD_MANAGERS\ORDERS_BY_SOLDIER' directories.
 .PARAMETER all
    All parameters. Alias: 'a'. This parameter tells ORDPRO to run all required parameters needed to be successful. Most common parameter to those new to using ORDPRO.
 .INPUTS
