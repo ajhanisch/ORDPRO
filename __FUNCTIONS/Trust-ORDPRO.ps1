@@ -1,5 +1,6 @@
 ﻿$ordpro_scripts = @(
-"..\ORDPRO.ps1",
+"..\ORDPRO-CLI.ps1",
+"..\ORDPRO-TUI.ps1",
 ".\Archive-Directory.ps1",
 ".\Clean-OrdersCertificate.ps1",
 ".\Clean-OrdersMain.ps1",
@@ -17,6 +18,7 @@
 ".\Process-KeyboardCommands.ps1",
 ".\Split-OrdersCertificate.ps1",
 ".\Split-OrdersMain.ps1",
+".\Undo-PreviousSessions.ps1",
 ".\Validate-Variables.ps1",
 ".\Work-Magic.ps1",
 ".\Write-Log.ps1"
