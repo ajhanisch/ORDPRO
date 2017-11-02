@@ -84,6 +84,8 @@
                     }
                 }
 
+                $format = '102-10A'
+
                 Write-Log -log_file $log_file -message "Looking for 'last, first, mi' in $($file)."
                 Write-Verbose "Looking for 'last, first, mi' in $($file)."
                 $name = (Select-String -Path "$($file)" -Pattern $($regex_name_parse_orders_cert)  | Select -First 1)
@@ -100,12 +102,6 @@
                 {
                     $middle_initial = $name[7]
                 }
-
-                # Remove non lower/upper case letters from name variables.
-                $last_name = $last_name -replace $regex_keep_names_clean,''
-                $first_name = $first_name -replace $regex_keep_names_clean,''
-                $middle_initial = $middle_initial -replace $regex_keep_names_clean,''
-                $name = "$($last_name)_$($first_name)_$($middle_initial)"
                 Write-Log -log_file $log_file -message "Found 'last, first, mi' in $($file)."
                 Write-Verbose "Found 'last, first, mi' in $($file)."
 
@@ -131,14 +127,12 @@
                 $period_from_year = $period_from[0]
                 $period_from_month = $period_from[1]
                 $period_from_day = $period_from[2]
-                $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
 
                 $period_to = $period[7]
                 $period_to = @($period_to -split '(.{2})' | ? { $_ })
                 $period_to_year = $period_to[0]
                 $period_to_month = $period_to[1]
                 $period_to_day = $period_to[2]
-                $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
                 Write-Log -log_file $log_file -message "Found 'period from year, month, day' in $($file)."
                 Write-Verbose "Found 'period from year, month, day' in $($file)."
         
@@ -148,7 +142,30 @@
                 Write-Log -log_file $log_file -message "Found 'ssn' in hash table for $($file)."
                 Write-Verbose "Found 'ssn' in hash table for $($file)."
                 
-                Write-Debug "File: $($file). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). UIC: $($uic). Order Number: $($order_number). Period From Year: $($period_from_year). Period From Month: $($period_from_month). Period From Day: $($period_from_day). Period To Year: $($period_to_year). Period To Month: $($period_to_month). Period To Day: $($period_to_day)."
+                Write-Debug "Variables before cleaning. `nFile: $($file). Format: $($format).Order Number: $($order_number).Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). UIC: $($uic).  Period From Year: $($period_from_year). Period From Month: $($period_from_month). Period From Day: $($period_from_day). Period To Year: $($period_to_year). Period To Month: $($period_to_month). Period To Day: $($period_to_day)."
+
+                # CLEAN ALL VARIABLES BEFORE VALIDATING.
+                $format = $format -replace "[^\d{3}]",''
+                #$order_number = $order_number -replace "[^\d{3}-\d{3}]",''
+                $last_name = $last_name -replace "[^a-zA-Z-']",''
+                $first_name = $first_name -replace "[^a-zA-Z-']",''
+                $middle_initial = $middle_initial -replace "[^a-zA-Z-']",''
+                #$ssn = $ssn -replace "[^\d{3}-\d{2}-\d{4}]",''
+                $uic = $uic -replace "[^\w{5}]",''
+                $published_year = $published_year -replace "[^\d{2,4}]",''
+                $period_from_year = $period_from_year -replace "[^\d{2,4}]",''
+                $period_from_month = $period_from_month -replace "[^\d{2}]",''
+                $period_from_day = $period_from_day -replace "[^\d{2}]",''
+                $period_to_year = $period_to_year -replace "[^\d{2,4}]",''
+                $period_to_month = $period_to_month -replace "[^\d{2}]",''
+                $period_to_day = $period_to_day -replace "[^\d{2}]",''
+
+                # SET FINAL VARIALBES BEFORE VALIDATING
+                $name = "$($last_name)_$($first_name)_$($middle_initial)"
+                $period_from = "$($period_from_year)$($period_from_month)$($period_from_day)"
+                $period_to = "$($period_to_year)$($period_to_month)$($period_to_day)"
+
+                Write-Debug "Variables after cleaning. `nFile: $($file). Format: $($format). Order Number: $($order_number). Last Name: $($last_name). First Name: $($first_name). Middle Initial: $($middle_initial). SSN: $($ssn). UIC: $($uic).  Period From Year: $($period_from_year). Period From Month: $($period_from_month). Period From Day: $($period_from_day). Period To Year: $($period_to_year). Period To Month: $($period_to_month). Period To Day: $($period_to_day)."
                 
                 $validation_results = Validate-Variables -last_name $($last_name) -first_name $($first_name) -middle_initial $($middle_initial) -ssn $($ssn) -uic $($uic) -order_number $($order_number) -period_from_year $($period_from_year) -period_from_month $($period_from_month) -period_from_day $($period_from_day) -period_to_year $($period_to_year) -period_to_month $($period_to_month) -period_to_day $($period_to_day)
 
