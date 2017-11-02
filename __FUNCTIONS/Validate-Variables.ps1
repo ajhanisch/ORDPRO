@@ -54,26 +54,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -89,26 +89,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
 
@@ -125,26 +125,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -160,26 +160,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -195,26 +195,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -230,26 +230,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -265,26 +265,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -300,9 +300,9 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
@@ -310,16 +310,16 @@
                     { 
                         Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation. User most likely does not exist output directory yet. 'Make sure to run $($script_name) -sm -em -mm -o <output>' before dealing with certificate order files."
 	                    Write-Error " Value '$($value)' from '$($key)' failed validation. User most likely does not exist output directory yet. 'Make sure to run $($script_name) -sm -em -mm -o <output>' before dealing with certificate order files."
-                        throw " Value '$($value)' from '$($key)' failed validation. User most likely does not exist output directory yet. 'Make sure to run $($script_name) -sm -em -mm -o <output>' before dealing with certificate order files."
+                        throw "Value $($value) from $($key) failed validation. User most likely does not exist output directory yet. 'Make sure to run $($script_name) -sm -em -mm -o <output>' before dealing with certificate order files."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -335,26 +335,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -370,26 +370,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -405,26 +405,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -440,26 +440,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -475,26 +475,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -510,26 +510,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -545,26 +545,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -580,26 +580,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -615,26 +615,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -650,26 +650,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -685,26 +685,26 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
@@ -720,34 +720,34 @@
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     } 
                     else 
                     { 
-                        Write-Log -level [ERROR] -log_file $log_file -message " Value '$($value)' from '$($key)' failed validation."
-	                    Write-Error " Value '$($value)' from '$($key)' failed validation."
-                        throw " Value '$($value)' from '$($key)' failed validation."
+                        Write-Log -level [ERROR] -log_file $log_file -message "Value '$($value)' from '$($key)' failed validation."
+	                    Write-Error "Value '$($value)' from '$($key)' failed validation."
+                        throw "Value $($value) from $($key) failed validation."
 	
                         $status = "fail"
 
                         if(!($validation_results -contains "$($key)"))
                         {
                             $validation_result = New-Object -TypeName PSObject
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $key
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $status
-                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $value
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Variable -Value $($key)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Status -Value $($status)
+                            $validation_result | Add-Member -MemberType NoteProperty -Name Value -Value $($value)
                             $validation_results += $validation_result
                         }
                     }
                 }
                 else
                 {
-                    Write-Log -level [ERROR] -log_file $log_file -message " Incorrect or unknown parameter specified. Try again with proper input."
-                    Write-Error " Incorrect or unknown parameter specified. Try again with proper input."
+                    Write-Log -level [ERROR] -log_file $log_file -message "Incorrect or unknown parameter specified. Try again with proper input."
+                    Write-Error "Incorrect or unknown parameter specified. Try again with proper input."
                 }
 
                 Write-Verbose "Finished validating ( $($parameters_processed) / $($parameters_passed) ) parameters."
@@ -757,7 +757,7 @@
     }
     else
     {
-        Write-Log -level [ERROR] -log_file $log_file -message " No parameters passed. Try again with proper input."
-        Write-Error " No parameters passed. Try again with proper input."
+        Write-Log -level [ERROR] -log_file $log_file -message "No parameters passed. Try again with proper input."
+        Write-Error "No parameters passed. Try again with proper input."
     }
 }
