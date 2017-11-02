@@ -100,17 +100,24 @@
                 {
                     $middle_initial = $name[7]
                 }
+
+                # Remove non lower/upper case letters from name variables.
+                $last_name = $last_name -replace $regex_keep_names_clean,''
+                $first_name = $first_name -replace $regex_keep_names_clean,''
+                $middle_initial = $middle_initial -replace $regex_keep_names_clean,''
                 $name = "$($last_name)_$($first_name)_$($middle_initial)"
                 Write-Log -log_file $log_file -message "Found 'last, first, mi' in $($file)."
                 Write-Verbose "Found 'last, first, mi' in $($file)."
 
                 Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                 Write-Verbose "Looking for 'order number' in $($file)."
-                $order_number = (Select-String -Path "$($file)" -Pattern $($regex_order_number_parse_orders_cert) | Select -First 1)
-                $order_number = $order_number.ToString()
-                $order_number = $order_number.Split(' ')
-                $order_number = $($order_number[2])
+                $order_number_published_year = (Select-String -Path "$($file)" -Pattern $($regex_order_number_parse_orders_cert) | Select -First 1)
+                $order_number_published_year = $order_number_published_year.ToString()
+                $order_number_published_year = $order_number_published_year.Split(' ')
+                $order_number = $order_number_published_year[2]
                 $order_number = $order_number.Insert(3,"-")
+                $published_year = $order_number_published_year[5]
+                $published_year = $published_year.substring(0,2)
                 Write-Log -log_file $log_file -message "Found 'order number' in $($file)."
                 Write-Verbose "Found 'order number' in $($file)."
 
