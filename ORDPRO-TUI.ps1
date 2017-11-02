@@ -134,7 +134,7 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
-$version_info = "1.8"
+$version_info = "1.9"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $script_name = $($MyInvocation.MyCommand.Name)
 $exclude_directories = '$($mof_directory_original_splits_working)|$($cof_directory_original_splits_working)'
