@@ -197,7 +197,8 @@ $directories = @(
 $known_bad_strings = @(
 "                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
 "                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
-"ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}"
+"ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",
+" " # Line break that gets left behind after removing other lines in array. Leave this as is.
 )
 
 <#
@@ -242,7 +243,7 @@ $regex_end_cert = "Automated NGB Form 102-10A  dtd  12 AUG 96"
 <#
 VARIABLES NEEDED
 #>
-$version_info = "1.8"
+$version_info = "1.9"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $script_name = $($MyInvocation.MyCommand.Name)
 $exclude_directories = '$($mof_directory_original_splits_working)|$($cof_directory_original_splits_working)'
