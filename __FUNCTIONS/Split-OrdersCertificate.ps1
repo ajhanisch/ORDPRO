@@ -20,34 +20,32 @@
         $orders_split_csv = "$($log_directory_working)\$($run_date)\$($run_date)_orders_split_cert.csv"
         $order_not_split_csv = "$($log_directory_working)\$($run_date)\$($run_date)_order_not_split_cert.csv"
 
-        $out_directory = $($cof_directory_working)
-
         $start_time = Get-Date
         Write-Log -log_file $log_file -message "Start time: $($start_time)."
         Write-Verbose "Start time: $($start_time)."
 
-        if(!(Test-Path $($out_directory)))
+        if(!(Test-Path $($cof_directory_working)))
         {
-            Write-Log -log_file $log_file -message "$($out_directory) not created. Creating now."
-            Write-Verbose "$($out_directory) not created. Creating now."
+            Write-Log -log_file $log_file -message "$($cof_directory_working) not created. Creating now."
+            Write-Verbose "$($cof_directory_working) not created. Creating now."
 
-            New-Item -ItemType Directory -Path $($out_directory) > $null
+            New-Item -ItemType Directory -Path $($cof_directory_working) > $null
 
             if($?)
             {
-                Write-Log -log_file $log_file -message "$($out_directory) created successfully."
-                Write-Verbose "$($out_directory) created successfully."
+                Write-Log -log_file $log_file -message "$($cof_directory_working) created successfully."
+                Write-Verbose "$($cof_directory_working) created successfully."
             }
             else
             {
-                Write-Log -level [ERROR] -log_file $log_file -message " $($out_directory) creation failed."
-                Write-Error " $($out_directory) creation failed."
+                Write-Log -level [ERROR] -log_file $log_file -message " $($cof_directory_working) creation failed."
+                Write-Error " $($cof_directory_working) creation failed."
             }
         }
         else
         {
-            Write-Log -log_file $log_file -message "$($out_directory) already created."
-            Write-Verbose "$($out_directory) already created."
+            Write-Log -log_file $log_file -message "$($cof_directory_working) already created."
+            Write-Verbose "$($cof_directory_working) already created."
         }
 
         foreach($file in $files_orders_c_prt)
@@ -56,8 +54,8 @@
 	        $content = (Get-Content "$($input_dir)\$($file)" | Out-String)
 	        $orders = [regex]::Match($content,'(?<=FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=Automated NGB Form 102-10A  dtd  12 AUG 96)',"singleline").Value -split "$($regex_end_cert)"
             
-            Write-Log -log_file $log_file -message "Parsing $($input_dir)\$($file) now."
-	        Write-Verbose "Parsing $($input_dir)\$($file) now."
+            Write-Log -log_file $log_file -message "Parsing $($input_dir)\$($file) to $($cof_directory_working) now."
+	        Write-Verbose "Parsing $($input_dir)\$($file) to $($cof_directory_working) now."
 
 	        foreach($order in $orders)
 	        {
@@ -69,10 +67,10 @@
 
 			        $out_file = "$($run_date)_$($count_orders).cof"
 
-                    Write-Log -log_file $log_file -message "Processing $($out_file) now."
-			        Write-Verbose "Processing $($out_file) now."
+                    Write-Log -log_file $log_file -message "Processing $($out_file) to $($cof_directory_working) now."
+			        Write-Verbose "Processing $($out_file) to $($cof_directory_working) now."
 
-			        New-Item -ItemType File -Path $($out_directory) -Name $($out_file) -Value $($order) > $null
+			        New-Item -ItemType File -Name $($out_file) -Value $($order) -Path $($cof_directory_working) | Out-Null
 
 			        if($?)
 			        {
@@ -91,8 +89,8 @@
 			        }
 			        else
 			        {
-                        Write-Log -level [ERROR] -log_file $log_file -message " $($out_file) file creation failed."
-				        Write-Error " $($out_file) file creation failed."
+                        Write-Log -level [ERROR] -log_file $log_file -message " $($out_file) to $($cof_directory_working) file creation failed."
+				        Write-Error " $($out_file) to $($cof_directory_working) file creation failed."
 
 				        $hash = @{
 					        'ORIGINAL_FILE' = "$($input_dir)\$($file)"
