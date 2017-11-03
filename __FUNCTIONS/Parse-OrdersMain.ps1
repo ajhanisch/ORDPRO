@@ -59,8 +59,8 @@
                     $error_code = "0xNF"
                     $error_info = "File $($file) with no format. Error code $($error_code)."
 
-                    Write-Log -log_file $log_file -message "[+] $($error_info)"
-                    Write-Warning "[+] $($error_info)"
+                    Write-Log -log_file $log_file -message "$($error_info)"
+                    Write-Warning "$($error_info)"
 
                     $hash = @{
                         FILE = $($file)
@@ -79,7 +79,7 @@
                     $error_code = "0xFR"
                     $error_info = "File $($file) containing 'Following request is APPROVED || DISAPPROVED'. This is a known issue and guidance has been to disregard these files. Error code $($error_code)."
 
-                    Write-Log -level [WARN] -log_file $log_file -message "[+] $($error_info)"
+                    Write-Log -level [WARN] -log_file $log_file -message "$($error_info)"
                     Write-Warning " $($error_info)"
 
                      $hash = @{
@@ -95,8 +95,8 @@
                 }
                 elseif($($format) -eq '400' -and !($($following_request_exists)))
                 {
-                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
-                    Write-Verbose "[+] Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
+                    Write-Verbose "Found format $($format) in $($file)!"
 
                     Write-Verbose "Looking for order number in $($file)."
                     $order_number = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
@@ -308,8 +308,8 @@
                 }
                 elseif($($format) -eq '165' -and !($($following_request_exists)))
                 {
-                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
-                    Write-Verbose "[+] Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
+                    Write-Verbose "Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for order number in $($file)."
                     Write-Verbose "Looking for order number in $($file)."
@@ -521,8 +521,8 @@
                 }
                 elseif($($format) -eq '172' -and !($($following_request_exists)))
                 {
-                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
-                    Write-Verbose "[+] Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
+                    Write-Verbose "Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
@@ -750,8 +750,8 @@
                 }
                 elseif($($format) -like '700' -and !($($following_request_exists))) # Amendment order for "700" and "700 *" formats
                 {
-                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
-                    Write-Verbose "[+] Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
+                    Write-Verbose "Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
@@ -936,8 +936,8 @@
                 }
                 elseif($($format) -eq '705' -and !($($following_request_exists))) # Revoke.
                 {
-                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
-                    Write-Verbose "[+] Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
+                    Write-Verbose "Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
@@ -1122,8 +1122,8 @@
                 }
                 elseif($($format) -eq '290' -and !($($following_request_exists))) # Pay order only.
                 {
-                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
-                    Write-Verbose "[+] Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
+                    Write-Verbose "Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
@@ -1353,8 +1353,8 @@
                 }
                 elseif($($format) -eq '296' -or $($format) -eq '282' -or $($format) -eq '294' -or $($format) -eq '284' -and !($($following_request_exists))) # 296 AT Orders // 282 Unknown // 294 Full Time National Guard Duty - Operational Support (FTNGD-OS) // 284 Unknown.
                 {
-                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
-                    Write-Verbose "[+] Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
+                    Write-Verbose "Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
@@ -1583,8 +1583,8 @@
                     $error_code = "0x00"
                     $error_info = "File $($file) with format $($format). This is not currently an unknown and/or handled format. Notify ORDPRO support of this error ASAP. Error code $($error_code)."
 
-                    Write-Log -level [WARN] -log_file $log_file -message "[+] $($error_info)"
-                    Write-Warning "[+] $($error_info)"
+                    Write-Log -level [WARN] -log_file $log_file -message "$($error_info)"
+                    Write-Warning "$($error_info)"
                     
                     $hash = @{
                         FILE = $($file)
