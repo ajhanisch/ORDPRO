@@ -31,6 +31,12 @@
             {
                 Process-KeyboardCommands -sw $($sw)
 
+                # Check for CIVI UNIT VOLUNTEER and CIVI ESGR VOLUNTEER
+                $civi_1 = "CIVI UNIT VOLUNTEER"
+                $civi_1_exists = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($civi_1) -AllMatches | Select -First 1)
+                $civi_2 = "CIVI ESGR VOLUNTEER"
+                $civi_2_exists = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($civi_2) -AllMatches | Select -First 1)
+
                 # Check for different 700 forms.
                 $following_request = "Following Request is" # Disapproved || Approved
                 $following_request_exists = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern $($following_request) -AllMatches | Select -First 1)
@@ -59,8 +65,8 @@
                     $error_code = "0xNF"
                     $error_info = "File $($file) with no format. Error code $($error_code)."
 
-                    Write-Log -log_file $log_file -message "$($error_info)"
-                    Write-Warning "$($error_info)"
+                    Write-Log -log_file $log_file -message "[+] $($error_info)"
+                    Write-Warning "[+] $($error_info)"
 
                     $hash = @{
                         FILE = $($file)
@@ -74,12 +80,32 @@
                     continue
                 }
 
+                if($($civi_1_exists) -or $($civi_2_exists))
+                {
+                    $error_code = "0xCV"
+                    $error_info = "File $($file) containing 'CIVI UNIT VOLUNTEER' or 'CIVI ESGR VOLUNTEER'. This is a known issue and a fix for these files is coming in future versions. Error code $($error_code)."
+
+                    Write-Log -level [WARN] -log_file $log_file -message "[+] $($error_info)"
+                    Write-Warning " $($error_info)"
+
+                     $hash = @{
+                        FILE = $($file)
+                        ERROR_CODE = $($error_code)
+                        ERROR_INFO = $($error_info)
+                    }
+
+	                $order_info = New-Object -TypeName PSObject -Property $hash
+                    $orders_not_created_main += $order_info
+                               
+                    continue
+                }
+
                 if($($following_request_exists)) # Any format containing Following Request is APPROVED||DISAPPROVED and no Order Number.
                 {
                     $error_code = "0xFR"
                     $error_info = "File $($file) containing 'Following request is APPROVED || DISAPPROVED'. This is a known issue and guidance has been to disregard these files. Error code $($error_code)."
 
-                    Write-Log -level [WARN] -log_file $log_file -message "$($error_info)"
+                    Write-Log -level [WARN] -log_file $log_file -message "[+] $($error_info)"
                     Write-Warning " $($error_info)"
 
                      $hash = @{
@@ -95,8 +121,8 @@
                 }
                 elseif($($format) -eq '400' -and !($($following_request_exists)))
                 {
-                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
-                    Write-Verbose "Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
                     Write-Verbose "Looking for order number in $($file)."
                     $order_number = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "ORDERS " -AllMatches | Select -First 1)
@@ -308,8 +334,8 @@
                 }
                 elseif($($format) -eq '165' -and !($($following_request_exists)))
                 {
-                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
-                    Write-Verbose "Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for order number in $($file)."
                     Write-Verbose "Looking for order number in $($file)."
@@ -330,11 +356,11 @@
                     Write-Verbose "Found 'published year' in $($file)."
                     $order_number = $order_number[1]
 
-                    # Orders '12 and newer
-                    # $anchor = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "You are ordered to" -AllMatches -Context 5,0 | Select -First 1 | ConvertFrom-String | Select P3, P4, P5, P6 ) # MI (3 = last, 4 = first, 5 = MI, 6 = SSN) // NO MI ( 3 = last, 4 = first, 5 = ssn, 6 = rank )
+                    # Orders '15 - '12
+                    $anchor = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "You are ordered to" -AllMatches -Context 5,0 | Select -First 1 | ConvertFrom-String | Select P3, P4, P5, P6 ) # MI (3 = last, 4 = first, 5 = MI, 6 = SSN) // NO MI ( 3 = last, 4 = first, 5 = ssn, 6 = rank )
 
-                    # Orders '11 and older
-                    $anchor = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "You are ordered to" -AllMatches -Context 4,0 | Select -First 1 | ConvertFrom-String | Select P3, P4, P5, P6 ) # MI (3 = last, 4 = first, 5 = MI, 6 = SSN) // NO MI ( 3 = last, 4 = first, 5 = ssn, 6 = rank )
+                    # Orders '16 and newer, '11, '10
+                    #$anchor = (Select-String -Path "$($mof_directory_original_splits_working)\$($file)" -Pattern "You are ordered to" -AllMatches -Context 4,0 | Select -First 1 | ConvertFrom-String | Select P3, P4, P5, P6 ) # MI (3 = last, 4 = first, 5 = MI, 6 = SSN) // NO MI ( 3 = last, 4 = first, 5 = ssn, 6 = rank )
 
                     Write-Log -log_file $log_file -message "Looking for 'last, first, mi, ssn' in $($file)."
                     Write-Verbose "Looking for 'last, first, mi, ssn' in $($file)."
@@ -521,8 +547,8 @@
                 }
                 elseif($($format) -eq '172' -and !($($following_request_exists)))
                 {
-                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
-                    Write-Verbose "Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
@@ -750,8 +776,8 @@
                 }
                 elseif($($format) -like '700' -and !($($following_request_exists))) # Amendment order for "700" and "700 *" formats
                 {
-                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
-                    Write-Verbose "Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
@@ -936,8 +962,8 @@
                 }
                 elseif($($format) -eq '705' -and !($($following_request_exists))) # Revoke.
                 {
-                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
-                    Write-Verbose "Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
@@ -1122,8 +1148,8 @@
                 }
                 elseif($($format) -eq '290' -and !($($following_request_exists))) # Pay order only.
                 {
-                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
-                    Write-Verbose "Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
@@ -1353,8 +1379,8 @@
                 }
                 elseif($($format) -eq '296' -or $($format) -eq '282' -or $($format) -eq '294' -or $($format) -eq '284' -and !($($following_request_exists))) # 296 AT Orders // 282 Unknown // 294 Full Time National Guard Duty - Operational Support (FTNGD-OS) // 284 Unknown.
                 {
-                    Write-Log -log_file $log_file -message "Found format $($format) in $($file)!"
-                    Write-Verbose "Found format $($format) in $($file)!"
+                    Write-Log -log_file $log_file -message "[+] Found format $($format) in $($file)!"
+                    Write-Verbose "[+] Found format $($format) in $($file)!"
 
                     Write-Log -log_file $log_file -message "Looking for 'order number' in $($file)."
                     Write-Verbose "Looking for 'order number' in $($file)."
@@ -1583,8 +1609,8 @@
                     $error_code = "0x00"
                     $error_info = "File $($file) with format $($format). This is not currently an unknown and/or handled format. Notify ORDPRO support of this error ASAP. Error code $($error_code)."
 
-                    Write-Log -level [WARN] -log_file $log_file -message "$($error_info)"
-                    Write-Warning "$($error_info)"
+                    Write-Log -level [WARN] -log_file $log_file -message "[+] $($error_info)"
+                    Write-Warning "[+] $($error_info)"
                     
                     $hash = @{
                         FILE = $($file)
