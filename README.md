@@ -40,4 +40,5 @@ Check the Wiki for detailed information on all CLI parameters and switches.
 - [ ] Implement a configuration file for settings
 - [x] Implement an undo function to remove results of previously ran sessions
 - [ ] Look at possibly reworking the functionality to a C# application with a true UI
+- [ ] Significantly simply orders splitting, editing, and parsing to gather variable information (major update)
   
