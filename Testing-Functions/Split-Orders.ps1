@@ -1,18 +1,17 @@
 ﻿<#
 VARIABLES
 #>
-$files_path = "C:\temp\SAMPLES\2017"
+$files_path = "C:\temp\SAMPLES\TEST"
 $orders_array = @()
 
 <#
 PARSE R.REG FILE(S) TO POPULATE ORDERS INDEX OF ALL NEEDED VARIABLES.
 #>
-<#
+Write-Host "Populating Orders Index now."
+
 $files = (Get-ChildItem -Path $($files_path) -Filter "*r.reg" -File)
 foreach($file in $files)
 {
-    Write-Host "Parsing reg file $($file)."
-
     $reg_file_content = (Get-Content -Path "$($files_path)\$($file)")
 
     foreach($line in $reg_file_content)
@@ -46,10 +45,14 @@ foreach($file in $files)
 	    $orders_array += $order_info
     }
 }
-#>
+
+Write-Host "Finished populating Orders Index now."
+
 <#
 SPLIT ORDERS
 #>
+Write-Host "Getting orders and adding them to Orders Index now."
+
 $files = (Get-ChildItem -Path $($files_path) -Filter "*m.prt" -File)
 foreach($file in $files)
 {
@@ -63,8 +66,8 @@ foreach($file in $files)
         $regex_format = [regex]"Format: \d{3}"
         $format = $regex_format.Match($o).Value.Split(' ')[1]
 
-        $regex_order_number = [regex]"ORDERS\s{1,}\d{3}-\d{3}"
-        $order_number = $regex_order_number.Match($o).Value.Split(' ')[1]
+        $regex_order_number = [regex]"ORDERS\s{1,2}\d{3}-\d{3}"
+        $order_number = $regex_order_number.Match($o).Value.Split(' ')[-1]
 
         $regex_ssn = [regex]"\d{3}-\d{2}-\d{4}"
         $ssn = $regex_ssn.Match($o).Value
@@ -73,6 +76,8 @@ foreach($file in $files)
         Write-Host "format: $($format) // order_number: $($order_number) // ssn: $($ssn)"
         Read-Host -Prompt "Enter to continue"
 
-        cls
+        #cls
     }
 }
+
+Write-Host "Finished getting orders and adding them to Orders Index."
