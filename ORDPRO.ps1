@@ -19,6 +19,7 @@ param(
     [alias('i')][string]$input_dir,
     [alias('o')][string]$output_dir,
     [alias('h')][switch]$help,
+    [alias('q')][switch]$quiet,
     [alias('v')][switch]$version
 )
 
@@ -110,14 +111,17 @@ $params_results = $params  | Out-String
 
 if($ParametersPassed -eq $TotalParameters) 
 {     
+    Write-Log -log_file $($log_file) -message "All $totalParameters parameters are being used. `n$($params_results)"
     Write-Verbose "All $totalParameters parameters are being used. `n$($params_results)"
 }
 elseif($ParametersPassed -eq 1) 
 { 
+    Write-Log -log_file $($log_file) -message "1 parameter is being used. `n$($params_results)"
     Write-Verbose "1 parameter is being used. `n$($params_results)" 
 }
 else
 { 
+    Write-Log -log_file $($log_file) -message "$ParametersPassed parameters are being used. `n`n$($params_results)"
     Write-Verbose "$ParametersPassed parameters are being used. `n`n$($params_results)" 
 }
 
@@ -138,26 +142,75 @@ if($($ParametersPassed) -gt '0')
         Work-Magic -i $($input_dir) -o $($output_dir) -Verbose
     }
 
-    if($($input_dir) -and $($output_dir) -and !($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent))
+    if($($input_dir) -and $($output_dir) -and !($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent) -and !($($quiet)))
     {
         try
         {
+            Write-Log -log_file $($log_file) -message "Creating required directories."
+            Write-Host "Creating required directories."
             Create-RequiredDirectories -directories $($directories) -log_file $($log_file)
 		    if($?) 
 		    {
-			    Write-Host "Creating directories finished." -ForegroundColor White
+                Write-Log -log_file $($log_file) -message "Creating required directories finished."
+			    Write-Host "Creating required directories finished."
 		    } 
             
+            Write-Log -log_file $($log_file) -message "Working magic."
+            Write-Host "Working magic."
             Work-Magic -i $($input_dir) -o $($output_dir)
             if($?)
             {
-                Write-Host "Working magic finished." -ForegroundColor White
+                Write-Log -log_file $($log_file) -message "Working magic finished."
+                Write-Host "Working magic finished."
             }
             
+            Write-Log -log_file $($log_file) -message "Zipping log directory."
+            Write-Host "Zipping log directory."
             Archive-Directory -source $($log_file_directory) -destination "$($log_directory_working)\$($run_date)_archive.zip"
             if($?)
             {
-                Write-Host "Zipping log directory finished." -ForegroundColor White
+                Write-Log -log_file $($log_file) -message "Zipping log directory finished."
+                Write-Host "Zipping log directory finished."
+            }
+
+            Present-Outcome -outcome GO
+        }
+        catch
+        {
+            Write-Log -level [ERROR] -log_file $($log_file) -message "$_"
+            Present-Outcome -outcome NOGO
+        }
+    }
+
+    if($($input_dir) -and $($output_dir) -and $($quiet))
+    {
+        try
+        {
+            Write-Log -log_file $($log_file) -message "Creating required directories."
+            Write-Host "Creating required directories."
+            Create-RequiredDirectories -directories $($directories) -log_file $($log_file) -quiet
+		    if($?) 
+		    {
+                Write-Log -log_file $($log_file) -message "Creating required directories finished."
+			    Write-Host "Creating required directories finished."
+		    } 
+            
+            Write-Log -log_file $($log_file) -message "Working magic."
+            Write-Host "Working magic."
+            Work-Magic -i $($input_dir) -o $($output_dir) -quiet
+            if($?)
+            {
+                Write-Log -log_file $($log_file) -message "Working magic finished."
+                Write-Host "Working magic finished."
+            }
+            
+            Write-Log -log_file $($log_file) -message "Zipping log directory."
+            Write-Host "Zipping log directory."
+            Archive-Directory -source $($log_file_directory) -destination "$($log_directory_working)\$($run_date)_archive.zip"
+            if($?)
+            {
+                Write-Log -log_file $($log_file) -message "Zipping log directory finished."
+                Write-Host "Zipping log directory finished."
             }
 
             Present-Outcome -outcome GO
@@ -171,6 +224,7 @@ if($($ParametersPassed) -gt '0')
 }
 else
 {
+    Write-Log -log_file $($log_file) -message "No parameters passed. Try '.\$($script_name) -h' for help using ORDPRO. Typical usage: .\$($script_name) -i '\\path\to\input' -o '\\path\to\output'"
     Write-Warning "No parameters passed. Try '.\$($script_name) -h' for help using ORDPRO."
     Write-Host "Typical usage: .\$($script_name) -i '\\path\to\input' -o '\\path\to\output'" -ForegroundColor Green
 }
