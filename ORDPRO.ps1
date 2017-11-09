@@ -145,19 +145,19 @@ if($($ParametersPassed) -gt '0')
             Create-RequiredDirectories -directories $($directories) -log_file $($log_file)
 		    if($?) 
 		    {
-			    Write-Host "[-] Creating directories finished." -ForegroundColor White
+			    Write-Host "Creating directories finished." -ForegroundColor White
 		    } 
             
             Work-Magic -i $($input_dir) -o $($output_dir)
             if($?)
             {
-                Write-Host "[-] Working magic finished." -ForegroundColor White
+                Write-Host "Working magic finished." -ForegroundColor White
             }
             
             Archive-Directory -source $($log_file_directory) -destination "$($log_directory_working)\$($run_date)_archive.zip"
             if($?)
             {
-                Write-Host "[-] Zipping log directory finished." -ForegroundColor White
+                Write-Host "Zipping log directory finished." -ForegroundColor White
             }
 
             Present-Outcome -outcome GO
