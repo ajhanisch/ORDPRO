@@ -3,7 +3,8 @@
     [cmdletbinding()]
     Param(
         [Parameter(mandatory = $true)] $directories,
-        [Parameter(mandatory = $true)] $log_file
+        [Parameter(mandatory = $true)] $log_file,
+        [alias('q')][switch]$quiet
     )
 
     if($($directories.Count) -gt 0)
@@ -48,24 +49,32 @@
                 Write-Verbose "$($directory) already created."
             }
 
-            $status = "Creating required directories."
-            $activity = "Creating directory $total_directories_created of $($directories.Count)."
-            $percent_complete = (($total_directories_created/$($directories.Count)) * 100)
-            $current_operation = "$("{0:N2}" -f ((($total_directories_created/$($directories.Count)) * 100),2))% Complete"
-            $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-            $seconds_remaining = ($seconds_elapsed / ($total_directories_created / $directories.Count)) - $seconds_elapsed
-            $ts =  [timespan]::fromseconds($seconds_remaining)
-            $ts = $ts.ToString("hh\:mm\:ss")
 
-            if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+            if($($quiet))
             {
-                Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation)."
-                Write-Verbose "$($status) $($activity) $($ts) remaining. $($current_operation)."
+                Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
             }
-            
             else
             {
-                Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                $status = "Creating required directories."
+                $activity = "Creating directory $total_directories_created of $($directories.Count)."
+                $percent_complete = (($total_directories_created/$($directories.Count)) * 100)
+                $current_operation = "$("{0:N2}" -f ((($total_directories_created/$($directories.Count)) * 100),2))% Complete"
+                $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
+                $seconds_remaining = ($seconds_elapsed / ($total_directories_created / $directories.Count)) - $seconds_elapsed
+                $ts =  [timespan]::fromseconds($seconds_remaining)
+                $ts = $ts.ToString("hh\:mm\:ss")
+
+                if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+                {
+                    Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation)."
+                    Write-Verbose "$($status) $($activity) $($ts) remaining. $($current_operation)."
+                }
+            
+                else
+                {
+                    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                }
             }
         }
 
