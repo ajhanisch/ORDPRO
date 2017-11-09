@@ -7,7 +7,8 @@
         [string]$input_dir,
         [Parameter(Mandatory=$true)]
         [alias('o')]
-        [string]$output_dir
+        [string]$output_dir,
+        [alias('q')][switch]$quiet
     )
     
     $orders_array = @()
@@ -127,25 +128,32 @@
                 }
             }
 
-            $status = "Populating Orders Index"
-            $activity = "Processing file $($files_parsed) of $($files.Count). Added $($added). Not added $($not_added). Step [ 1 / 4 ]"
-            $percent_complete = (($($files_parsed)/$($files.Count)) * 100)
-            $current_operation = "$("{0:N2}" -f ((($($files_parsed)/$($files.Count)) * 100),2))% Complete. Started at $($start_time)"
-            $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-            $seconds_remaining = ($seconds_elapsed / ($($files_parsed) / $($files.Count))) - $seconds_elapsed
-            $ts =  [timespan]::fromseconds($seconds_remaining)
-            $ts = $ts.ToString("hh\:mm\:ss")
+            if(!($($quiet)))
+            {
+                $status = "Populating Orders Index"
+                $activity = "Processing file $($files_parsed) of $($files.Count). Added $($added). Not added $($not_added). Step [ 1 / 4 ]"
+                $percent_complete = (($($files_parsed)/$($files.Count)) * 100)
+                $current_operation = "$("{0:N2}" -f ((($($files_parsed)/$($files.Count)) * 100),2))% Complete. Started at $($start_time)"
+                $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
+                $seconds_remaining = ($seconds_elapsed / ($($files_parsed) / $($files.Count))) - $seconds_elapsed
+                $ts =  [timespan]::fromseconds($seconds_remaining)
+                $ts = $ts.ToString("hh\:mm\:ss")
 
-            if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
-            {
-                Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                Write-Verbose "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-            }
+                if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+                {
+                    Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                    Write-Verbose "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                }
             
-            else
+                else
+                {
+                    Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                }
+            }
+            elseif($($quiet))
             {
-                Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                Write-Log -log_file $log_file -message "Processing file $($files_parsed) of $($files.Count). Added $($added). Not added $($not_added). Step [ 1 / 4 ]. Started at $($start_time)."
             }
         }
 
@@ -253,25 +261,32 @@
                     Read-Host -Prompt "Enter to continue"
                 }
 
-                $status = "Adding main order files to persons object in array."
-                $activity = "Processing file $($files_parsed) of $($files.Count). Added $($added). Not added $($not_added). Step [ 2 / 4 ]."
-                $percent_complete = (($($files_parsed)/$($files.Count)) * 100)
-                $current_operation = "$("{0:N2}" -f ((($($files_parsed)/$($files.Count)) * 100),2))% Complete. Started at $($start_time)"
-                $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-                $seconds_remaining = ($seconds_elapsed / ($($files_parsed) / $($files.Count))) - $seconds_elapsed
-                $ts =  [timespan]::fromseconds($seconds_remaining)
-                $ts = $ts.ToString("hh\:mm\:ss")
+                if(!($($quiet)))
+                {
+                    $status = "Adding main order files to persons object in array."
+                    $activity = "Processing file $($files_parsed) of $($files.Count). Added $($added). Not added $($not_added). Step [ 2 / 4 ]."
+                    $percent_complete = (($($files_parsed)/$($files.Count)) * 100)
+                    $current_operation = "$("{0:N2}" -f ((($($files_parsed)/$($files.Count)) * 100),2))% Complete. Started at $($start_time)"
+                    $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
+                    $seconds_remaining = ($seconds_elapsed / ($($files_parsed) / $($files.Count))) - $seconds_elapsed
+                    $ts =  [timespan]::fromseconds($seconds_remaining)
+                    $ts = $ts.ToString("hh\:mm\:ss")
 
-                if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
-                {
-                    Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                    Write-Verbose "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                }
+                    if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+                    {
+                        Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                        Write-Verbose "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                    }
             
-                else
+                    else
+                    {
+                        Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                    }
+                }
+                elseif($($quiet))
                 {
-                    Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                    Write-Log -log_file $log_file -message "Processing file $($files_parsed) of $($files.Count). Added $($added). Not added $($not_added). Step [ 2 / 4 ]. Started at $($start_time)."
                 }
             }
         }
@@ -351,25 +366,32 @@
                     Read-Host -Prompt "Enter to continue"				
 			    }
 
-			    $status = "Adding cert files to persons object in array."
-                $activity = "Processing file $($files_parsed) of $($files.Count). Added $($added). Not added $($not_added). Step [ 3 / 4 ]."
-                $percent_complete = (($($files_parsed)/$($files.Count)) * 100)
-                $current_operation = "$("{0:N2}" -f ((($($files_parsed)/$($files.Count)) * 100),2))% Complete. Started at $($start_time)"
-                $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-                $seconds_remaining = ($seconds_elapsed / ($($files_parsed) / $($files.Count))) - $seconds_elapsed
-                $ts =  [timespan]::fromseconds($seconds_remaining)
-                $ts = $ts.ToString("hh\:mm\:ss")
+                if(!($($quiet)))
+                {
+			        $status = "Adding cert files to persons object in array."
+                    $activity = "Processing file $($files_parsed) of $($files.Count). Added $($added). Not added $($not_added). Step [ 3 / 4 ]."
+                    $percent_complete = (($($files_parsed)/$($files.Count)) * 100)
+                    $current_operation = "$("{0:N2}" -f ((($($files_parsed)/$($files.Count)) * 100),2))% Complete. Started at $($start_time)"
+                    $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
+                    $seconds_remaining = ($seconds_elapsed / ($($files_parsed) / $($files.Count))) - $seconds_elapsed
+                    $ts =  [timespan]::fromseconds($seconds_remaining)
+                    $ts = $ts.ToString("hh\:mm\:ss")
 
-                if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
-                {
-                    Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                    Write-Verbose "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                }
+                    if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+                    {
+                        Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                        Write-Verbose "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                    }
             
-                else
+                    else
+                    {
+                        Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+                        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                    }
+                }
+                elseif($($quiet))
                 {
-                    Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-                    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+                    Write-Log -log_file $log_file -message "Processing file $($files_parsed) of $($files.Count). Added $($added). Not added $($not_added). Step [ 3 / 4 ]. Started at $($start_time)."
                 }
             }
         }
@@ -571,26 +593,34 @@
             Write-Log -log_file $log_file -message "Finished creating directory structure and order files for $($o.NAME)."
             Write-Verbose "Finished creating directory structure and order files for $($o.NAME)."
 		
-		    $status = "Creating directory structure and order files."
-		    $activity = "Processing order $($created) of $($orders_array.Count). Created $($created). Not created $($not_created). Step [ 4 / 4 ]."
-		    $percent_complete = (($($created)/$($orders_array.Count)) * 100)
-		    $current_operation = "$("{0:N2}" -f ((($($created)/$($orders_array.Count)) * 100),2))% Complete. Started at $($start_time)"
-		    $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
-		    $seconds_remaining = ($seconds_elapsed / ($($created) / $($orders_array.Count))) - $seconds_elapsed
-		    $ts =  [timespan]::fromseconds($seconds_remaining)
-		    $ts = $ts.ToString("hh\:mm\:ss")
 
-		    if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
-		    {
-                Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-			    Write-Verbose "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-		    }
+            if(!($($quiet)))
+            {
+		        $status = "Creating directory structure and order files."
+		        $activity = "Processing order $($created) of $($orders_array.Count). Created $($created). Not created $($not_created). Step [ 4 / 4 ]."
+		        $percent_complete = (($($created)/$($orders_array.Count)) * 100)
+		        $current_operation = "$("{0:N2}" -f ((($($created)/$($orders_array.Count)) * 100),2))% Complete. Started at $($start_time)"
+		        $seconds_elapsed = ((Get-Date) - $start_time).TotalSeconds
+		        $seconds_remaining = ($seconds_elapsed / ($($created) / $($orders_array.Count))) - $seconds_elapsed
+		        $ts =  [timespan]::fromseconds($seconds_remaining)
+		        $ts = $ts.ToString("hh\:mm\:ss")
+
+		        if((Get-PSCallStack)[1].Arguments -like '*Verbose=True*')
+		        {
+                    Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+			        Write-Verbose "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+		        }
 		
-		    else
-		    {
-                Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
-			    Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
-		    }
+		        else
+		        {
+                    Write-Log -log_file $log_file -message "$($status) $($activity) $($ts) remaining. $($current_operation). Started at $($start_time)."
+			        Write-Progress -Status $($status) -Activity $($activity) -PercentComplete $($percent_complete) -CurrentOperation $($current_operation) -SecondsRemaining $($seconds_remaining)
+		        }
+            }
+            elseif($($quiet))
+            {
+                Write-Log -log_file $log_file -message "Processing order $($created) of $($orders_array.Count). Created $($created). Not created $($not_created). Step [ 4 / 4 ]. Started at $($start_time)."
+            }
         }
 
 	    $end_time = Get-Date
