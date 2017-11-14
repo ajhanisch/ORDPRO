@@ -1,6 +1,18 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 2.1
+DATE: 11/14/2017
+CHANGES
+- successfully optimized variable capturing, order splitting, and overall speed and efficiency
+- removed some features previous versions had, will work on reimplementing needed ones down the road
+- cut processing time of historical years from hours to minutes while guarateeing accuracy
+------------------------------------
+VERSION: 2.0
+DATE: 11/3/2017
+CHANGES:
+- attempted to severely optimize overall functionality (not enough)
+------------------------------------
 VERSION: 1.9
 DATE: 11/2/2017
 CHANGES
