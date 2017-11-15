@@ -56,6 +56,76 @@ function Write-Log
     }
 }
 
+function Debug-Info
+{
+    Write-Debug "
+    =====================
+    | DEBUG INFORMATION |
+    =====================
+    ++++++++++++
+    | < LINE > |
+    ++++++++++++
+    $($line) 
+    +++++++++++++
+    | < /LINE > |
+    +++++++++++++
+    ++++++++++
+    | FORMAT | $($format)
+    ++++++++++
+    ++++++++++++++++
+    | ORDER NUMBER | $($order_number)
+    ++++++++++++++++
+    ++++++++
+    | NAME | $($name)
+    ++++++++
+    +++++++
+    | SSN | $($ssn)
+    +++++++
+    +++++++
+    | UIC | $($uic)
+    +++++++
+    ++++++++++++++++++
+    | PUBLISHED YEAR | $($published_year)
+    ++++++++++++++++++
+    +++++++++++++++
+    | PERIOD FROM | $($period_from)
+    +++++++++++++++
+    +++++++++++++
+    | PERIOD TO | $($period_to)
+    +++++++++++++
+    ++++++++++++++++++
+    | < ORDER MAIN > |
+    ++++++++++++++++++
+    $($order_m)
+    +++++++++++++++++++
+    | < /ORDER MAIN > |
+    +++++++++++++++++++
+    ++++++++++++++++++
+    | < ORDER CERT > |
+    ++++++++++++++++++
+    $($order_c)
+    +++++++++++++++++++
+    | < /ORDER CERT > |
+    +++++++++++++++++++
+    +++++++++++++++++
+    | UIC DIRECTORY | $($uic_directory)
+    +++++++++++++++++
+    ++++++++++++++++++++++++++
+    | SOLDIER DIRECTORY UICS | $($soldier_directory_uics)
+    ++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++
+    | UIC SOLDIER ORDER FILE NAME MAIN | $($uic_soldier_order_file_name_main)
+    ++++++++++++++++++++++++++++++++++++
+    ++++++++++++++++++++++++++++++++++++
+    | UIC SOLDIER ORDER FILE NAME CERT | $($uic_soldier_order_file_name_cert)
+    ++++++++++++++++++++++++++++++++++++
+    +++++++++++++++++++++++++++++++++
+    | ORD MANAGER SOLDIER DIRECTORY | $($ord_managers_soldier_directory)
+    +++++++++++++++++++++++++++++++++
+    =====================
+    "
+}
+
 <#
 DIRECTORIES OUTPUT
     These variables are for the directory structure needed in the output directory.
@@ -169,7 +239,7 @@ if($($parameters_passed) -gt '0')
                 {
                     Write-Log -log_file $log_file -message "$($directory) not created. Creating now."
                     Write-Verbose "$($directory) not created. Creating now."
-                    New-Item -ItemType Directory -Path $($directory) > $null
+                    New-Item -ItemType Directory -Path $($directory)  > $null
 
                     if($?)
                     {
@@ -291,18 +361,18 @@ if($($parameters_passed) -gt '0')
                             #$order_c = $order_c -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",''
                         }
 
-
-
                         # Create directories and move orders
                         $uic_directory = "$($uics_directory_output)\$($uic)" # Paths and names for UICS directory of output directory.
                         $soldier_directory_uics = "$($uic_directory)\$($name)___$($ssn)" # Paths and names for UICS directory of output directory.
                         $uic_soldier_order_file_name_main = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt" # Paths and names for UICS directory of output directory.
-                        $uic_solder_order_file_name_cert = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___cert.txt" # Paths and names for UICS directory of output directory.
+                        $uic_soldier_order_file_name_cert = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___cert.txt" # Paths and names for UICS directory of output directory.
                         $ord_managers_soldier_directory = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)" # Paths and names for ORD_MANAGERS directory of output directory.
 
+                        Debug-Info
+
                         # (6) create directories and place edited orders in appropriate directories
-                        Write-Log -log_file $($log_file) -message "Creating directory structure and order files for $($name)."
-                        Write-Verbose "Creating directory structure and order files for $($name)."
+                        Write-Log -log_file $($log_file) -message "Creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
+                        Write-Verbose "Creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
             
                         if(!(Test-Path "$($soldier_directory_uics)"))
                         {
@@ -358,27 +428,27 @@ if($($parameters_passed) -gt '0')
                         }
                         else
                         {
-                            if(!(Test-Path "$($soldier_directory_uics)\$($uic_solder_order_file_name_cert)"))
+                            if(!(Test-Path "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert)"))
                             {
-                                Write-Log -log_file $($log_file) -message "$($soldier_directory_uics)\$($uic_solder_order_file_name_cert) does not exist. Creating now."
-                                Write-Verbose "$($soldier_directory_uics)\$($uic_solder_order_file_name_cert) does not exist. Creating now."
-		                        New-Item -ItemType File -Path "$($soldier_directory_uics)" -Name "$($uic_solder_order_file_name_cert)" -Value $($order_c) > $null
+                                Write-Log -log_file $($log_file) -message "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) does not exist. Creating now."
+                                Write-Verbose "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) does not exist. Creating now."
+		                        New-Item -ItemType File -Path "$($soldier_directory_uics)" -Name "$($uic_soldier_order_file_name_cert)" -Value $($order_c) > $null
                                 if($?)
                                 {
-                                    Write-Log -log_file $($log_file) -message "$($soldier_directory_uics)\$($uic_solder_order_file_name_cert) created successfully."
-                                    Write-Verbose "$($soldier_directory_uics)\$($uic_solder_order_file_name_cert) created successfully."
+                                    Write-Log -log_file $($log_file) -message "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) created successfully."
+                                    Write-Verbose "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) created successfully."
                                 }
                                 else
                                 {
-                                    Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_solder_order_file_name_cert) creation failed." -level [ERROR]
-                                    Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_solder_order_file_name_cert) creation failed."
-                                    throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_solder_order_file_name_cert) creation failed."
+                                    Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed." -level [ERROR]
+                                    Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed."
+                                    throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed."
                                 }
                             }
                             else
                             {
-                                Write-Log -log_file $($log_file) -message "$($soldier_directory_uics)\$($uic_solder_order_file_name_cert) already created. Continuing."
-                                Write-Verbose "$($soldier_directory_uics)\$($uic_solder_order_file_name_cert) already created. Continuing."
+                                Write-Log -log_file $($log_file) -message "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) already created. Continuing."
+                                Write-Verbose "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) already created. Continuing."
                             }
                         }
 
@@ -437,37 +507,39 @@ if($($parameters_passed) -gt '0')
                         }
                         else
                         {
-                            if(!(Test-Path "$($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert)"))
+                            if(!(Test-Path "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert)"))
                             {
-                                Write-Log -log_file $($log_file) -message "$($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) does not exist. Creating now."
-                                Write-Verbose "$($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) does not exist. Creating now."
-		                        New-Item -ItemType File -Path "$($ord_managers_soldier_directory)" -Name "$($uic_solder_order_file_name_cert)" -Value $($order_c) > $null
+                                Write-Log -log_file $($log_file) -message "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) does not exist. Creating now."
+                                Write-Verbose "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) does not exist. Creating now."
+		                        New-Item -ItemType File -Path "$($ord_managers_soldier_directory)" -Name "$($uic_soldier_order_file_name_cert)" -Value $($order_c) > $null
                                 if($?)
                                 {
-                                    Write-Log -log_file $($log_file) -message "$($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) created successfully."
-                                    Write-Verbose "$($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) created successfully."
+                                    Write-Log -log_file $($log_file) -message "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) created successfully."
+                                    Write-Verbose "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) created successfully."
                                 }
                                 else
                                 {
-                                    Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) creation failed." -level [ERROR]
-                                    Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) creation failed."
-                                    throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) creation failed."
+                                    Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed." -level [ERROR]
+                                    Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed."
+                                    throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed."
                                 }
                             }
                             else
                             {
-                                Write-Log -log_file $($log_file) -message "$($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) already created. Continuing."
-                                Write-Verbose "$($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) already created. Continuing."
+                                Write-Log -log_file $($log_file) -message "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) already created. Continuing."
+                                Write-Verbose "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) already created. Continuing."
                             }
 
-                            Write-Log -log_file $($log_file) -message "Finished creating directory structure and order files for $($name)."
-                            Write-Verbose "Finished creating directory structure and order files for $($name)."
+                            Write-Log -log_file $($log_file) -message "Finished creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
+                            Write-Verbose "Finished creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
                         }
-
-                        Write-Log -log_file $($log_file) -message "Finished processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
-                        Write-Verbose "Finished processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
                     }
+
+                Write-Log -log_file $($log_file) -message "Finished processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
+                Write-Verbose "Finished processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
+
                 }
+
 
                 # (7) combine created orders for the day into batches of no more than 250 for use by the orders processing folks to input into iPermsIntegrator
                 Write-Log -log_file $($log_file) -message "Combining processed orders into batches of no more than 250 in each file to $($ordmanagers_iperms_integrator_output)\$($run_date)."
@@ -530,10 +602,12 @@ if($($parameters_passed) -gt '0')
                 $run_time = $([timespan]::fromseconds(((Get-Date)-$($start_time)).Totalseconds).ToString(“hh\:mm\:ss”))
 
                 Write-Log -log_file $($log_file) -message "Total processed $($files_processed)/$($files.Count)."
+                Write-Log -log_file $($log_file) -message "Start time: $($start_time)."
                 Write-Log -log_file $($log_file) -message "End time: $($end_time)."
                 Write-Log -log_file $($log_file) -message "Run time: $($run_time)"
 
                 Write-Verbose "Total processed $($files_processed)/$($files.Count)."
+                Write-Verbose "Start time: $($start_time)."
                 Write-Verbose "End time: $($end_time)."
                 Write-Verbose "Run time: $($run_time)"
             }
@@ -556,11 +630,13 @@ if($($parameters_passed) -gt '0')
             $failed_item = $_.Exception.ItemName
 
             Write-Log -log_file $($log_file) -message "Total processed $($files_processed)/$($files.Count)."
+            Write-Log -log_file $($log_file) -message "Start time: $($start_time)."
             Write-Log -log_file $($log_file) -message "End time: $($end_time)."
             Write-Log -log_file $($log_file) -message "Run time: $($run_time)"
             Write-Log -log_file $($log_file) -message "Processing orders failed.`nThe error message was $error_message`nThe failed item was $failed_item" -level [ERROR]
 
             Write-Verbose "Total processed $($files_processed)/$($files.Count)."
+            Write-Verbose "Start time: $($start_time)."
             Write-Verbose "End time: $($end_time)."
             Write-Verbose "Run time: $($run_time)"
 
