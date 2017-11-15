@@ -215,6 +215,8 @@ if($($parameters_passed) -gt '0')
                 {
                     $files_processed ++
 
+                    $reg_file_content = (Get-Content -Path "$($input_dir)\$($file)")
+
                     # Present current operation
                     $order_n = $file.ToString().Substring(3,6)
                     Write-Log -log_file $($log_file) -message "Processing $($order_n.Insert(3,"-"))."
@@ -223,6 +225,7 @@ if($($parameters_passed) -gt '0')
                     # (2) determine the m.prt and c.prt file that corresponds with the currently parsed r.reg file
                     $order_file_main = (Get-ChildItem -Path "$($input_dir)" -Filter "*$($order_n)m.prt" -File)
                     $main_file_content = (Get-Content -Path "$($input_dir)\$($order_file_main)" | Out-String)
+                    $last_line_main = ($reg_file_content | Select -Last 1 | Out-String)
 
                     $order_file_cert = (Get-ChildItem -Path "$($input_dir)" -Filter "*$($order_n)c.prt" -File)
                     $cert_file_content = (Get-Content -Path "$($input_dir)\$($order_file_cert)" | Out-String)
@@ -230,8 +233,6 @@ if($($parameters_passed) -gt '0')
                     Write-Log -log_file $($log_file) -message "Registry file found is $($file). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
                     Write-Verbose "Registry file found is $($file). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
 
-                    $reg_file_content = (Get-Content -Path "$($input_dir)\$($file)")
-                    $last_line = ($reg_file_content | Select -Last 1 | Out-String)
                     $line_count = 0
 
                     # (1) we process each r.reg file line by line
@@ -248,41 +249,49 @@ if($($parameters_passed) -gt '0')
                         $name = $name -replace "\W","_"
                         $ssn = (($c[60..68]) -join '').Insert(3,"-").Insert(6,"-")
                         $uic = ($c[37..41]) -join ''
+                        $uic = $uic -replace "\W","_"
                         $published_year = ($c[6..11] -join '').Substring(0,2)
                         $period_from = ($c[48..53]) -join ''
                         $period_to = ($c[54..59]) -join ''
 
                         # Still has spacing between 'Marital status / Number of dependents' and 'Type of incentive pay' & 'APC DJMS-RC' and 'APC STANFINS Pay' & 'Auth:' and 'HOR:'
                         # (5) determine last line of r.reg file so we can accurately extract the last order. (this is a fix to an issue of last order in file not being properly located and split)
-                        if($($line) -eq $($last_line))
+                        if($($line) -eq $($last_line_main))
                         {
                             # (4) find and edit the main and cert file if needed
-                            $orders_m = [regex]::Match($main_file_content,"(?<=                          FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=                          FOR OFFICIAL USE ONLY - PRIVACY ACT)","singleline").Value -split "                          FOR OFFICIAL USE ONLY - PRIVACY ACT"
-                            $order_m = $orders_m -match "ORDERS\s{1,2}$($order_number)"
-                            $order_m = ($order_m -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",'' -replace "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",'' -replace " ",'' | Out-String)
+                            #$orders_m = [regex]::Match($main_file_content,"(?<= ).+(?=The Adjutant General)","singleline").Value -split " "
+                            $orders_m = $main_file_content -split " "
+                            $order_m = $orders_m -match "ORDERS\s{1,2}$($order_number)" | Out-String
+                            #$order_m = ($order_m -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",'' -replace "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",'' -replace " ",'' | Out-String)
                         }
                         else
                         {
                             # (4) find and edit the main and cert file if needed
                             $orders_m = [regex]::Match($main_file_content,"(?<= ).+(?= )","singleline").Value -split " "
-                            $order_m = $orders_m -match "ORDERS\s{1,2}$($order_number)"
-                            $order_m = ($order_m -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",'' -replace "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",'' -replace " ",'' | Out-String)
+                            $order_m = $orders_m -match "ORDERS\s{1,2}$($order_number)" | Out-String
+                            #$order_m = ($order_m -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",'' -replace "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",'' -replace " ",'' | Out-String)
                         }
 
+
+
                         # Find order in cert file and edit order
-                        if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294)
+                        if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294 -or $($format) -eq 400)
                         {
-                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
-                            Write-Verbose "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Verbose "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
                         }
                         else
                         {
                             #$orders_c = [regex]::Match($cert_file_content,"(?<= ).+(?= )","singleline").Value -split " "
                             #$orders_c = [regex]::Match($cert_file_content,"(?<=FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=FOR OFFICIAL USE ONLY - PRIVACY ACT)","singleline").Value -split "FOR OFFICIAL USE ONLY - PRIVACY ACT"
-                            $orders_c = [regex]::Match($cert_file_content,"(?<=                          FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=FOR OFFICIAL USE ONLY - PRIVACY ACT)","singleline").Value -split "                          FOR OFFICIAL USE ONLY - PRIVACY ACT"
+                            #$orders_c = [regex]::Match($cert_file_content,"(?<=                          FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=FOR OFFICIAL USE ONLY - PRIVACY ACT)","singleline").Value -split "                          FOR OFFICIAL USE ONLY - PRIVACY ACT"
+                            #$orders_c = [regex]::Match($cert_file_content,"(?<= ).+(?= )","singleline").Value -split " "
+                            $orders_c = $cert_file_content -split " "
                             $order_c = $orders_c -match "Order number: $($c[0..5] -join '')"
-                            $order_c = $order_c -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",''
+                            #$order_c = $order_c -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",''
                         }
+
+
 
                         # Create directories and move orders
                         $uic_directory = "$($uics_directory_output)\$($uic)" # Paths and names for UICS directory of output directory.
@@ -342,10 +351,10 @@ if($($parameters_passed) -gt '0')
                             Write-Verbose "$($soldier_directory_uics)\$($uic_soldier_order_file_name_main) already created. Continuing."
                         }
 
-                        if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294)
+                        if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294 -or $($format) -eq 400)
                         {
-                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
-                            Write-Verbose "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Verbose "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
                         }
                         else
                         {
@@ -421,10 +430,10 @@ if($($parameters_passed) -gt '0')
                         }
 
 
-                        if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294)
+                        if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294 -or $($format) -eq 400)
                         {
-                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
-                            Write-Verbose "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Verbose "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
                         }
                         else
                         {
