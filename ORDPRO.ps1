@@ -331,8 +331,8 @@ if($($parameters_passed) -gt '0')
                             }
                             else
                             {
-                                Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed."
-                                Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed." -level [ERROR]
+                                Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed." -level [ERROR]
+                                Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed."
                                 throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed."
                             }
                         }
@@ -361,8 +361,8 @@ if($($parameters_passed) -gt '0')
                                 }
                                 else
                                 {
-                                    Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_solder_order_file_name_cert) creation failed."
-                                    Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_solder_order_file_name_cert) creation failed." -level [ERROR]
+                                    Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_solder_order_file_name_cert) creation failed." -level [ERROR]
+                                    Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_solder_order_file_name_cert) creation failed."
                                     throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_solder_order_file_name_cert) creation failed."
                                 }
                             }
@@ -386,8 +386,8 @@ if($($parameters_passed) -gt '0')
                             }
                             else
                             {
-                                Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
-                                Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed." -level [ERROR]
+                                Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed." -level [ERROR]
+                                Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
                                 throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
                             }
                         }
@@ -409,8 +409,8 @@ if($($parameters_passed) -gt '0')
                             }
                             else
                             {
-                                Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) creation failed."
-                                Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) creation failed." -level [ERROR]
+                                Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) creation failed." -level [ERROR]
+                                Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) creation failed."
                                 throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
                             }
                         }
@@ -440,8 +440,8 @@ if($($parameters_passed) -gt '0')
                                 }
                                 else
                                 {
-                                    Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) creation failed."
-                                    Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) creation failed." -level [ERROR]
+                                    Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) creation failed." -level [ERROR]
+                                    Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) creation failed."
                                     throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_solder_order_file_name_cert) creation failed."
                                 }
                             }
@@ -488,7 +488,7 @@ if($($parameters_passed) -gt '0')
                         }
                         else
                         {
-                            Write-Log -level [ERROR] -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed."
+                            Write-Log -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed." -level [ERROR]
                             Write-Error "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed."    
                             throw "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed."
                         }
