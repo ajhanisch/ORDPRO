@@ -1,6 +1,15 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 2.2
+DATE: 11/15/2017
+CHANGES:
+- added detection of format 400 files. 400 do not have certs
+- added some comment based descriptions of process and certain items in script
+- changed how splitting was happening for main and cert files not regexing from one point to another then splitting, just splitting then finding order
+- modified verbosity statements
+- added detailed debug statement before each order gets created for troubleshooting down the road
+------------------------------------
 VERSION: 2.1
 DATE: 11/14/2017
 CHANGES
