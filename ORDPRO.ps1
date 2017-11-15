@@ -7,6 +7,8 @@
    Input directory. Alias is 'i'. This is the directory that contains the required orders files to be processed. Required files include '*r.reg', '*m.prt', and '*c.prt'.
 .PARAMETER output_dir
    Output directory. Alias is 'o'. This is the directory that will house the results of processing. Results include directory structure as well as split, edited, and organized order files.
+.PARAMETER combine_orders
+   Combine main order files. Alias is 'c'. This will combine the orders split, edited, and organized from the '*m.prt' files into file(s) containing no more than 250 orders to be used by orders processing individuals at a later time.
 .PARAMETER version
    Version information. Alias is 'v'. This will tell the user the version of ORDPRO they are currently running.
 .PARAMETER help
@@ -22,6 +24,7 @@ PARAMETERS
     Param(
         [alias('i')][string]$input_dir,
         [alias('o')][string]$output_dir,
+        [alias('c')][switch]$combine_orders,
         [alias('h')][switch]$help,
         [alias('v')][switch]$version
     )
@@ -62,6 +65,15 @@ function Debug-Info
     =====================
     | DEBUG INFORMATION |
     =====================
+    +++++++++++++++++
+    | REGISTRY FILE | $($order_file_reg)
+    +++++++++++++++++
+    +++++++++++++
+    | MAIN FILE | $($order_file_main)
+    +++++++++++++
+    +++++++++++++
+    | CERT FILE | $($order_file_cert)
+    +++++++++++++
     ++++++++++++
     | < LINE > |
     ++++++++++++
@@ -124,6 +136,65 @@ function Debug-Info
     +++++++++++++++++++++++++++++++++
     =====================
     "
+}
+
+function Combine-Orders
+{
+    # (7) combine created orders for the day into batches of no more than 250 for use by the orders processing folks to input into iPermsIntegrator
+    Write-Log -log_file $($log_file) -message "Combining processed orders into batches of no more than 250 in each file to $($ordmanagers_iperms_integrator_output)\$($run_date)."
+    Write-Verbose "Combining processed orders into batches of no more than 250 in each file to $($ordmanagers_iperms_integrator_output)\$($run_date)."
+
+    $order_files = (Get-ChildItem "$($ordmanagers_orders_by_soldier_output)" -Recurse -File -Exclude "*___cert.txt" | ? { $_.CreationTime -gt (Get-Date).Date } | Select -First 250 | Select FullName)
+    $order_files_processed = @()
+
+    $order_files_count = $($order_files).Count
+
+    $start = 1
+    $end = $order_files.Count
+
+    do{            
+        $out_file = "$($ordmanagers_iperms_integrator_output)\$($run_date)\$($start)-$($end).txt"
+
+        if(!(Test-Path "$($ordmanagers_iperms_integrator_output)\$($run_date)"))
+        {
+            Write-Log -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) not created. Creating now."
+            Write-Verbose "$($ordmanagers_iperms_integrator_output)\$($run_date) not created. Creating now."
+            New-Item -ItemType Directory -Path "$($ordmanagers_iperms_integrator_output)\$($run_date)" -Force > $null
+                
+            if($?)
+            {
+                Write-Log -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) created successfully."
+                Write-Verbose "$($ordmanagers_iperms_integrator_output)\$($run_date) created successfully."                        
+            }
+            else
+            {
+                Write-Log -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed." -level [ERROR]
+                Write-Error "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed."    
+                throw "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed."
+            }
+        }
+            
+        # Set outfile name for each batch
+        Write-Log -log_file $log_file -message "Name of outfile is $($out_file)."
+        Write-Verbose "Name of outfile is $($out_file)."
+        New-Item -ItemType File $out_file -Force > $null
+
+        # Combine 250 files into batch
+        Write-Log -log_file $log_file -message "Combining $($start) - $($end) files into $($out_file)."
+        Write-Verbose "Combining $($start) - $($end) files into $($out_file)."
+        $order_files | % { Get-Content $_.FullName | Add-Content $($out_file) }
+
+        # Move files to array containing files already processed
+        $order_files | % { $order_files_processed += $_.FullName }
+
+        # Repopulate array
+        $order_files = (Get-ChildItem "$($ordmanagers_orders_by_soldier_output)" -Recurse -File -Exclude "*___cert.txt" | ? { $_.CreationTime -gt (Get-Date).Date } | ? { $_ -notin $order_files_processed } | Select -First 250 | Select FullName)
+        $order_files_count = $($order_files).Count
+
+        $start = $end + 1
+        $end = $start + $($order_files_count) - 1
+    }
+    While($order_files_count -ne 0)
 }
 
 <#
@@ -285,7 +356,8 @@ if($($parameters_passed) -gt '0')
                 {
                     $files_processed ++
 
-                    $reg_file_content = (Get-Content -Path "$($input_dir)\$($file)")
+                    $order_file_reg = $($file)
+                    $reg_file_content = (Get-Content -Path "$($input_dir)\$($order_file_reg)")
 
                     # Present current operation
                     $order_n = $file.ToString().Substring(3,6)
@@ -300,8 +372,8 @@ if($($parameters_passed) -gt '0')
                     $order_file_cert = (Get-ChildItem -Path "$($input_dir)" -Filter "*$($order_n)c.prt" -File)
                     $cert_file_content = (Get-Content -Path "$($input_dir)\$($order_file_cert)" | Out-String)
 
-                    Write-Log -log_file $($log_file) -message "Registry file found is $($file). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
-                    Write-Verbose "Registry file found is $($file). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
+                    Write-Log -log_file $($log_file) -message "Registry file found is $($order_file_reg). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
+                    Write-Verbose "Registry file found is $($order_file_reg). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
 
                     $line_count = 0
 
@@ -329,7 +401,6 @@ if($($parameters_passed) -gt '0')
                         if($($line) -eq $($last_line_main))
                         {
                             # (4) find and edit the main and cert file if needed
-                            #$orders_m = [regex]::Match($main_file_content,"(?<= ).+(?=The Adjutant General)","singleline").Value -split " "
                             $orders_m = $main_file_content -split " "
                             $order_m = $orders_m -match "ORDERS\s{1,2}$($order_number)" | Out-String
                             #$order_m = ($order_m -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",'' -replace "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",'' -replace " ",'' | Out-String)
@@ -342,20 +413,14 @@ if($($parameters_passed) -gt '0')
                             #$order_m = ($order_m -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",'' -replace "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",'' -replace " ",'' | Out-String)
                         }
 
-
-
                         # Find order in cert file and edit order
                         if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294 -or $($format) -eq 400)
                         {
-                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
-                            Write-Verbose "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Verbose "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
                         }
                         else
                         {
-                            #$orders_c = [regex]::Match($cert_file_content,"(?<= ).+(?= )","singleline").Value -split " "
-                            #$orders_c = [regex]::Match($cert_file_content,"(?<=FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=FOR OFFICIAL USE ONLY - PRIVACY ACT)","singleline").Value -split "FOR OFFICIAL USE ONLY - PRIVACY ACT"
-                            #$orders_c = [regex]::Match($cert_file_content,"(?<=                          FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=FOR OFFICIAL USE ONLY - PRIVACY ACT)","singleline").Value -split "                          FOR OFFICIAL USE ONLY - PRIVACY ACT"
-                            #$orders_c = [regex]::Match($cert_file_content,"(?<= ).+(?= )","singleline").Value -split " "
                             $orders_c = $cert_file_content -split " "
                             $order_c = $orders_c -match "Order number: $($c[0..5] -join '')"
                             #$order_c = $order_c -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",''
@@ -386,9 +451,9 @@ if($($parameters_passed) -gt '0')
                             }
                             else
                             {
-                                Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics) creation failed." -level [ERROR]
-                                Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics) creation failed."
-                                throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics) creation failed."
+                                Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics) creation failed." -level [ERROR]
+                                Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics) creation failed."
+                                throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics) creation failed."
                             }
                         }
                         else
@@ -410,9 +475,9 @@ if($($parameters_passed) -gt '0')
                             }
                             else
                             {
-                                Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed." -level [ERROR]
-                                Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed."
-                                throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed."
+                                Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed." -level [ERROR]
+                                Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed."
+                                throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed."
                             }
                         }
                         else
@@ -423,8 +488,8 @@ if($($parameters_passed) -gt '0')
 
                         if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294 -or $($format) -eq 400)
                         {
-                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
-                            Write-Verbose "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Verbose "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
                         }
                         else
                         {
@@ -440,9 +505,9 @@ if($($parameters_passed) -gt '0')
                                 }
                                 else
                                 {
-                                    Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed." -level [ERROR]
-                                    Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed."
-                                    throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed."
+                                    Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed." -level [ERROR]
+                                    Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed."
+                                    throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed."
                                 }
                             }
                             else
@@ -465,9 +530,9 @@ if($($parameters_passed) -gt '0')
                             }
                             else
                             {
-                                Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed." -level [ERROR]
-                                Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
-                                throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
+                                Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed." -level [ERROR]
+                                Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
+                                throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
                             }
                         }
                         else
@@ -488,9 +553,9 @@ if($($parameters_passed) -gt '0')
                             }
                             else
                             {
-                                Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) creation failed." -level [ERROR]
-                                Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) creation failed."
-                                throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
+                                Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) creation failed." -level [ERROR]
+                                Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) creation failed."
+                                throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
                             }
                         }
                         else
@@ -502,8 +567,8 @@ if($($parameters_passed) -gt '0')
 
                         if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294 -or $($format) -eq 400)
                         {
-                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
-                            Write-Verbose "Found format $($format) in $($file) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Verbose "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
                         }
                         else
                         {
@@ -519,9 +584,9 @@ if($($parameters_passed) -gt '0')
                                 }
                                 else
                                 {
-                                    Write-Log -log_file $($log_file) -message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed." -level [ERROR]
-                                    Write-Error -Message "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed."
-                                    throw "Failed to process $($file) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed."
+                                    Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed." -level [ERROR]
+                                    Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed."
+                                    throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed."
                                 }
                             }
                             else
@@ -540,62 +605,10 @@ if($($parameters_passed) -gt '0')
 
                 }
 
-
-                # (7) combine created orders for the day into batches of no more than 250 for use by the orders processing folks to input into iPermsIntegrator
-                Write-Log -log_file $($log_file) -message "Combining processed orders into batches of no more than 250 in each file to $($ordmanagers_iperms_integrator_output)\$($run_date)."
-                Write-Verbose "Combining processed orders into batches of no more than 250 in each file to $($ordmanagers_iperms_integrator_output)\$($run_date)."
-
-                $order_files = (Get-ChildItem "$($ordmanagers_orders_by_soldier_output)" -Recurse -File -Exclude "*___cert.txt" | ? { $_.CreationTime -gt (Get-Date).Date } | Select -First 250 | Select FullName)
-                $order_files_processed = @()
-
-                $order_files_count = $($order_files).Count
-
-                $start = 1
-                $end = $order_files.Count
-
-                do{            
-                    $out_file = "$($ordmanagers_iperms_integrator_output)\$($run_date)\$($start)-$($end).txt"
-
-                    if(!(Test-Path "$($ordmanagers_iperms_integrator_output)\$($run_date)"))
-                    {
-                        Write-Log -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) not created. Creating now."
-                        Write-Verbose "$($ordmanagers_iperms_integrator_output)\$($run_date) not created. Creating now."
-                        New-Item -ItemType Directory -Path "$($ordmanagers_iperms_integrator_output)\$($run_date)" -Force > $null
-                
-                        if($?)
-                        {
-                            Write-Log -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) created successfully."
-                            Write-Verbose "$($ordmanagers_iperms_integrator_output)\$($run_date) created successfully."                        
-                        }
-                        else
-                        {
-                            Write-Log -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed." -level [ERROR]
-                            Write-Error "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed."    
-                            throw "$($ordmanagers_iperms_integrator_output)\$($run_date) creation failed."
-                        }
-                    }
-            
-                    # Set outfile name for each batch
-                    Write-Log -log_file $log_file -message "Name of outfile is $($out_file)."
-                    Write-Verbose "Name of outfile is $($out_file)."
-                    New-Item -ItemType File $out_file -Force > $null
-
-                    # Combine 250 files into batch
-                    Write-Log -log_file $log_file -message "Combining $($start) - $($end) files into $($out_file)."
-                    Write-Verbose "Combining $($start) - $($end) files into $($out_file)."
-                    $order_files | % { Get-Content $_.FullName | Add-Content $($out_file) }
-
-                    # Move files to array containing files already processed
-                    $order_files | % { $order_files_processed += $_.FullName }
-
-                    # Repopulate array
-                    $order_files = (Get-ChildItem "$($ordmanagers_orders_by_soldier_output)" -Recurse -File -Exclude "*___cert.txt" | ? { $_.CreationTime -gt (Get-Date).Date } | ? { $_ -notin $order_files_processed } | Select -First 250 | Select FullName)
-                    $order_files_count = $($order_files).Count
-
-                    $start = $end + 1
-                    $end = $start + $($order_files_count) - 1
+                if($($combine_orders))
+                {
+                    Combine-Orders
                 }
-                While($order_files_count -ne 0)
 
                 $end_time = Get-Date
                 #$run_time = $([timespan]::fromseconds(((Get-Date)-$start_time).Totalseconds).ToString(“dd\:hh\:mm\:ss”))
@@ -604,12 +617,12 @@ if($($parameters_passed) -gt '0')
                 Write-Log -log_file $($log_file) -message "Total processed $($files_processed)/$($files.Count)."
                 Write-Log -log_file $($log_file) -message "Start time: $($start_time)."
                 Write-Log -log_file $($log_file) -message "End time: $($end_time)."
-                Write-Log -log_file $($log_file) -message "Run time: $($run_time)"
+                Write-Log -log_file $($log_file) -message "Run time: $($run_time)."
 
                 Write-Verbose "Total processed $($files_processed)/$($files.Count)."
                 Write-Verbose "Start time: $($start_time)."
                 Write-Verbose "End time: $($end_time)."
-                Write-Verbose "Run time: $($run_time)"
+                Write-Verbose "Run time: $($run_time)."
             }
             else
             {
@@ -631,14 +644,14 @@ if($($parameters_passed) -gt '0')
 
             Write-Log -log_file $($log_file) -message "Total processed $($files_processed)/$($files.Count)."
             Write-Log -log_file $($log_file) -message "Start time: $($start_time)."
-            Write-Log -log_file $($log_file) -message "End time: $($end_time)."
-            Write-Log -log_file $($log_file) -message "Run time: $($run_time)"
+            Write-Log -log_file $($log_file) -message "End time:   $($end_time)."
+            Write-Log -log_file $($log_file) -message "Run time:   $($run_time)."
             Write-Log -log_file $($log_file) -message "Processing orders failed.`nThe error message was $error_message`nThe failed item was $failed_item" -level [ERROR]
 
             Write-Verbose "Total processed $($files_processed)/$($files.Count)."
             Write-Verbose "Start time: $($start_time)."
-            Write-Verbose "End time: $($end_time)."
-            Write-Verbose "Run time: $($run_time)"
+            Write-Verbose "End time:   $($end_time)."
+            Write-Verbose "Run time:   $($run_time)."
 
             Write-Error -Message "Processing orders failed.`nThe error message was $error_message`nThe failed item was $failed_item"
         }
