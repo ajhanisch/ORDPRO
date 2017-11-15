@@ -7,6 +7,7 @@ CHANGES
 - successfully optimized variable capturing, order splitting, and overall speed and efficiency
 - removed some features previous versions had, will work on reimplementing needed ones down the road
 - cut processing time of historical years from hours to minutes while guarateeing accuracy
+- re-implemented main order combining for iperms integrator functionality
 ------------------------------------
 VERSION: 2.0
 DATE: 11/3/2017
