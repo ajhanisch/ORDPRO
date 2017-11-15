@@ -159,7 +159,7 @@ VARIABLES
     These variables are any stand alone script-wide variables needed.
 #>
 $script_name = $($MyInvocation.MyCommand.Name)
-$version_info = "2.1"
+$version_info = "2.2"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $log_file = "$($log_directory_working)\$($run_date)_ORDPRO.log"
 
