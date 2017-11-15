@@ -58,6 +58,7 @@ function Write-Log
 
 <#
 DIRECTORIES OUTPUT
+    These variables are for the directory structure needed in the output directory.
 #>
 $ordmanagers_directory_output = "$($output_dir)\ORD_MANAGERS"
 $ordmanagers_orders_by_soldier_output = "$($ordmanagers_directory_output)\ORDERS_BY_SOLDIER"
@@ -66,12 +67,14 @@ $uics_directory_output = "$($output_dir)\UICS"
 
 <#
 DIRECTORIES WORKING
+    These variables are for the processing of orders in the directory where ORDPRO is placed. LOGS directory will contain the detailed log file of each run of ORDPRO.
 #>
 $current_directory_working = (Get-Item -Path ".\" -Verbose).FullName
 $log_directory_working = "$($current_directory_working )\LOGS"
 
 <#
 ARRAYS
+    These variables are used for any script-wide arrays needed.
 #>
 $directories = @(
 "$($ordmanagers_directory_output)", 
@@ -83,6 +86,7 @@ $directories = @(
 
 <#
 VARIABLES
+    These variables are any stand alone script-wide variables needed.
 #>
 $script_name = $($MyInvocation.MyCommand.Name)
 $version_info = "2.1"
@@ -91,6 +95,7 @@ $log_file = "$($log_directory_working)\$($run_date)_ORDPRO.log"
 
 <#
 ENTRY POINT
+    This section handles any command line parameters and arguments given by the user and begins processing orders if proper parameters are given.
 #>
 $parameters = (Get-Command -Name $MyInvocation.InvocationName).Parameters | Select -ExpandProperty Keys | Where-Object { $_ -NotIn ('Verbose', 'ErrorAction', 'WarningAction', 'PipelineVariable', 'OutBuffer', 'Debug', 'ErrorAction','WarningAction', 'ErrorVariable', 'WarningVariable', 'OutVariable') }
 $total_parameters = $parameters.count
@@ -119,6 +124,26 @@ if($($parameters_passed) -gt '0')
     if($($help))
     {
         Get-Help .\$($script_name) -Full
+
+        $response = Read-Host "Would you like to be directed to the GitLab page for ORDPRO? [ Y / N ]"
+        switch($response)
+        {
+            y
+            {
+                Write-Host "Directing you to GitLab page for ORDPRO now."
+                Get-Help .\$($script_name) -Online
+            }
+
+            n
+            {
+                Write-Host "Not directing you to GitLag page for ORDPRO now. Check the home page out for the most recent updates and help information."
+            }
+
+            default
+            {
+                Write-Host "Inproper response given. Try again with proper input."
+            }
+        }
     }
 
     if($($version))
@@ -134,6 +159,10 @@ if($($parameters_passed) -gt '0')
             Write-Log -log_file $($log_file) -message "Start time: $($start_time)."
             Write-Verbose "Start time: $($start_time)."
 
+            <#
+            <CREATE REQUIRED DIRECTORIES>
+                Using the above array 'directories' to define the required directories needed for proper functionality. To add new directories simply define new paths in the appropriate OUPTUT or WORKING section and add the variable name to the array.
+            #>
             foreach($directory in $directories)
             {
                 if(!(Test-Path $($directory)))
@@ -159,7 +188,21 @@ if($($parameters_passed) -gt '0')
                     Write-Verbose "$($directory) already created."
                 }
             }
+            <#
+            </CREATE REQUIRED DIRECTORIES>
+            #>
 
+            <#
+            <PROCESS ORDERS IN INPUT FOLDER>
+                This section is where the r.reg, m.prt, and c.prt files from the input directory given are processed and the magic is done. The process goes like this --
+                    (1) we process each r.reg file line by line
+                    (2) determine the m.prt and c.prt file that corresponds with the currently parsed r.reg file
+                    (3) extract the needed variable information from the line
+                    (4) find and edit the main and cert file if needed
+                    (5) determine last line of r.reg file so we can accurately extract the last order. (this is a fix to an issue of last order in file not being properly located and split)
+                    (6) create directories and place edited orders in appropriate directories
+                    (7) combine created orders for the day into batches of no more than 250 for use by the orders processing folks to input into iPermsIntegrator
+            #>
             $files = (Get-ChildItem -Path "$($input_dir)" -Filter "*r.reg" -File)
             $files_processed = 0
             if($($files).Count -gt 0)
@@ -167,6 +210,7 @@ if($($parameters_passed) -gt '0')
                 Write-Log -log_file $($log_file) -message "Total to process: $($files.Count)."
                 Write-Verbose "Total to process: $($files.Count)."
 
+                # (1) we process each r.reg file line by line
                 foreach($file in $files)
                 {
                     $files_processed ++
@@ -176,7 +220,7 @@ if($($parameters_passed) -gt '0')
                     Write-Log -log_file $($log_file) -message "Processing $($order_n.Insert(3,"-"))."
                     Write-Verbose "Processing $($order_n.Insert(3,"-"))."
 
-                    # Find corresponding main and cert file and get content of each
+                    # (2) determine the m.prt and c.prt file that corresponds with the currently parsed r.reg file
                     $order_file_main = (Get-ChildItem -Path "$($input_dir)" -Filter "*$($order_n)m.prt" -File)
                     $main_file_content = (Get-Content -Path "$($input_dir)\$($order_file_main)" | Out-String)
 
@@ -186,16 +230,16 @@ if($($parameters_passed) -gt '0')
                     Write-Log -log_file $($log_file) -message "Registry file found is $($file). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
                     Write-Verbose "Registry file found is $($file). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
 
-                    # Build orders array index for order_n
                     $reg_file_content = (Get-Content -Path "$($input_dir)\$($file)")
                     $last_line = ($reg_file_content | Select -Last 1 | Out-String)
                     $line_count = 0
 
+                    # (1) we process each r.reg file line by line
                     foreach($line in $reg_file_content)
                     {
                         $line_count ++
                         
-                        # Get needed information from registry file
+                        # (3) extract the needed variable information from the line
                         $line = ($line | Out-String)
                         $c = $line.ToCharArray()
                         $format = $c[12..14] -join ''
@@ -208,16 +252,18 @@ if($($parameters_passed) -gt '0')
                         $period_from = ($c[48..53]) -join ''
                         $period_to = ($c[54..59]) -join ''
 
-                        # Find order in main file and edit order. Still has spacing between 'Marital status / Number of dependents' and 'Type of incentive pay' & 'APC DJMS-RC' and 'APC STANFINS Pay' & 'Auth:' and 'HOR:'
-                        # Test to fix last order in m.prt file not getting properly split and set to file
+                        # Still has spacing between 'Marital status / Number of dependents' and 'Type of incentive pay' & 'APC DJMS-RC' and 'APC STANFINS Pay' & 'Auth:' and 'HOR:'
+                        # (5) determine last line of r.reg file so we can accurately extract the last order. (this is a fix to an issue of last order in file not being properly located and split)
                         if($($line) -eq $($last_line))
                         {
+                            # (4) find and edit the main and cert file if needed
                             $orders_m = [regex]::Match($main_file_content,"(?<=                          FOR OFFICIAL USE ONLY - PRIVACY ACT).+(?=                          FOR OFFICIAL USE ONLY - PRIVACY ACT)","singleline").Value -split "                          FOR OFFICIAL USE ONLY - PRIVACY ACT"
                             $order_m = $orders_m -match "ORDERS\s{1,2}$($order_number)"
                             $order_m = ($order_m -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",'' -replace "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",'' -replace " ",'' | Out-String)
                         }
                         else
                         {
+                            # (4) find and edit the main and cert file if needed
                             $orders_m = [regex]::Match($main_file_content,"(?<= ).+(?= )","singleline").Value -split " "
                             $order_m = $orders_m -match "ORDERS\s{1,2}$($order_number)"
                             $order_m = ($order_m -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",'' -replace "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",'' -replace " ",'' | Out-String)
@@ -245,6 +291,7 @@ if($($parameters_passed) -gt '0')
                         $uic_solder_order_file_name_cert = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___cert.txt" # Paths and names for UICS directory of output directory.
                         $ord_managers_soldier_directory = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)" # Paths and names for ORD_MANAGERS directory of output directory.
 
+                        # (6) create directories and place edited orders in appropriate directories
                         Write-Log -log_file $($log_file) -message "Creating directory structure and order files for $($name)."
                         Write-Verbose "Creating directory structure and order files for $($name)."
             
@@ -413,6 +460,7 @@ if($($parameters_passed) -gt '0')
                     }
                 }
 
+                # (7) combine created orders for the day into batches of no more than 250 for use by the orders processing folks to input into iPermsIntegrator
                 Write-Log -log_file $($log_file) -message "Combining processed orders into batches of no more than 250 in each file to $($ordmanagers_iperms_integrator_output)\$($run_date)."
                 Write-Verbose "Combining processed orders into batches of no more than 250 in each file to $($ordmanagers_iperms_integrator_output)\$($run_date)."
 
@@ -486,6 +534,9 @@ if($($parameters_passed) -gt '0')
                 Write-Error -Message "No '*r.reg' files in input directory. Try again with proper input." -level [ERROR]
                 throw "No '*r.reg' files in input directory. Try again with proper input."
             }
+            <#
+            </PROCESS ORDERS IN INPUT FOLDER>
+            #>
         }
         catch
         {
