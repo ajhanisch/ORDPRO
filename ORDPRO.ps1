@@ -148,7 +148,7 @@ if($($parameters_passed) -gt '0')
 
     if($($version))
     {
-        Write-Verbose "You are running $($script_name) version $($version_info). Make sure to check https://gitlab.com/ajhanisch/ORDPRO for the most recent version of ORDPRO."
+        Write-Host "You are running $($script_name) version $($version_info). Make sure to check https://gitlab.com/ajhanisch/ORDPRO for the most recent version of ORDPRO." -ForegroundColor Green
     }
 
     if($($input_dir) -and $($output_dir))
