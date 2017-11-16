@@ -2,7 +2,7 @@
 .Synopsis
    Script to help automate orders management.
 .DESCRIPTION
-   Description goes here.
+   Script designed to parse given files, create directory structure to be accessed by various users, split, edit, and organize orders to appropriate locations in directory structure.
 .PARAMETER input_dir
    Input directory. Alias is 'i'. This is the directory that contains the required orders files to be processed. Required files include '*r.reg', '*m.prt', and '*c.prt'.
 .PARAMETER output_dir
