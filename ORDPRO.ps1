@@ -396,22 +396,11 @@ if($($parameters_passed) -gt '0')
                         $period_from = ($c[48..53]) -join ''
                         $period_to = ($c[54..59]) -join ''
 
-                        # Still has spacing between 'Marital status / Number of dependents' and 'Type of incentive pay' & 'APC DJMS-RC' and 'APC STANFINS Pay' & 'Auth:' and 'HOR:'
-                        # (5) determine last line of r.reg file so we can accurately extract the last order. (this is a fix to an issue of last order in file not being properly located and split)
-                        if($($line) -eq $($last_line_main))
-                        {
-                            # (4) find and edit the main and cert file if needed
-                            $orders_m = $main_file_content -split " "
-                            $order_m = $orders_m -match "ORDERS\s{1,2}$($order_number)" | Out-String
-                            #$order_m = ($order_m -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",'' -replace "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",'' -replace " ",'' | Out-String)
-                        }
-                        else
-                        {
-                            # (4) find and edit the main and cert file if needed
-                            $orders_m = [regex]::Match($main_file_content,"(?<= ).+(?= )","singleline").Value -split " "
-                            $order_m = $orders_m -match "ORDERS\s{1,2}$($order_number)" | Out-String
-                            #$order_m = ($order_m -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",'' -replace "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",'' -replace " ",'' | Out-String)
-                        }
+                        # (4) find and edit the main if needed 
+                        #$orders_m = $main_file_content -split "(?=`f)"
+                        $orders_m = $main_file_content -split "(?<=`f)"
+                        $order_m = $orders_m -match "ORDERS\s{1,2}$($order_number)" | Out-String
+
 
                         # Find order in cert file and edit order
                         if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294 -or $($format) -eq 400)
@@ -421,9 +410,8 @@ if($($parameters_passed) -gt '0')
                         }
                         else
                         {
-                            $orders_c = $cert_file_content -split " "
+                            $orders_c = $cert_file_content -split "(`f)"
                             $order_c = $orders_c -match "Order number: $($c[0..5] -join '')"
-                            #$order_c = $order_c -replace "FOR OFFICIAL USE ONLY - PRIVACY ACT`r`n",''
                         }
 
                         # Create directories and move orders
@@ -436,8 +424,8 @@ if($($parameters_passed) -gt '0')
                         Debug-Info
 
                         # (6) create directories and place edited orders in appropriate directories
-                        Write-Log -log_file $($log_file) -message "Creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
-                        Write-Verbose "Creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
+                        Write-Log -log_file $($log_file) -message "Creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processing $($files_processed)/$($files.Count)."
+                        Write-Verbose "Creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processing $($files_processed)/$($files.Count)."
             
                         if(!(Test-Path "$($soldier_directory_uics)"))
                         {
@@ -595,8 +583,8 @@ if($($parameters_passed) -gt '0')
                                 Write-Verbose "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) already created. Continuing."
                             }
 
-                            Write-Log -log_file $($log_file) -message "Finished creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
-                            Write-Verbose "Finished creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processed $($files_processed)/$($files.Count)."
+                            Write-Log -log_file $($log_file) -message "Finished creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processing $($files_processed)/$($files.Count)."
+                            Write-Verbose "Finished creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processing $($files_processed)/$($files.Count)."
                         }
                     }
 
