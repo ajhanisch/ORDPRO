@@ -35,7 +35,6 @@ Check the Wiki for detailed information on all CLI parameters and switches.
 - [ ] Orders follow individuals as they move
 - [ ] Implement a checkpoint system
 - [ ] Implement parallel processing
-- [x] Extract all functions and create individual module files to be called from main script
 - [ ] Implement an undo function to remove results of previously ran sessions
 - [ ] Look at possibly reworking the functionality to a C# application with a true UI
 - [x] Significantly simplify orders splitting, editing, and parsing to gather variable information (major update)
