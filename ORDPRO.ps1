@@ -340,7 +340,6 @@ if($($parameters_passed) -gt '0')
                     (2) determine the m.prt and c.prt file that corresponds with the currently parsed r.reg file
                     (3) extract the needed variable information from the line
                     (4) find and edit the main and cert file if needed
-                    (5) determine last line of r.reg file so we can accurately extract the last order. (this is a fix to an issue of last order in file not being properly located and split)
                     (6) create directories and place edited orders in appropriate directories
                     (7) combine created orders for the day into batches of no more than 250 for use by the orders processing folks to input into iPermsIntegrator
             #>
@@ -423,7 +422,7 @@ if($($parameters_passed) -gt '0')
 
                         Debug-Info
 
-                        # (6) create directories and place edited orders in appropriate directories
+                        # (5) create directories and place edited orders in appropriate directories
                         Write-Log -log_file $($log_file) -message "Creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processing $($files_processed)/$($files.Count)."
                         Write-Verbose "Creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processing $($files_processed)/$($files.Count)."
             
