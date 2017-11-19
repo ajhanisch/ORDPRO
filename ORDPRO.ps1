@@ -140,7 +140,6 @@ function Debug-Info
 
 function Combine-Orders
 {
-    # (7) combine created orders for the day into batches of no more than 250 for use by the orders processing folks to input into iPermsIntegrator
     Write-Log -log_file $($log_file) -message "Combining processed orders into batches of no more than 250 in each file to $($ordmanagers_iperms_integrator_output)\$($run_date)."
     Write-Verbose "Combining processed orders into batches of no more than 250 in each file to $($ordmanagers_iperms_integrator_output)\$($run_date)."
 
@@ -238,7 +237,7 @@ $log_file = "$($log_directory_working)\$($run_date)_ORDPRO.log"
 ENTRY POINT
     This section handles any command line parameters and arguments given by the user and begins processing orders if proper parameters are given.
 #>
-$parameters = (Get-Command -Name $MyInvocation.InvocationName).Parameters | Select -ExpandProperty Keys | Where-Object { $_ -NotIn ('Verbose', 'ErrorAction', 'WarningAction', 'PipelineVariable', 'OutBuffer', 'Debug', 'ErrorAction','WarningAction', 'ErrorVariable', 'WarningVariable', 'OutVariable') }
+$parameters = (Get-Command -Name $MyInvocation.InvocationName).Parameters | Select -ExpandProperty Keys | Where-Object { $_ -NotIn ('Verbose', 'Debug', 'ErrorAction', 'WarningAction', 'InformationAction', 'ErrorVariable', 'WarningVariable', 'InformationVariable', 'OutVariable', 'OutBuffer', 'PipelineVariable') }
 $total_parameters = $parameters.count
 $parameters_passed = $PSBoundParameters.Count
 $params = @($PSBoundParameters.Keys)
@@ -341,7 +340,6 @@ if($($parameters_passed) -gt '0')
                     (3) extract the needed variable information from the line
                     (4) find and edit the main and cert file if needed
                     (6) create directories and place edited orders in appropriate directories
-                    (7) combine created orders for the day into batches of no more than 250 for use by the orders processing folks to input into iPermsIntegrator
             #>
             $files = (Get-ChildItem -Path "$($input_dir)" -Filter "*r.reg" -File)
             $files_processed = 0
