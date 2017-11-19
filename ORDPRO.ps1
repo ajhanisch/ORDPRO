@@ -601,13 +601,13 @@ if($($parameters_passed) -gt '0')
 
                 Write-Log -log_file $($log_file) -message "Total processed $($files_processed)/$($files.Count)."
                 Write-Log -log_file $($log_file) -message "Start time: $($start_time)."
-                Write-Log -log_file $($log_file) -message "End time: $($end_time)."
-                Write-Log -log_file $($log_file) -message "Run time: $($run_time)."
+                Write-Log -log_file $($log_file) -message "End time:   $($end_time)."
+                Write-Log -log_file $($log_file) -message "Run time:   $($run_time)."
 
                 Write-Verbose "Total processed $($files_processed)/$($files.Count)."
                 Write-Verbose "Start time: $($start_time)."
-                Write-Verbose "End time: $($end_time)."
-                Write-Verbose "Run time: $($run_time)."
+                Write-Verbose "End time:   $($end_time)."
+                Write-Verbose "Run time:   $($run_time)."
             }
             else
             {
