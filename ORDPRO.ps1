@@ -157,11 +157,7 @@ function Combine-Orders
     )
 
     $order_files = $($input_batch)  | Select -First 250
-    $order_files.Count
-    Read-Host -Prompt "Enter to continue"
-
     $order_files_processed = @()
-
     $order_files_count = $($order_files).Count
 
     $start = 1
@@ -409,10 +405,10 @@ if($($parameters_passed) -gt '0')
                         $format = $c[12..14] -join ''
                         $order_number = ($c[0..5] -join '').Insert(3,"-")
                         $name = ($c[15..36] -join '').Trim()
-                        $name = $name -replace "\W","_"
+                        $name = $name -replace "\W",""
                         $ssn = (($c[60..68]) -join '').Insert(3,"-").Insert(6,"-")
                         $uic = ($c[37..41]) -join ''
-                        $uic = $uic -replace "\W","_"
+                        $uic = $uic -replace "\W",""
                         $published_year = ($c[6..11] -join '').Substring(0,2)
                         $period_from = ($c[48..53]) -join ''
                         $period_to = ($c[54..59]) -join ''
