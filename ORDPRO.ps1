@@ -140,10 +140,26 @@ function Debug-Info
 
 function Combine-Orders
 {
+[CmdletBinding()]
+    Param(
+        [alias('i')]$input_batch,
+        [alias('y')][string]$year
+    )
+
     Write-Log -log_file $($log_file) -message "Combining processed orders into batches of no more than 250 in each file to $($ordmanagers_iperms_integrator_output)\$($run_date)."
     Write-Verbose "Combining processed orders into batches of no more than 250 in each file to $($ordmanagers_iperms_integrator_output)\$($run_date)."
 
-    $order_files = (Get-ChildItem "$($ordmanagers_orders_by_soldier_output)" -Recurse -File -Exclude "*___cert.txt" | ? { $_.CreationTime -gt (Get-Date).Date } | Select -First 250 | Select FullName)
+    $known_bad_strings = @(
+    "                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
+    "                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
+    "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",
+    "`f"
+    )
+
+    $order_files = $($input_batch)  | Select -First 250
+    $order_files.Count
+    Read-Host -Prompt "Enter to continue"
+
     $order_files_processed = @()
 
     $order_files_count = $($order_files).Count
@@ -152,7 +168,7 @@ function Combine-Orders
     $end = $order_files.Count
 
     do{            
-        $out_file = "$($ordmanagers_iperms_integrator_output)\$($run_date)\$($start)-$($end).txt"
+        $out_file = "$($ordmanagers_iperms_integrator_output)\$($run_date)\$($year)_$($start)-$($end).txt"
 
         if(!(Test-Path "$($ordmanagers_iperms_integrator_output)\$($run_date)"))
         {
@@ -163,7 +179,7 @@ function Combine-Orders
             if($?)
             {
                 Write-Log -log_file $($log_file) -message "$($ordmanagers_iperms_integrator_output)\$($run_date) created successfully."
-                Write-Verbose "$($ordmanagers_iperms_integrator_output)\$($run_date) created successfully."                        
+                Write-Verbose "$($ordmanagers_iperms_integrator_output)\$($run_date) created successfully."
             }
             else
             {
@@ -181,13 +197,20 @@ function Combine-Orders
         # Combine 250 files into batch
         Write-Log -log_file $log_file -message "Combining $($start) - $($end) files into $($out_file)."
         Write-Verbose "Combining $($start) - $($end) files into $($out_file)."
-        $order_files | % { Get-Content $_.FullName | Add-Content $($out_file) }
+        $order_files | % { Get-Content $_ | Add-Content $($out_file) }
 
         # Move files to array containing files already processed
-        $order_files | % { $order_files_processed += $_.FullName }
+        $order_files | % { $order_files_processed += $_ }
+
+        # Edit file to remove bad strings
+        $file_content = (Get-Content $($out_file))
+        $file_content = ($file_content | Select-String -Pattern $($known_bad_strings) -NotMatch)
+
+        # Set edited file
+         Set-Content -Path "$($out_file)" $file_content
 
         # Repopulate array
-        $order_files = (Get-ChildItem "$($ordmanagers_orders_by_soldier_output)" -Recurse -File -Exclude "*___cert.txt" | ? { $_.CreationTime -gt (Get-Date).Date } | ? { $_ -notin $order_files_processed } | Select -First 250 | Select FullName)
+        $order_files = ($($input_batch) | ? { $_ -notin $order_files_processed } | Select -First 250)
         $order_files_count = $($order_files).Count
 
         $start = $end + 1
@@ -229,7 +252,7 @@ VARIABLES
     These variables are any stand alone script-wide variables needed.
 #>
 $script_name = $($MyInvocation.MyCommand.Name)
-$version_info = "2.2"
+$version_info = "2.3"
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $log_file = "$($log_directory_working)\$($run_date)_ORDPRO.log"
 
@@ -246,17 +269,17 @@ $params_results = $params  | Out-String
 if($parameters_passed -eq $total_parameters) 
 {     
     Write-Log -log_file $($log_file) -message "All $total_parameters parameters are being used. `n$($params_results)"
-    Write-Verbose "All $total_parameters parameters are being used. `n$($params_results)"
+    Write-Verbose "All $total_parameters parameters are being used. `n`n$($params_results)`n"
 }
 elseif($parameters_passed -eq 1) 
 { 
     Write-Log -log_file $($log_file) -message "1 parameter is being used. `n$($params_results)"
-    Write-Verbose "1 parameter is being used. `n$($params_results)" 
+    Write-Verbose "1 parameter is being used. `n`n$($params_results)`n" 
 }
 else
 { 
     Write-Log -log_file $($log_file) -message "$parameters_passed parameters are being used. `n`n$($params_results)"
-    Write-Verbose "$parameters_passed parameters are being used. `n`n$($params_results)" 
+    Write-Verbose "$parameters_passed parameters are being used. `n`n$($params_results)`n" 
 }
 
 if($($parameters_passed) -gt '0')
@@ -342,7 +365,11 @@ if($($parameters_passed) -gt '0')
                     (6) create directories and place edited orders in appropriate directories
             #>
             $files = (Get-ChildItem -Path "$($input_dir)" -Filter "*r.reg" -File)
+            $orders_processed_batch = @()
             $files_processed = 0
+            $line_count = 0
+            $warning_count = 0
+            $error_count = 0
             if($($files).Count -gt 0)
             {
                 Write-Log -log_file $($log_file) -message "Total to process: $($files.Count)."
@@ -364,15 +391,12 @@ if($($parameters_passed) -gt '0')
                     # (2) determine the m.prt and c.prt file that corresponds with the currently parsed r.reg file
                     $order_file_main = (Get-ChildItem -Path "$($input_dir)" -Filter "*$($order_n)m.prt" -File)
                     $main_file_content = (Get-Content -Path "$($input_dir)\$($order_file_main)" | Out-String)
-                    $last_line_main = ($reg_file_content | Select -Last 1 | Out-String)
 
                     $order_file_cert = (Get-ChildItem -Path "$($input_dir)" -Filter "*$($order_n)c.prt" -File)
                     $cert_file_content = (Get-Content -Path "$($input_dir)\$($order_file_cert)" | Out-String)
 
                     Write-Log -log_file $($log_file) -message "Registry file found is $($order_file_reg). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
                     Write-Verbose "Registry file found is $($order_file_reg). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
-
-                    $line_count = 0
 
                     # (1) we process each r.reg file line by line
                     foreach($line in $reg_file_content)
@@ -395,9 +419,24 @@ if($($parameters_passed) -gt '0')
 
                         # (4) find and edit the main if needed 
                         #$orders_m = $main_file_content -split "(?=`f)"
-                        $orders_m = $main_file_content -split "(?<=`f)"
-                        $order_m = $orders_m -match "ORDERS\s{1,2}$($order_number)" | Out-String
+                        #$orders_m = $main_file_content -split "(?<=`f)"
+                        $orders_m = $main_file_content -split "(?<=`f)+"
+                        $order_m = ($orders_m -match "ORDERS\s{1,2}$($order_number)")
+                        if($($order_m))
+                        {
+                            Write-Verbose "Found valid main order for $($name) $($ssn) order number $($order_number)."
+                            Write-Log -log_file $($log_file) -message "Found valid main order for $($name) $($ssn) order number $($order_number)."
 
+                            $order_m[-1] = $order_m[-1] -replace "`f",''
+                            $order_m = ($order_m | Out-String)
+                        }
+                        else
+                        {
+                            Write-Warning "Failed to find valid main order for $($name) $($ssn) order number $($order_number)."
+                            Write-Log -log_file $($log_file) -message "Failed to find valid main order for $($name) $($ssn) order number $($order_number)." -level [WARN]
+                            $warning_count ++
+                            continue
+                        }
 
                         # Find order in cert file and edit order
                         if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294 -or $($format) -eq 400)
@@ -409,6 +448,17 @@ if($($parameters_passed) -gt '0')
                         {
                             $orders_c = $cert_file_content -split "(`f)"
                             $order_c = $orders_c -match "Order number: $($c[0..5] -join '')"
+                            if($($order_c))
+                            {
+                                Write-Verbose "Found valid certificate order for $($name) $($ssn) order number $($order_number)."
+                                Write-Log -log_file $($log_file) -message "Found valid certificate order for $($name) $($ssn) order number $($order_number)."
+                            }
+                            else
+                            {
+                                Write-Warning "Failed to find valid certificate order for $($name) $($ssn) order number $($order_number)."
+                                Write-Log -log_file $($log_file) -message "Failed to find valid certificate order for $($name) $($ssn) order number $($order_number)." -level [WARN]
+                                $warning_count ++
+                            }
                         }
 
                         # Create directories and move orders
@@ -423,7 +473,8 @@ if($($parameters_passed) -gt '0')
                         # (5) create directories and place edited orders in appropriate directories
                         Write-Log -log_file $($log_file) -message "Creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processing $($files_processed)/$($files.Count)."
                         Write-Verbose "Creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processing $($files_processed)/$($files.Count)."
-            
+                        
+                        # Check for soldier within uic
                         if(!(Test-Path "$($soldier_directory_uics)"))
                         {
                             Write-Log -log_file $($log_file) -message "$($soldier_directory_uics) does not exist. Creating now."
@@ -438,7 +489,8 @@ if($($parameters_passed) -gt '0')
                             {
                                 Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics) creation failed." -level [ERROR]
                                 Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics) creation failed."
-                                throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics) creation failed."
+                                $error_count ++
+                                #throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics) creation failed."
                             }
                         }
                         else
@@ -446,7 +498,8 @@ if($($parameters_passed) -gt '0')
                             Write-Log -log_file $($log_file) -message "$($soldier_directory_uics) already created. Continuing."
                             Write-Verbose "$($soldier_directory_uics) already created. Continuing."
                         }
-        
+                        
+                        # Check for main order file within soldiers directory under uic
                         if(!(Test-Path "$($soldier_directory_uics)\$($uic_soldier_order_file_name_main)"))
                         {
                             Write-Log -log_file $($log_file) -message "$($soldier_directory_uics)\$($uic_soldier_order_file_name_main) does not exist. Creating now."
@@ -462,7 +515,8 @@ if($($parameters_passed) -gt '0')
                             {
                                 Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed." -level [ERROR]
                                 Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed."
-                                throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed."
+                                $error_count ++
+                                #throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_main) creation failed."
                             }
                         }
                         else
@@ -471,10 +525,10 @@ if($($parameters_passed) -gt '0')
                             Write-Verbose "$($soldier_directory_uics)\$($uic_soldier_order_file_name_main) already created. Continuing."
                         }
 
-                        if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294 -or $($format) -eq 400)
+                        if(!($($order_c)))
                         {
-                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
-                            Write-Verbose "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Log -log_file $($log_file) -message "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping."
+                            Write-Verbose "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping."
                         }
                         else
                         {
@@ -483,6 +537,7 @@ if($($parameters_passed) -gt '0')
                                 Write-Log -log_file $($log_file) -message "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) does not exist. Creating now."
                                 Write-Verbose "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) does not exist. Creating now."
 		                        New-Item -ItemType File -Path "$($soldier_directory_uics)" -Name "$($uic_soldier_order_file_name_cert)" -Value $($order_c) > $null
+
                                 if($?)
                                 {
                                     Write-Log -log_file $($log_file) -message "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) created successfully."
@@ -492,7 +547,8 @@ if($($parameters_passed) -gt '0')
                                 {
                                     Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed." -level [ERROR]
                                     Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed."
-                                    throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed."
+                                    $error_count ++
+                                    #throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) creation failed."
                                 }
                             }
                             else
@@ -517,7 +573,8 @@ if($($parameters_passed) -gt '0')
                             {
                                 Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed." -level [ERROR]
                                 Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
-                                throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
+                                $error_count ++
+                                #throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
                             }
                         }
                         else
@@ -534,13 +591,15 @@ if($($parameters_passed) -gt '0')
                             if($?)
                             {
                                 Write-Log -log_file $($log_file) -message "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) created successfully."   
-                                Write-Verbose "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) created successfully."   
+                                Write-Verbose "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) created successfully."
+                                $orders_processed_batch += "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main)"
                             }
                             else
                             {
                                 Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) creation failed." -level [ERROR]
                                 Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_main) creation failed."
-                                throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
+                                $error_count ++
+                                #throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory) creation failed."
                             }
                         }
                         else
@@ -550,10 +609,10 @@ if($($parameters_passed) -gt '0')
                         }
 
 
-                        if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294 -or $($format) -eq 400)
+                        if(!($($order_c)))
                         {
-                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
-                            Write-Verbose "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Log -log_file $($log_file) -message "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping."
+                            Write-Verbose "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping."
                         }
                         else
                         {
@@ -571,7 +630,8 @@ if($($parameters_passed) -gt '0')
                                 {
                                     Write-Log -log_file $($log_file) -message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed." -level [ERROR]
                                     Write-Error -Message "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed."
-                                    throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed."
+                                    $error_count ++
+                                    #throw "Failed to process $($order_file_reg) for $($name) $($ssn) order number $($order_number). $($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) creation failed."
                                 }
                             }
                             else
@@ -592,22 +652,45 @@ if($($parameters_passed) -gt '0')
 
                 if($($combine_orders))
                 {
-                    Combine-Orders
+                    Combine-Orders -input_batch $($orders_processed_batch) -year $($published_year)
+                    $combined_order_count = $($orders_processed_batch).Count
                 }
 
                 $end_time = Get-Date
                 #$run_time = $([timespan]::fromseconds(((Get-Date)-$start_time).Totalseconds).ToString(“dd\:hh\:mm\:ss”))
                 $run_time = $([timespan]::fromseconds(((Get-Date)-$($start_time)).Totalseconds).ToString(“hh\:mm\:ss”))
 
-                Write-Log -log_file $($log_file) -message "Total processed $($files_processed)/$($files.Count)."
-                Write-Log -log_file $($log_file) -message "Start time: $($start_time)."
-                Write-Log -log_file $($log_file) -message "End time:   $($end_time)."
-                Write-Log -log_file $($log_file) -message "Run time:   $($run_time)."
+                Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
+                Write-Log -log_file $($log_file) -message "                      PROCESSING STATS                    "
+                Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
+                Write-Log -log_file $($log_file) -message "Total files processed:   $($files_processed)/$($files.Count)."
+                Write-Log -log_file $($log_file) -message "Total lines processed:   $($line_count)."
+                Write-Log -log_file $($log_file) -message "Total orders combined:   $($combined_order_count)."
+                Write-Log -log_file $($log_file) -message "Total warnings occurred: $($warning_count)."
+                Write-Log -log_file $($log_file) -message "Total errors occurred:   $($error_count)."
+                Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
+                Write-Log -log_file $($log_file) -message "                      RUN TIME STATS                      "
+                Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
+                Write-Log -log_file $($log_file) -message "Start time:            $($start_time)."
+                Write-Log -log_file $($log_file) -message "End time:              $($end_time)."
+                Write-Log -log_file $($log_file) -message "Run time:              $($run_time)."
+                Write-Log -log_file $($log_file) -message "-----------------------------------------------------------"
 
-                Write-Verbose "Total processed $($files_processed)/$($files.Count)."
+                Write-Verbose "----------------------------------------------------------"
+                Write-Verbose "                      PROCESSING STATS                    "
+                Write-Verbose "----------------------------------------------------------"
+                Write-Verbose "Total files processed:   $($files_processed)/$($files.Count)."
+                Write-Verbose "Total lines processed:   $($line_count)."
+                Write-Verbose "Total orders combined:   $($combined_order_count)."
+                Write-Verbose "Total warnings occurred: $($warning_count)."
+                Write-Verbose "Total errors occurred:   $($error_count)."
+                Write-Verbose "----------------------------------------------------------"
+                Write-Verbose "                      RUN TIME STATS                      "
+                Write-Verbose "----------------------------------------------------------"
                 Write-Verbose "Start time: $($start_time)."
                 Write-Verbose "End time:   $($end_time)."
                 Write-Verbose "Run time:   $($run_time)."
+                Write-Verbose "----------------------------------------------------------"
             }
             else
             {
@@ -622,23 +705,41 @@ if($($parameters_passed) -gt '0')
         catch
         {
             $end_time = Get-Date
-            #$run_time = $([timespan]::fromseconds(((Get-Date)-$start_time).Totalseconds).ToString(“dd\:hh\:mm\:ss”))
             $run_time = $([timespan]::fromseconds(((Get-Date)-$start_time).Totalseconds).ToString(“hh\:mm\:ss”))
-            $error_message = $_.Exception.Message
-            $failed_item = $_.Exception.ItemName
 
-            Write-Log -log_file $($log_file) -message "Total processed $($files_processed)/$($files.Count)."
-            Write-Log -log_file $($log_file) -message "Start time: $($start_time)."
-            Write-Log -log_file $($log_file) -message "End time:   $($end_time)."
-            Write-Log -log_file $($log_file) -message "Run time:   $($run_time)."
-            Write-Log -log_file $($log_file) -message "Processing orders failed.`nThe error message was $error_message`nThe failed item was $failed_item" -level [ERROR]
+            Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
+            Write-Log -log_file $($log_file) -message "                      PROCESSING STATS                    "
+            Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
+            Write-Log -log_file $($log_file) -message "Total files processed:   $($files_processed)/$($files.Count)."
+            Write-Log -log_file $($log_file) -message "Total lines processed:   $($line_count)."
+            Write-Log -log_file $($log_file) -message "Total orders combined:   $($combined_order_count)."
+            Write-Log -log_file $($log_file) -message "Total warnings occurred: $($warning_count)."
+            Write-Log -log_file $($log_file) -message "Total errors occurred:   $($error_count)."
+            Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
+            Write-Log -log_file $($log_file) -message "                      RUN TIME STATS                      "
+            Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
+            Write-Log -log_file $($log_file) -message "Start time:            $($start_time)."
+            Write-Log -log_file $($log_file) -message "End time:              $($end_time)."
+            Write-Log -log_file $($log_file) -message "Run time:              $($run_time)."
+            Write-Log -log_file $($log_file) -message "-----------------------------------------------------------"
+            Write-Log -log_file $($log_file) -message "$_" -level [ERROR]
 
-            Write-Verbose "Total processed $($files_processed)/$($files.Count)."
+            Write-Verbose "----------------------------------------------------------"
+            Write-Verbose "                      PROCESSING STATS                    "
+            Write-Verbose "----------------------------------------------------------"
+            Write-Verbose "Total files processed:   $($files_processed)/$($files.Count)."
+            Write-Verbose "Total lines processed:   $($line_count)."
+            Write-Verbose "Total orders combined:   $($combined_order_count)."
+            Write-Verbose "Total warnings occurred: $($warning_count)."
+            Write-Verbose "Total errors occurred:   $($error_count)."
+            Write-Verbose "----------------------------------------------------------"
+            Write-Verbose "                      RUN TIME STATS                      "
+            Write-Verbose "----------------------------------------------------------"
             Write-Verbose "Start time: $($start_time)."
             Write-Verbose "End time:   $($end_time)."
             Write-Verbose "Run time:   $($run_time)."
-
-            Write-Error -Message "Processing orders failed.`nThe error message was $error_message`nThe failed item was $failed_item"
+            Write-Verbose "----------------------------------------------------------"
+            Write-Error -Message "$_"
         }
     }
 }
