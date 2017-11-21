@@ -10,7 +10,7 @@ Author: Ashton J. Hanisch < <ajhanisch@gmail.com> >
 Automates splitting, editing, combining, processing, and managing of orders.
   
 # **DESCRIPTION**  
-Script designed to assist in management and processing of orders given in the format of a single file or files containing numerous orders, from one to thousands of orders. Script to go from one single file containing any number of orders to organized directory structure by 'UIC\SOLDIER' to allow for a more organized look and viewing of orders processed on a daily basis or in large batches of historical orders.
+Script designed to assist in management and processing of orders given in the format of a single file or files containing numerous orders, from one to thousands of orders. Script to go from one single file containing any number of orders to organized directory structure by 'UICS\\[UIC]\\[SOLDIER]\\ORDER_N' to allow for a more organized look and viewing of orders processed on a daily basis or in large batches of historical orders.
     
 # **FEATURES**  
 Automated parsing, splitting, editing, and organizing, orders. Detailed verbosity of script processing during runtime. Detailed logging of all parameters and output. Debugging options available.
