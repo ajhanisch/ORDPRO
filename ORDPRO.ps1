@@ -164,7 +164,7 @@ function Combine-Orders
     $end = $order_files.Count
 
     do{            
-        $out_file = "$($ordmanagers_iperms_integrator_output)\$($run_date)\$($year)_$($start)-$($end).txt"
+        $out_file = "$($ordmanagers_iperms_integrator_output)\$($run_date)\$($year)_$($start)-$($end).doc"
 
         if(!(Test-Path "$($ordmanagers_iperms_integrator_output)\$($run_date)"))
         {
@@ -460,8 +460,8 @@ if($($parameters_passed) -gt '0')
                         # Create directories and move orders
                         $uic_directory = "$($uics_directory_output)\$($uic)" # Paths and names for UICS directory of output directory.
                         $soldier_directory_uics = "$($uic_directory)\$($name)___$($ssn)" # Paths and names for UICS directory of output directory.
-                        $uic_soldier_order_file_name_main = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).txt" # Paths and names for UICS directory of output directory.
-                        $uic_soldier_order_file_name_cert = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___cert.txt" # Paths and names for UICS directory of output directory.
+                        $uic_soldier_order_file_name_main = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___$($format).doc" # Paths and names for UICS directory of output directory.
+                        $uic_soldier_order_file_name_cert = "$($published_year)___$($ssn)___$($order_number)___$($period_from)___$($period_to)___cert.doc" # Paths and names for UICS directory of output directory.
                         $ord_managers_soldier_directory = "$($ordmanagers_orders_by_soldier_output)\$($name)___$($ssn)" # Paths and names for ORD_MANAGERS directory of output directory.
 
                         Debug-Info
