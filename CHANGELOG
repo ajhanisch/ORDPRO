@@ -1,6 +1,17 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 2.3
+DATE: 11/21/2017
+CHANGES:
+- fixed printing and formatting issues
+- added detailed processing and run time to output when finished
+- replace .txt extentions with .doc
+- modified combining orders functionality to combine orders processed batch by batch rather than by timestamp
+- added published year to combined file names
+- added check for making sure we have '*r.reg', '*m.prt', '*c.prt' files before processing orders. if we dont have them, files are logged and skipped
+- added csv file output describing files missing required order files
+------------------------------------
 VERSION: 2.2
 DATE: 11/15/2017
 CHANGES:
