@@ -360,12 +360,19 @@ if($($parameters_passed) -gt '0')
                     (4) find and edit the main and cert file if needed
                     (6) create directories and place edited orders in appropriate directories
             #>
-            $files = (Get-ChildItem -Path "$($input_dir)" -Filter "*r.reg" -File)
+
             $orders_processed_batch = @()
+            $orders_missing_files = @()
+            $orders_missing_files_csv = "$($log_directory_working)\$($run_date)_missing_files.csv"
+
             $files_processed = 0
             $line_count = 0
             $warning_count = 0
             $error_count = 0
+            $orders_main_count = 0
+            $orders_cert_count = 0
+
+            $files = (Get-ChildItem -Path "$($input_dir)" -Filter "*r.reg" -File)
             if($($files).Count -gt 0)
             {
                 Write-Log -log_file $($log_file) -message "Total to process: $($files.Count)."
@@ -384,15 +391,34 @@ if($($parameters_passed) -gt '0')
                     Write-Log -log_file $($log_file) -message "Processing $($order_n.Insert(3,"-"))."
                     Write-Verbose "Processing $($order_n.Insert(3,"-"))."
 
-                    # (2) determine the m.prt and c.prt file that corresponds with the currently parsed r.reg file
+                    # (2) determine the m.prt and c.prt file that corresponds with the currently parsed r.reg filed
                     $order_file_main = (Get-ChildItem -Path "$($input_dir)" -Filter "*$($order_n)m.prt" -File)
                     $main_file_content = (Get-Content -Path "$($input_dir)\$($order_file_main)" | Out-String)
 
                     $order_file_cert = (Get-ChildItem -Path "$($input_dir)" -Filter "*$($order_n)c.prt" -File)
                     $cert_file_content = (Get-Content -Path "$($input_dir)\$($order_file_cert)" | Out-String)
 
-                    Write-Log -log_file $($log_file) -message "Registry file found is $($order_file_reg). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
-                    Write-Verbose "Registry file found is $($order_file_reg). Main file found is $($order_file_main). Cert file found is $($order_file_cert)."
+                    if($($order_file_reg) -and $($order_file_main) -and $($order_file_cert))
+                    {
+                        Write-Log -log_file $($log_file) -message "Registry file found is [$($order_file_reg)]. Main file found is [$($order_file_main)]. Cert file found is [$($order_file_cert)]."
+                        Write-Verbose "Registry file found is [$($order_file_reg)]. Main file found is [$($order_file_main)]. Cert file found is [$($order_file_cert)]."
+                    }
+                    else
+                    {
+                        Write-Log -log_file $($log_file) -message "Registry file found is [$($order_file_reg)]. Main file found is [$($order_file_main)]. Cert file found is [$($order_file_cert)]. Missing one or more file(s)." -level [ERROR]
+                        Write-Error -Message "Registry file found is [$($order_file_reg)]. Main file found is [$($order_file_main)]. Cert file found is [$($order_file_cert)]. Missing one or more file(s)."
+                        
+                        $hash = @{
+                            REG_FILE = $($order_file_reg);
+                            MAIN_FILE = $($order_file_main);
+                            CERT_FILE = $($order_file_cert);
+                        }
+
+                        $missing_file = New-Object -TypeName PSObject -Property $hash
+                        $orders_missing_files += $missing_file
+
+                        break
+                    }
 
                     # (1) we process each r.reg file line by line
                     foreach($line in $reg_file_content)
@@ -424,7 +450,7 @@ if($($parameters_passed) -gt '0')
                             Write-Log -log_file $($log_file) -message "Found valid main order for $($name) $($ssn) order number $($order_number)."
 
                             $order_m[-1] = $order_m[-1] -replace "`f",''
-                            $order_m = ($order_m | Out-String)
+                            $order_m = ($order_m | Out-String)                            
                         }
                         else
                         {
@@ -435,26 +461,19 @@ if($($parameters_passed) -gt '0')
                         }
 
                         # Find order in cert file and edit order
-                        if($($format) -eq 700 -or $($format) -eq 705 -or $($format) -eq 172 -or $($format) -eq 294 -or $($format) -eq 400)
+                        $orders_c = $cert_file_content -split "(`f)"
+                        $order_c = $orders_c -match "Order number: $($c[0..5] -join '')"
+                        if(!($($order_c)))
                         {
-                            Write-Log -log_file $($log_file) -message "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
-                            Write-Verbose "Found format $($format) in $($order_file_reg) for $($name) $($ssn) order number $($order_number). 400, 294, 172, 700, and 705 formats do not have corresponding certificate files. Skipping."
+                            Write-Log -log_file $($log_file) -message "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping." -level [WARN]
+                            Write-Warning "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping."
+                            $warning_count ++
                         }
                         else
                         {
                             $orders_c = $cert_file_content -split "(`f)"
                             $order_c = $orders_c -match "Order number: $($c[0..5] -join '')"
-                            if($($order_c))
-                            {
-                                Write-Verbose "Found valid certificate order for $($name) $($ssn) order number $($order_number)."
-                                Write-Log -log_file $($log_file) -message "Found valid certificate order for $($name) $($ssn) order number $($order_number)."
-                            }
-                            else
-                            {
-                                Write-Warning "Failed to find valid certificate order for $($name) $($ssn) order number $($order_number)."
-                                Write-Log -log_file $($log_file) -message "Failed to find valid certificate order for $($name) $($ssn) order number $($order_number)." -level [WARN]
-                                $warning_count ++
-                            }
+
                         }
 
                         # Create directories and move orders
@@ -506,6 +525,7 @@ if($($parameters_passed) -gt '0')
                             {
                                 Write-Log -log_file $($log_file) -message "$($soldier_directory_uics)\$($uic_soldier_order_file_name_main) created successfully."
                                 Write-Verbose "$($soldier_directory_uics)\$($uic_soldier_order_file_name_main) created successfully."
+                                $orders_main_count ++
                             }
                             else
                             {
@@ -523,7 +543,7 @@ if($($parameters_passed) -gt '0')
 
                         if(!($($order_c)))
                         {
-                            Write-Log -log_file $($log_file) -message "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping."
+                            #Write-Log -log_file $($log_file) -message "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping."
                             Write-Verbose "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping."
                         }
                         else
@@ -538,6 +558,8 @@ if($($parameters_passed) -gt '0')
                                 {
                                     Write-Log -log_file $($log_file) -message "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) created successfully."
                                     Write-Verbose "$($soldier_directory_uics)\$($uic_soldier_order_file_name_cert) created successfully."
+
+                                    $orders_cert_count ++
                                 }
                                 else
                                 {
@@ -607,7 +629,7 @@ if($($parameters_passed) -gt '0')
 
                         if(!($($order_c)))
                         {
-                            Write-Log -log_file $($log_file) -message "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping."
+                            #Write-Log -log_file $($log_file) -message "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping."
                             Write-Verbose "Failed to find certificate order for $($name) $($ssn) order number $($order_number). Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping."
                         }
                         else
@@ -636,8 +658,8 @@ if($($parameters_passed) -gt '0')
                                 Write-Verbose "$($ord_managers_soldier_directory)\$($uic_soldier_order_file_name_cert) already created. Continuing."
                             }
 
-                            Write-Log -log_file $($log_file) -message "Finished creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processing $($files_processed)/$($files.Count)."
-                            Write-Verbose "Finished creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")). Processing $($files_processed)/$($files.Count)."
+                            Write-Log -log_file $($log_file) -message "Finished creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")) $($files_processed)/$($files.Count)."
+                            Write-Verbose "Finished creating directory structure and order files for $($name) $($ssn) order number $($order_number). Processing $($order_n.Insert(3,"-")) $files_processed/$($files.Count)."
                         }
                     }
 
@@ -652,20 +674,36 @@ if($($parameters_passed) -gt '0')
                     $combined_order_count = $($orders_processed_batch).Count
                 }
 
+                $missing_files_count = @($($orders_missing_files)).Count
+                if($missing_files_count -gt 0)
+                {
+                    Write-Log -log_file $($log_file) -message "Looks like we had some problems with files from AFCOS. Writing $($orders_missing_files_csv) now. Check this file for full results. The files listed did NOT get orders created due to missing files." -level [WARN]
+                    Write-Warning "Looks like we had some problems with files from AFCOS. Writing $($orders_missing_files_csv) now. Check this file for full results. The files listed did NOT get orders created due to missing files."
+                    $orders_missing_files | Select REG_FILE, MAIN_FILE, CERT_FILE | Export-Csv -Path "$($orders_missing_files_csv)" -NoTypeInformation -Force
+                }
+                else
+                {
+                    Write-Log -log_file $($log_file) -message "Looks we had no problems with files from AFCOS. Everything looked good."
+                    Write-Verbose "Looks we had no problems with files from AFCOS. Everything looked good."
+                }
+
                 $end_time = Get-Date
                 #$run_time = $([timespan]::fromseconds(((Get-Date)-$start_time).Totalseconds).ToString(“dd\:hh\:mm\:ss”))
                 $run_time = $([timespan]::fromseconds(((Get-Date)-$($start_time)).Totalseconds).ToString(“hh\:mm\:ss”))
 
                 Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
-                Write-Log -log_file $($log_file) -message "                      PROCESSING STATS                    "
+                Write-Log -log_file $($log_file) -message "+                      PROCESSING STATS                  +"
                 Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
-                Write-Log -log_file $($log_file) -message "Total files processed:   $($files_processed)/$($files.Count)."
-                Write-Log -log_file $($log_file) -message "Total lines processed:   $($line_count)."
-                Write-Log -log_file $($log_file) -message "Total orders combined:   $($combined_order_count)."
-                Write-Log -log_file $($log_file) -message "Total warnings occurred: $($warning_count)."
-                Write-Log -log_file $($log_file) -message "Total errors occurred:   $($error_count)."
+                Write-Log -log_file $($log_file) -message "Total files processed:       $($files_processed)/$($files.Count)."
+                Write-Log -log_file $($log_file) -message "Total files missing:         $($orders_missing_files.Count)/$($files.Count)."
+                Write-Log -log_file $($log_file) -message "Total lines processed:       $($line_count)."
+                Write-Log -log_file $($log_file) -message "Total main orders processed: $($orders_main_count)"
+                Write-Log -log_file $($log_file) -message "Total cert orders processed: $($orders_cert_count)"
+                Write-Log -log_file $($log_file) -message "Total orders combined:       $($combined_order_count)."
+                Write-Log -log_file $($log_file) -message "Total warnings occurred:     $($warning_count)."
+                Write-Log -log_file $($log_file) -message "Total errors occurred:       $($error_count)."
                 Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
-                Write-Log -log_file $($log_file) -message "                      RUN TIME STATS                      "
+                Write-Log -log_file $($log_file) -message "+                      RUN TIME STATS                    +"
                 Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
                 Write-Log -log_file $($log_file) -message "Start time:            $($start_time)."
                 Write-Log -log_file $($log_file) -message "End time:              $($end_time)."
@@ -673,15 +711,18 @@ if($($parameters_passed) -gt '0')
                 Write-Log -log_file $($log_file) -message "-----------------------------------------------------------"
 
                 Write-Verbose "----------------------------------------------------------"
-                Write-Verbose "                      PROCESSING STATS                    "
+                Write-Verbose "+                      PROCESSING STATS                  +"
                 Write-Verbose "----------------------------------------------------------"
-                Write-Verbose "Total files processed:   $($files_processed)/$($files.Count)."
-                Write-Verbose "Total lines processed:   $($line_count)."
-                Write-Verbose "Total orders combined:   $($combined_order_count)."
-                Write-Verbose "Total warnings occurred: $($warning_count)."
-                Write-Verbose "Total errors occurred:   $($error_count)."
+                Write-Verbose "Total files processed:       $($files_processed)/$($files.Count)."
+                Write-Verbose "Total files missing:         $($orders_missing_files.Count)/$($files.Count)."
+                Write-Verbose "Total lines processed:       $($line_count)."
+                Write-Verbose "Total main orders processed: $($orders_main_count)"
+                Write-Verbose "Total cert orders processed: $($orders_cert_count)"
+                Write-Verbose "Total orders combined:       $($combined_order_count)."
+                Write-Verbose "Total warnings occurred:     $($warning_count)."
+                Write-Verbose "Total errors occurred:       $($error_count)."
                 Write-Verbose "----------------------------------------------------------"
-                Write-Verbose "                      RUN TIME STATS                      "
+                Write-Verbose "+                      RUN TIME STATS                    +"
                 Write-Verbose "----------------------------------------------------------"
                 Write-Verbose "Start time: $($start_time)."
                 Write-Verbose "End time:   $($end_time)."
@@ -704,15 +745,18 @@ if($($parameters_passed) -gt '0')
             $run_time = $([timespan]::fromseconds(((Get-Date)-$start_time).Totalseconds).ToString(“hh\:mm\:ss”))
 
             Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
-            Write-Log -log_file $($log_file) -message "                      PROCESSING STATS                    "
+            Write-Log -log_file $($log_file) -message "+                      PROCESSING STATS                  +"
             Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
-            Write-Log -log_file $($log_file) -message "Total files processed:   $($files_processed)/$($files.Count)."
-            Write-Log -log_file $($log_file) -message "Total lines processed:   $($line_count)."
-            Write-Log -log_file $($log_file) -message "Total orders combined:   $($combined_order_count)."
-            Write-Log -log_file $($log_file) -message "Total warnings occurred: $($warning_count)."
-            Write-Log -log_file $($log_file) -message "Total errors occurred:   $($error_count)."
+            Write-Log -log_file $($log_file) -message "Total files processed:       $($files_processed)/$($files.Count)."
+            Write-Log -log_file $($log_file) -message "Total files missing:         $($orders_missing_files.Count)/$($files.Count)."
+            Write-Log -log_file $($log_file) -message "Total lines processed:       $($line_count)."
+            Write-Log -log_file $($log_file) -message "Total main orders processed: $($orders_main_count)"
+            Write-Log -log_file $($log_file) -message "Total cert orders processed: $($orders_cert_count)"
+            Write-Log -log_file $($log_file) -message "Total orders combined:       $($combined_order_count)."
+            Write-Log -log_file $($log_file) -message "Total warnings occurred:     $($warning_count)."
+            Write-Log -log_file $($log_file) -message "Total errors occurred:       $($error_count)."
             Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
-            Write-Log -log_file $($log_file) -message "                      RUN TIME STATS                      "
+            Write-Log -log_file $($log_file) -message "+                      RUN TIME STATS                    +"
             Write-Log -log_file $($log_file) -message "----------------------------------------------------------"
             Write-Log -log_file $($log_file) -message "Start time:            $($start_time)."
             Write-Log -log_file $($log_file) -message "End time:              $($end_time)."
@@ -721,15 +765,18 @@ if($($parameters_passed) -gt '0')
             Write-Log -log_file $($log_file) -message "$_" -level [ERROR]
 
             Write-Verbose "----------------------------------------------------------"
-            Write-Verbose "                      PROCESSING STATS                    "
+            Write-Verbose "+                      PROCESSING STATS                  +"
             Write-Verbose "----------------------------------------------------------"
-            Write-Verbose "Total files processed:   $($files_processed)/$($files.Count)."
-            Write-Verbose "Total lines processed:   $($line_count)."
-            Write-Verbose "Total orders combined:   $($combined_order_count)."
-            Write-Verbose "Total warnings occurred: $($warning_count)."
-            Write-Verbose "Total errors occurred:   $($error_count)."
+            Write-Verbose "Total files processed:       $($files_processed)/$($files.Count)."
+            Write-Verbose "Total files missing:         $($orders_missing_files.Count)/$($files.Count)."
+            Write-Verbose "Total lines processed:       $($line_count)."
+            Write-Verbose "Total main orders processed: $($orders_main_count)"
+            Write-Verbose "Total cert orders processed: $($orders_cert_count)"
+            Write-Verbose "Total orders combined:       $($combined_order_count)."
+            Write-Verbose "Total warnings occurred:     $($warning_count)."
+            Write-Verbose "Total errors occurred:       $($error_count)."
             Write-Verbose "----------------------------------------------------------"
-            Write-Verbose "                      RUN TIME STATS                      "
+            Write-Verbose "+                      RUN TIME STATS                    +"
             Write-Verbose "----------------------------------------------------------"
             Write-Verbose "Start time: $($start_time)."
             Write-Verbose "End time:   $($end_time)."
