@@ -1,6 +1,11 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 2.4
+DATE: 11/23/2017
+CHANGES:
+- created python version of powershell script. currently has core functionality, need to still implement some luxury features
+------------------------------------
 VERSION: 2.3
 DATE: 11/21/2017
 CHANGES:
