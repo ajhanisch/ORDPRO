@@ -33,7 +33,7 @@ class Order:
 		'''
 		PRINT VERSION
 		'''
-		parser.add_argument("--version", action="version", version='%(prog)s - Version 2.5')
+		parser.add_argument("--version", action="version", version='%(prog)s - Version 2.5. Check https://gitlab.com/ajhanisch/ORDPRO for the most up to date information.')
 		
 		args = parser.parse_args()
 		
@@ -83,6 +83,8 @@ class Order:
 	def CombineOrders(self, orders_to_combine, year):
 		self.orders_to_combine = orders_to_combine
 		self.year = year
+		
+		self.known_bad_strings = ["                          FOR OFFICIAL USE ONLY - PRIVACY ACT", "                          FOR OFFICIAL USE ONLY - PRIVACY ACT", "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}", "`f"]
 		
 		self.order_files = self.orders_to_combine[:250]
 		self.order_files_count = len(self.order_files)
@@ -173,7 +175,7 @@ if __name__ == '__main__':
 		for a in args.__dict__:
 			log.info(str(a) + ": " + str(args.__dict__[a]))
 				
-		for f in glob.glob("{}\\*r.reg".format(args.i)):			
+		for f in glob.glob("{}\\*r.reg".format(args.i)):
 			
 			if sys.platform == 'win32': # windows
 				f = f.split('\\')[-1]
@@ -182,7 +184,7 @@ if __name__ == '__main__':
 			elif sys.platform == 'linux' or sys.platform == 'linux2': # linux
 				f = f.split('//')[-1]
 				
-			result = { 'ORDER_FILE_REG' : '', 'ORDER_FILE_MAIN' : '', 'ORDER_FILE_CERT' : '', 'ORDER_FILE_R_PRT' : ''}			
+			result = { 'ORDER_FILE_REG' : '', 'ORDER_FILE_MAIN' : '', 'ORDER_FILE_CERT' : '', 'ORDER_FILE_R_PRT' : ''}	
 			order_n = f[3:9]
 			pattern_main = "ord{}m.prt".format(order_n)
 			pattern_cert = "ord{}c.prt".format(order_n)
@@ -204,12 +206,13 @@ if __name__ == '__main__':
 				log.debug("Registry file found is [{}]. Main file found is [{}]. Cer file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))
 			else:
 				log.error("Registry file found is [{}]. Main file found is [{}]. Cert file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))
-				sys.exit("Missing one or more files. Try again with proper input.")
+				#sys.exit("Missing one or more files. Try again with proper input.")
 				
 			for key, value in result.items():
 				if key == 'ORDER_FILE_REG':
 					with open(value, 'r') as reg_file:
 						for line in reg_file:
+							
 							order_number = line[:3] + '-' + line[3:6]
 							published_year = line[6:12]
 							published_year = published_year[0:2]
@@ -221,31 +224,37 @@ if __name__ == '__main__':
 							ssn = line[60:63] + "-" + line[63:65] + "-" + line[64:68]
 							
 							order_m = ''
-							with open(result['ORDER_FILE_MAIN'], 'r') as main_file:
-								orders_m = main_file.read().split("\f")						
-								order_regex_1 = "ORDERS {}".format(order_number)
-								order_regex_2 = "ORDERS  {}".format(order_number)
-								for order in orders_m:
-									if order_regex_1 in order:
-										order_m += order
-									elif order_regex_2 in order:
-										order_m += order
-							if order_m:
-								log.info("Found valid main order for {} {} order number {}.".format(name, ssn, order_number))
-							else:
-								log.error("Failed to find main order for {} {} order number {}.".format(name, ssn, order_number))
+							try:
+								with open(result['ORDER_FILE_MAIN'], 'r') as main_file:
+									orders_m = main_file.read().split("\f")						
+									order_regex_1 = "ORDERS {}".format(order_number)
+									order_regex_2 = "ORDERS  {}".format(order_number)
+									for order in orders_m:
+										if order_regex_1 in order:
+											order_m += order
+										elif order_regex_2 in order:
+											order_m += order
+								if order_m:
+									log.info("Found valid main order for {} {} order number {}.".format(name, ssn, order_number))
+								else:
+									log.warning("Failed to find main order for {} {} order number {}.".format(name, ssn, order_number))
+							except FileNotFoundError:
+								break
 									
 							order_c = ''
-							with open(result['ORDER_FILE_CERT'], 'r') as cert_file:
-								orders_c = cert_file.read().split("\f")						
-								order_regex = "Order number: {}".format(line[0:6])
-								for order in orders_c:
-									if order_regex in order:
-										order_c += order
-							if order_c:
-								log.info("Found valid cert order for {} {} order number {}.".format(name, ssn, order_number))
-							else:
-								log.error("Failed to find cert order for {} {} order number {}.".format(name, ssn, order_number))
+							try:
+								with open(result['ORDER_FILE_CERT'], 'r') as cert_file:
+									orders_c = cert_file.read().split("\f")						
+									order_regex = "Order number: {}".format(line[0:6])
+									for order in orders_c:
+										if order_regex in order:
+											order_c += order
+								if order_c:
+									log.info("Found valid cert order for {} {} order number {}.".format(name, ssn, order_number))
+								else:
+									log.warning("Failed to find cert order for {} {} order number {}.".format(name, ssn, order_number))
+							except FileNotFoundError:
+								break
 								
 							uic_directory = "{}\\{}".format(directories['UICS_DIRECTORY_OUTPUT'], uic)
 							soldier_directory_uics = "{}\\{}___{}".format(uic_directory, name, ssn)
