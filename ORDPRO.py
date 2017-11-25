@@ -3,6 +3,7 @@
 
 import argparse, os, logging, glob, sys, fnmatch, re
 from time import gmtime, strftime
+from pprint import pprint
 
 class Order:
 	'''
@@ -27,6 +28,7 @@ class Order:
 		OPTIONAL ARGUMENTS
 		'''
 		parser.add_argument('--verbose', '-v', action="store_true", help="enable detailed script verbosity")
+		parser.add_argument('--combine', '-c', action="store_true", help="combine main order files")
 		
 		'''
 		PRINT VERSION
@@ -75,42 +77,57 @@ class Order:
 			with open("{}\\{}".format(self.directory, self.order_file), 'w') as f:
 				f.write(self.order)
 				
-	def CombineOrders(self, orders_to_combine):
+			if 'UICS' in self.directory and '__cert.doc' not in self.order_file and self.order_file not in Order().orders_to_combine:
+				Order().orders_to_combine.append("{}\\{}".format(self.directory, self.order_file))
+				
+	def CombineOrders(self, orders_to_combine, year):
 		self.orders_to_combine = orders_to_combine
+		self.year = year
 		
-		order_files = self.orders_to_combine[:250]
-		order_files_processed = [] 
-		order_files_count = len(order_files)
+		self.known_bad_strings = ["                          FOR OFFICIAL USE ONLY - PRIVACY ACT\s", "                          FOR OFFICIAL USE ONLY - PRIVACY ACT\s", "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}\s", "`f\s"]
 		
-		start = 1
-		end = len(order_files)
+		self.order_files = self.orders_to_combine[:250]
+		self.order_files_count = len(self.order_files)
+		self.order_files_processed = []
+		self.start = 1
+		self.end = len(self.order_files)
 		
-		while True:
-			if len(order_files) 0:
-				break
-			else:
-				out_file = "{}\\{}-{}.doc".format(self.ordmanagers_iperms_integrator_output, start, end)
+		while len(self.order_files) != 0:
+			self.out_file = "{}\\{}\\{}_{}-{}.doc".format(self.ordmanagers_iperms_integrator_output, self.run_date, self.year, self.start, self.end)
+			
+			if not os.path.exists("{}\\{}".format(self.ordmanagers_iperms_integrator_output, self.run_date)):
+				os.makedirs("{}\\{}".format(self.ordmanagers_iperms_integrator_output, self.run_date))
+			
+			if not os.path.exists(self.out_file):
+				with open(self.out_file, 'w') as f:
+					f.write(self.out_file)
+			
+			# Combine 250 file batches
+			with open("{}".format(self.out_file), 'w') as f:
+				for fname in self.order_files:
+					with open(fname) as infile:
+						if "_cert.doc" not in fname:
+							f.write(infile.read())
+							self.order_files_processed.append(fname)
 				
-				# Combine 250 file batches
-				with open("{}".format(out_file), 'w') as outfile:
-					for fname in self.orders_to_combine:
-						with open(fname) as infile:
-							outfile.write(infile.read())
-				
-				# Add file names to files already processed list
-				for fname in order_files:
-					order_files_processed.append(fname)
-					
-				# Edit file to remove bad strings
-				
-				
-				# Repopulate order_files list
-				
-				
-				# Set new counters
-				start = end + 1
-				end = start + order_files_count - 1
-		
+			# Edit file to remove bad strings
+			for s in self.known_bad_strings:
+				with open(self.out_file, 'r') as f:
+					f_data = f.read()
+					pattern = re.compile(s)
+					f_data = pattern.sub('', f_data)
+					with open(self.out_file, 'w') as f:
+						f.write(f_data)
+			
+			# Repopultae list
+			self.order_files = []
+			for fname in self.orders_to_combine:
+				if fname not in self.order_files_processed:
+					self.order_files.append(fname)
+			self.order_files = self.order_files[:250]
+			self.start = self.end + 1
+			self.end = self.start + len(self.order_files) - 1
+			
 '''
 ENTRY POINT
 '''
@@ -245,3 +262,6 @@ if __name__ == '__main__':
 							o.CreateDirectory(ord_managers_soldier_directory)
 							o.CreateOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_main, order_m)
 							o.CreateOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_cert, order_c)
+		
+		if args.combine:
+			o.CombineOrders(o.orders_to_combine, published_year)
