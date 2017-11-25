@@ -1,6 +1,12 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 2.5
+DATE: 11/25/2017
+CHANGES:
+- reimplemented order combining
+- cleaned up functionality with class, methods, functions
+------------------------------------
 VERSION: 2.4
 DATE: 11/23/2017
 CHANGES:
