@@ -5,93 +5,89 @@ import argparse, os, logging, timeit, time, glob, sys, fnmatch, re
 from time import gmtime, strftime
 from datetime import datetime
 
-'''
-FUNCTIONS
-'''
-def SetVariables():	
+class Order:
 	'''
-	PARSE ARGUMENTS
-	'''
-	args = ParseArguments()
-	
-	'''
-	DIRECTORIES WORKING
-	'''
-	current_directory_working = os.getcwd()
-	log_directory_working = r"{}\\LOGS".format(current_directory_working)
-	
-	'''
-	VARIABLES
-	'''
-	script_name = os.path.basename(__file__)
-	run_date = strftime("%Y-%m-%d_%H-%M-%S", gmtime())
-	log_file = "{}\\{}_ORDPRO.log".format(log_directory_working, run_date)
-
-	'''
-	DIRECTORIES OUTPUT
-	'''
-	uics_directory_output = "{}\\UICS".format(args.o)
-	ordmanagers_directory_output = "{}\\ORD_MANAGERS".format(args.o)
-	ordmanagers_orders_by_soldier_output = "{}\\ORDERS_BY_SOLDIER".format(ordmanagers_directory_output)
-	ordmanagers_iperms_integrator_output = "{}\\IPERMS_INTEGRATOR".format(ordmanagers_directory_output)
-
-	'''
-	DICTIONARIES
-	'''
-	directories = { 'CURRENT_DIRECTORY_WORKING': current_directory_working, 'LOG_DIRECTORY_WORKING': log_directory_working, 'UICS_DIRECTORY_OUTPUT': uics_directory_output, 'ORDMANAGERS_DIRECTORY_OUTPUT': ordmanagers_directory_output, 'ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT': ordmanagers_orders_by_soldier_output, 'ORDMANAGERS_IPERMS_INTEGRATOR_OUTPUT': ordmanagers_iperms_integrator_output }
-	
-	variables = { 'SCRIPT_NAME': script_name, 'RUN_DATE': run_date, 'LOG_FILE': log_file }
-	
-	return directories, variables
-
-def ParseArguments():
-	'''
-	CREATE ARGUMENT PARSER
-	'''
-	parser = argparse.ArgumentParser(description="Script to process orders from AFCOS.")
-	
-	'''
-	POSITIONAL MANDATORY ARGUMENTS
-	'''
-	parser.add_argument("i", help="input directory", type=str)
-	parser.add_argument("o", help="output directory", type=str)
-	
-	'''
-	OPTIONAL ARGUMENTS
-	'''
-	parser.add_argument('--verbose', '-v', action="store_true", help="enable detailed script verbosity")
-	
-	'''
-	PRINT VERSION
-	'''
-	parser.add_argument("--version", action="version", version='%(prog)s - Version 2.4')
-	
-	'''
-	PARSE ARGUMENTS
-	'''
-	args = parser.parse_args()
-	
-	return args
-	
-def main():
-	'''
-	PARSE ARGUMENTS
-	'''
-	args = ParseArguments()
-	
-	if args.i and args.o:	
+	Class for all orders processed
+	'''			
+	def ParseArguments(self):
 		'''
-		GET REQUIRED VARIABLES
+		CREATE ARGUMENT PARSER
 		'''
-		directories, variables = SetVariables() # Accessed via directories['DIRECTORY'] || variables['VARIABLE']
+		parser = argparse.ArgumentParser(description="Script to process orders from AFCOS.")
 		
 		'''
-		CREATE REQUIRED DIRECTORES
+		POSITIONAL MANDATORY ARGUMENTS
 		'''
+		parser.add_argument("i", help="input directory", type=str)
+		parser.add_argument("o", help="output directory", type=str)
+		
+		'''
+		OPTIONAL ARGUMENTS
+		'''
+		parser.add_argument('--verbose', '-v', action="store_true", help="enable detailed script verbosity")
+		
+		'''
+		PRINT VERSION
+		'''
+		parser.add_argument("--version", action="version", version='%(prog)s - Version 2.5')
+		
+		args = parser.parse_args()
+		
+		return args
+		
+	def SetVariables(self):	
+
+		args = Order().ParseArguments()
+		
+		self.current_directory_working = os.getcwd()
+		self.log_directory_working = "{}\\LOGS".format(self.current_directory_working)
+		
+		self.script_name = os.path.basename(__file__)
+		self.run_date = strftime("%Y-%m-%d_%H-%M-%S", gmtime())
+		self.log_file = "{}\\{}_ORDPRO.log".format(self.log_directory_working, self.run_date)
+
+		self.uics_directory_output = "{}\\UICS".format(args.o)
+		self.ordmanagers_directory_output = "{}\\ORD_MANAGERS".format(args.o)
+		self.ordmanagers_orders_by_soldier_output = "{}\\ORDERS_BY_SOLDIER".format(self.ordmanagers_directory_output)
+		self.ordmanagers_iperms_integrator_output = "{}\\IPERMS_INTEGRATOR".format(self.ordmanagers_directory_output)
+
+		self.directories = { 'CURRENT_DIRECTORY_WORKING': self.current_directory_working, 'LOG_DIRECTORY_WORKING': self.log_directory_working, 'UICS_DIRECTORY_OUTPUT': self.uics_directory_output, 'ORDMANAGERS_DIRECTORY_OUTPUT': self.ordmanagers_directory_output, 'ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT': self.ordmanagers_orders_by_soldier_output, 'ORDMANAGERS_IPERMS_INTEGRATOR_OUTPUT': self.ordmanagers_iperms_integrator_output }
+		
+		self.variables = { 'SCRIPT_NAME': self.script_name, 'RUN_DATE': self.run_date, 'LOG_FILE': self.log_file }
+		
+		return self.directories, self.variables
+		
+	def CreateDirectory(self, directory):		
+		self.directory = directory	
+		
+		if not os.path.exists(self.directory): 
+			log.info("{} doesn't exist. Creating now.".format(self.directory))			
+			os.makedirs("{}".format(self.directory))
+	
+	def CreateOrder(self, directory, order_file, order):
+		self.directory = directory
+		self.order_file = order_file
+		self.order = order
+		
+		if not os.path.exists("{}\\{}".format(self.directory, self.order)): 
+			log.info("{}\\{} does not exist. Creating now.".format(self.directory, self.order_file))
+			with open("{}\\{}".format(self.directory, self.order_file), 'w') as f:
+				f.write(self.order)
+		
+'''
+ENTRY POINT
+'''
+if __name__ == '__main__':
+	o = Order()
+	args = o.ParseArguments()
+	
+	if args.i and args.o:	
+		directories, variables = o.SetVariables() # Accessed via directories['DIRECTORY'] || variables['VARIABLE']
+		
 		for key, value in directories.items():
 			if not os.path.exists(value):
 				os.makedirs(value)
-
+		
 		'''
 		ENABLE/DISABLE VERBOSITY
 		More logging info here https://docs.python.org/3/library/logging.html#module-logging
@@ -120,17 +116,11 @@ def main():
 			handler_file.setFormatter(format_log)
 			logger_root = logging.getLogger()
 			logger_root.addHandler(handler_file)
-		
-		'''
-		PRINT ARGUMENTS
-		'''
+				
 		log.info("You are running {} with the following arguments: ".format(variables['SCRIPT_NAME']))
 		for a in args.__dict__:
 			log.info(str(a) + ": " + str(args.__dict__[a]))
-
-		'''
-		GATHER FILES
-		'''	
+				
 		for f in glob.glob("{}\\*r.reg".format(args.i)):			
 			
 			if sys.platform == 'win32': # windows
@@ -159,9 +149,9 @@ def main():
 						result['ORDER_FILE_REG'] = "{}\\{}".format(root, name)
 			
 			if result['ORDER_FILE_REG'] and result['ORDER_FILE_MAIN'] and result['ORDER_FILE_CERT']:
-				print("Registry file found is [{}]. Main file found is [{}]. Cer file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))
+				log.debug("Registry file found is [{}]. Main file found is [{}]. Cer file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))
 			else:
-				print("Registry file found is [{}]. Main file found is [{}]. Cert file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))
+				log.error("Registry file found is [{}]. Main file found is [{}]. Cert file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))
 				sys.exit("Missing one or more files. Try again with proper input.")
 				
 			for key, value in result.items():
@@ -187,12 +177,11 @@ def main():
 									if order_regex_1 in order:
 										order_m += order
 									elif order_regex_2 in order:
-										#order = order.replace("`f",'')
 										order_m += order
-							if order_m != '':
-								print("Found valid main order for {} {} order number {}.".format(name, ssn, order_number))
+							if order_m:
+								log.info("Found valid main order for {} {} order number {}.".format(name, ssn, order_number))
 							else:
-								print("Failed to find main order for {} {} order number {}.".format(name, ssn, order_number))
+								log.error("Failed to find main order for {} {} order number {}.".format(name, ssn, order_number))
 									
 							order_c = ''
 							with open(result['ORDER_FILE_CERT'], 'r') as cert_file:
@@ -201,10 +190,10 @@ def main():
 								for order in orders_c:
 									if order_regex in order:
 										order_c += order
-							if order_c != '':
-								print("Found valid cert order for {} {} order number {}.".format(name, ssn, order_number))
+							if order_c:
+								log.info("Found valid cert order for {} {} order number {}.".format(name, ssn, order_number))
 							else:
-								print("Failed to find cert order for {} {} order number {}.".format(name, ssn, order_number))
+								log.error("Failed to find cert order for {} {} order number {}.".format(name, ssn, order_number))
 								
 							uic_directory = "{}\\{}".format(directories['UICS_DIRECTORY_OUTPUT'], uic)
 							soldier_directory_uics = "{}\\{}___{}".format(uic_directory, name, ssn)
@@ -212,33 +201,10 @@ def main():
 							uic_soldier_order_file_name_cert = "{}___{}___{}___{}___{}___cert.doc".format(published_year, ssn, order_number, period_from, period_to)
 							ord_managers_soldier_directory = "{}\\{}___{}".format(directories['ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT'], name, ssn)
 							
-							# UICS directory
-							if not os.path.exists("{}".format(soldier_directory_uics)):
-								os.makedirs("{}".format(soldier_directory_uics))
-							if not os.path.exists("{}\\{}".format(soldier_directory_uics, uic_soldier_order_file_name_main)):
-								with open("{}\\{}".format(soldier_directory_uics, uic_soldier_order_file_name_main), 'w') as f:
-									f.write(order_m)
-							if order_c:
-								if not os.path.exists("{}\\{}".format(soldier_directory_uics, uic_soldier_order_file_name_cert)):
-									with open("{}\\{}".format(soldier_directory_uics, uic_soldier_order_file_name_cert), 'w') as f:
-										f.write(order_c)
-							else:
-								print("Failed to find certificate order for {} {} order number {}. Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping.".format(name, ssn, order_number))
-								
-							# ORD_MANAGERS directory
-							if not os.path.exists("{}".format(ord_managers_soldier_directory)):
-								os.makedirs("{}".format(ord_managers_soldier_directory))
-							if not os.path.exists("{}\\{}".format(ord_managers_soldier_directory, uic_soldier_order_file_name_main)):
-								with open("{}\\{}".format(ord_managers_soldier_directory, uic_soldier_order_file_name_main), 'w') as f:
-									f.write(order_m)
-							if order_c:
-								if not os.path.exists("{}\\{}".format(ord_managers_soldier_directory, uic_soldier_order_file_name_cert)):
-									with open("{}\\{}".format(ord_managers_soldier_directory, uic_soldier_order_file_name_cert), 'w') as f:
-										f.write(order_c)
-							else:
-								print("Failed to find certificate order for {} {} order number {}. Most likely certificate for this person does not exist or certificate order file as a whole does not exist. Skipping.".format(name, ssn, order_number))
-'''
-ENTRY POINT
-'''
-if __name__ == '__main__':
-	main()
+							o.CreateDirectory(soldier_directory_uics)
+							o.CreateOrder(soldier_directory_uics, uic_soldier_order_file_name_main, order_m)
+							o.CreateOrder(soldier_directory_uics, uic_soldier_order_file_name_cert, order_c)
+							
+							o.CreateDirectory(ord_managers_soldier_directory)
+							o.CreateOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_main, order_m)
+							o.CreateOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_cert, order_c)
