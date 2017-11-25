@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse, os, logging, timeit, time, glob, sys, fnmatch, re
+import argparse, os, logging, glob, sys, fnmatch, re
 from time import gmtime, strftime
-from datetime import datetime
 
 class Order:
 	'''
