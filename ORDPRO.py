@@ -7,7 +7,10 @@ from time import gmtime, strftime
 class Order:
 	'''
 	Class for all orders processed
-	'''			
+	'''		
+
+	orders_to_combine = []
+	
 	def ParseArguments(self):
 		'''
 		CREATE ARGUMENT PARSER
@@ -35,7 +38,6 @@ class Order:
 		return args
 		
 	def SetVariables(self):	
-
 		args = Order().ParseArguments()
 		
 		self.current_directory_working = os.getcwd()
@@ -72,6 +74,42 @@ class Order:
 			log.info("{}\\{} does not exist. Creating now.".format(self.directory, self.order_file))
 			with open("{}\\{}".format(self.directory, self.order_file), 'w') as f:
 				f.write(self.order)
+				
+	def CombineOrders(self, orders_to_combine):
+		self.orders_to_combine = orders_to_combine
+		
+		order_files = self.orders_to_combine[:250]
+		order_files_processed = [] 
+		order_files_count = len(order_files)
+		
+		start = 1
+		end = len(order_files)
+		
+		while True:
+			if len(order_files) 0:
+				break
+			else:
+				out_file = "{}\\{}-{}.doc".format(self.ordmanagers_iperms_integrator_output, start, end)
+				
+				# Combine 250 file batches
+				with open("{}".format(out_file), 'w') as outfile:
+					for fname in self.orders_to_combine:
+						with open(fname) as infile:
+							outfile.write(infile.read())
+				
+				# Add file names to files already processed list
+				for fname in order_files:
+					order_files_processed.append(fname)
+					
+				# Edit file to remove bad strings
+				
+				
+				# Repopulate order_files list
+				
+				
+				# Set new counters
+				start = end + 1
+				end = start + order_files_count - 1
 		
 '''
 ENTRY POINT
