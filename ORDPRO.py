@@ -84,8 +84,6 @@ class Order:
 		self.orders_to_combine = orders_to_combine
 		self.year = year
 		
-		self.known_bad_strings = ["                          FOR OFFICIAL USE ONLY - PRIVACY ACT\s", "                          FOR OFFICIAL USE ONLY - PRIVACY ACT\s", "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}\s", "`f\s"]
-		
 		self.order_files = self.orders_to_combine[:250]
 		self.order_files_count = len(self.order_files)
 		self.order_files_processed = []
