@@ -23,7 +23,7 @@ Running the tool:
 .\ORDPRO.py [options]
   
 Typical Usage Example:  
-.\ORDPRO.py "\\\path\to\input" "\\\path\to\output" --verbose
+.\ORDPRO.py "\\\path\to\input" "\\\path\to\output"
   
 Options:   
   
