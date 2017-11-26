@@ -1,6 +1,12 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 2.6
+DATE: 11/26/2017
+CHANGES:
+- reimplemented detailed processing and run time statistics
+- added stronger error handling
+------------------------------------
 VERSION: 2.5
 DATE: 11/25/2017
 CHANGES:
