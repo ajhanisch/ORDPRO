@@ -19,21 +19,17 @@ class Order:
 		parser = argparse.ArgumentParser(description="Script to process orders from AFCOS.")
 		
 		'''
-		POSITIONAL MANDATORY ARGUMENTS
-		'''
-		parser.add_argument("i", help="input directory", type=str)
-		parser.add_argument("o", help="output directory", type=str)
-		
-		'''
 		OPTIONAL ARGUMENTS
 		'''
+		parser.add_argument('--input','-i', help="input directory", type=str)
+		parser.add_argument('--output', '-o', help="output directory", type=str)
 		parser.add_argument('--verbose', '-v', action="store_true", help="enable detailed script verbosity")
 		parser.add_argument('--combine', '-c', action="store_true", help="combine main order files")
 		
 		'''
 		PRINT VERSION
 		'''
-		parser.add_argument("--version", action="version", version='%(prog)s - Version 2.6. Check https://gitlab.com/ajhanisch/ORDPRO for the most up to date information.')
+		parser.add_argument("--version", action="version", version='%(prog)s - Version 2.7. Check https://gitlab.com/ajhanisch/ORDPRO for the most up to date information.')
 		
 		args = parser.parse_args()
 		
@@ -49,8 +45,8 @@ class Order:
 		self.run_date = strftime("%Y-%m-%d_%H-%M-%S", gmtime())
 		self.log_file = "{}\\{}_ORDPRO.log".format(self.log_directory_working, self.run_date)
 
-		self.uics_directory_output = "{}\\UICS".format(args.o)
-		self.ordmanagers_directory_output = "{}\\ORD_MANAGERS".format(args.o)
+		self.uics_directory_output = "{}\\UICS".format(args.output)
+		self.ordmanagers_directory_output = "{}\\ORD_MANAGERS".format(args.output)
 		self.ordmanagers_orders_by_soldier_output = "{}\\ORDERS_BY_SOLDIER".format(self.ordmanagers_directory_output)
 		self.ordmanagers_iperms_integrator_output = "{}\\IPERMS_INTEGRATOR".format(self.ordmanagers_directory_output)
 
@@ -86,7 +82,6 @@ class Order:
 		
 		self.known_bad_strings = ["                          FOR OFFICIAL USE ONLY - PRIVACY ACT", "                          FOR OFFICIAL USE ONLY - PRIVACY ACT", "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}", "`f"]
 		
-		log.info("Combining orders now.")
 		self.order_files = self.orders_to_combine[:250]
 		self.order_files_count = len(self.order_files)
 		self.order_files_processed = []
@@ -127,10 +122,7 @@ class Order:
 					self.order_files.append(fname)
 			self.order_files = self.order_files[:250]
 			self.start = self.end + 1
-			self.end = self.start + len(self.order_files) - 1
-		
-		log.info("Finished combining orders.")
-		
+			self.end = self.start + len(self.order_files) - 1		
 '''
 ENTRY POINT
 '''
@@ -138,7 +130,7 @@ if __name__ == '__main__':
 	o = Order()
 	args = o.ParseArguments()
 	
-	if args.i and args.o:	
+	if args.input and args.output:	
 		
 		start = time.strftime('%m-%d-%y %H:%M:%S')
 		start_time = timeit.default_timer()
@@ -155,7 +147,10 @@ if __name__ == '__main__':
 		error_count = 0
 		
 		orders_missing_files = {}
+		orders_missing_files_count = 0
 		orders_missing_files_csv = "{}\\{}_missing_files.csv".format(directories['LOG_DIRECTORY_WORKING'], variables['RUN_DATE'])
+		
+		orders_to_combine_csv = "{}\\{}_orders_created.csv".format(directories['LOG_DIRECTORY_WORKING'], variables['RUN_DATE'])
 		
 		for key, value in directories.items():
 			if not os.path.exists(value):
@@ -194,7 +189,7 @@ if __name__ == '__main__':
 		for a in args.__dict__:
 			log.info(str(a) + ": " + str(args.__dict__[a]))
 				
-		for f in glob.glob("{}\\*r.reg".format(args.i)):
+		for f in glob.glob("{}\\*r.reg".format(args.input)):
 			files_processed += 1			
 			if sys.platform == 'win32': # windows
 				f = f.split('\\')[-1]
@@ -210,7 +205,7 @@ if __name__ == '__main__':
 			pattern_reg = "reg{}r.reg".format(order_n)
 			pattern_reg_prt = "reg{}r.prt".format(order_n)
 		
-			for root, dirs, files in os.walk(args.i):
+			for root, dirs, files in os.walk(args.input):
 				for name in files:
 					if pattern_main in name:
 						result['ORDER_FILE_MAIN'] = "{}\\{}".format(root, name)
@@ -224,10 +219,12 @@ if __name__ == '__main__':
 			if result['ORDER_FILE_REG'] and result['ORDER_FILE_MAIN'] and result['ORDER_FILE_CERT']:
 				log.debug("Registry file found is [{}]. Main file found is [{}]. Cer file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))
 			else:
-				error_count += 1				
-				orders_missing_files[error_count] = []				
-				log.error("Registry file found is [{}]. Main file found is [{}]. Cert file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))				
-				orders_missing_files[error_count].append(result)
+				error_count += 1	
+				orders_missing_files_count += 1
+				log.error("Registry file found is [{}]. Main file found is [{}]. Cert file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))	
+				
+				orders_missing_files[orders_missing_files_count] = []				
+				orders_missing_files[orders_missing_files_count].append(result)
 				
 			for key, value in result.items():
 				if key == 'ORDER_FILE_REG':
@@ -242,22 +239,21 @@ if __name__ == '__main__':
 							uic = line[37:42]
 							period_from = line[48:54]
 							period_to = line[54:60]
-							ssn = line[60:63] + "-" + line[63:65] + "-" + line[64:68]
+							ssn = line[60:63] + "-" + line[63:65] + "-" + line[65:69]
 							
 							if result['ORDER_FILE_MAIN']:
-								order_m = ''
 								with open(result['ORDER_FILE_MAIN'], 'r') as main_file:
-									orders_m = main_file.read().split("\f")						
-									order_regex_1 = "ORDERS {}".format(order_number)
-									order_regex_2 = "ORDERS  {}".format(order_number)
-									for order in orders_m:
-										if order_regex_1 in order:
-											order_m += order
-										elif order_regex_2 in order:
-											order_m += order
+									orders_m = main_file.read()
+									orders_m = [x + "\f" for x in orders_m.split("\f")]							
+									order_m = [s for s in orders_m if order_number in s]
 								if order_m:
-									orders_main_count += 1								
+									orders_main_count += 1
 									log.info("Found valid main order for {} {} order number {}.".format(name, ssn, order_number))
+									
+									# Turn order_m list into order_m string to write to file
+									order_m = ''.join(order_m)
+									# Remove last line (\f) from the order to make printing work
+									order_m = order_m[:order_m.rfind('\f')]
 									
 									uic_directory = "{}\\{}".format(directories['UICS_DIRECTORY_OUTPUT'], uic)
 									soldier_directory_uics = "{}\\{}___{}".format(uic_directory, name, ssn)
@@ -305,38 +301,48 @@ if __name__ == '__main__':
 								error_count += 1
 								orders_cert_missing_count += 1
 								log.error("Missing cert order file for {} {} order number {}.".format(name, ssn, order_number))
+		if len(orders_missing_files) > 0:
+			log.critical("Looks like we have some missing files. Writing missing files results to {} now. Check this file for full results.".format(orders_missing_files_csv))
 		
-	if args.combine:
-		o.CombineOrders(o.orders_to_combine, published_year)
-		
-	if len(orders_missing_files) > 0:
-		log.critical("Looks like we have some missing files. Writing missing files results to {} now. Check this file for full results.".format(orders_missing_files_csv))
 		with open(orders_missing_files_csv, 'w') as out_file:
-			writer = csv.writer(out_file)
+			writer = csv.writer(out_file, lineterminator='\n')
 			for key, value in orders_missing_files.items():
 				writer.writerow([key, value])
 				
-	end = time.strftime('%m-%d-%y %H:%M:%S')
-	end_time = timeit.default_timer()
-	seconds = round(end_time - start_time)
-	m, s = divmod(seconds, 60)
-	h, m = divmod(m, 60)
+		if len(o.orders_to_combine) > 0:
+			log.info("Writing orders processed this round to {} now.".format(orders_to_combine_csv))
+			with open(orders_to_combine_csv, 'w') as out_file:
+				writer = csv.writer(out_file, lineterminator='\n')
+				for order in o.orders_to_combine:
+					writer.writerow([order])
+			log.info("Finished writing orders processed this round to {}.".format(orders_to_combine_csv))
+			
+		end = time.strftime('%m-%d-%y %H:%M:%S')
+		end_time = timeit.default_timer()
+		seconds = round(end_time - start_time)
+		m, s = divmod(seconds, 60)
+		h, m = divmod(m, 60)
+		
+		log.info('{:-^30}'.format(''))
+		log.info('{:+^30}'.format('PROCESSING STATS'))
+		log.info('{:-^30}'.format(''))
+		log.info('{:16s} {:13d}'.format('Files processed:', files_processed))
+		log.info('{:16s} {:13d}'.format('Files missing:', len(orders_missing_files)))
+		log.info('{:16s} {:13d}'.format('Lines processed:', lines_processed))
+		log.info('{:16s} {:13d}'.format('Main orders:', orders_main_count))
+		log.info('{:16s} {:13d}'.format('Cert orders:', orders_cert_count))
+		log.info('{:16s} {:13d}'.format('Missing main:', orders_main_missing_count))
+		log.info('{:16s} {:13d}'.format('Missing cert:', orders_cert_missing_count))
+		log.info('{:16s} {:11d}'.format('Warnings occurred:', warning_count))
+		log.info('{:16s} {:13d}'.format('Errors occurred:', error_count))
+		log.info('{:-^30}'.format(''))
+		log.info('{:+^30}'.format('RUNNING STATS'))
+		log.info('{:-^30}'.format(''))
+		log.info('{:11s} {:8}'.format('Start time:', start))
+		log.info('{:11s} {:10}'.format('End time:', end))
+		log.info('{:11s} {:d}:{:d}:{:d}'.format('Run time: ', h, m, s))
 	
-	log.info('{:-^30}'.format(''))
-	log.info('{:+^30}'.format('PROCESSING STATS'))
-	log.info('{:-^30}'.format(''))
-	log.info('{:16s} {:13d}'.format('Files processed:', files_processed))
-	log.info('{:16s} {:13d}'.format('Files missing:', len(orders_missing_files)))
-	log.info('{:16s} {:13d}'.format('Lines processed:', lines_processed))
-	log.info('{:16s} {:13d}'.format('Main orders:', orders_main_count))
-	log.info('{:16s} {:13d}'.format('Cert orders:', orders_cert_count))
-	log.info('{:16s} {:13d}'.format('Missing main:', orders_main_missing_count))
-	log.info('{:16s} {:13d}'.format('Missing cert:', orders_cert_missing_count))
-	log.info('{:16s} {:11d}'.format('Warnings occurred:', warning_count))
-	log.info('{:16s} {:13d}'.format('Errors occurred:', error_count))
-	log.info('{:-^30}'.format(''))
-	log.info('{:+^30}'.format('RUNNING STATS'))
-	log.info('{:-^30}'.format(''))
-	log.info('{:11s} {:8}'.format('Start time:', start))
-	log.info('{:11s} {:10}'.format('End time:', end))
-	log.info('{:11s} {:d}:{:d}:{:d}'.format('Run time: ', h, m, s))
+	if args.combine:
+		log.info("Combining orders to {} now.".format(directories['LOG_DIRECTORY_WORKING']))
+		o.CombineOrders(o.orders_to_combine, published_year)
+		log.info("Finished combining orders to {}.".format(directories['LOG_DIRECTORY_WORKING']))
