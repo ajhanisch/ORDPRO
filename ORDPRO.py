@@ -304,10 +304,10 @@ if __name__ == '__main__':
 		if len(orders_missing_files) > 0:
 			log.critical("Looks like we have some missing files. Writing missing files results to {} now. Check this file for full results.".format(orders_missing_files_csv))
 		
-		with open(orders_missing_files_csv, 'w') as out_file:
-			writer = csv.writer(out_file, lineterminator='\n')
-			for key, value in orders_missing_files.items():
-				writer.writerow([key, value])
+			with open(orders_missing_files_csv, 'w') as out_file:
+				writer = csv.writer(out_file, lineterminator='\n')
+				for key, value in orders_missing_files.items():
+					writer.writerow([key, value])
 				
 		if len(o.orders_to_combine) > 0:
 			log.info("Writing orders processed this round to {} now.".format(orders_to_combine_csv))
