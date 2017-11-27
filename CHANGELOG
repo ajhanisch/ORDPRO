@@ -1,6 +1,12 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 2.7
+DATE: 11/27/2017
+CHANGES:
+- fixed main order formatting and line breaks so orders can print properly
+- added output file containing orders created (to be used by orders removal function in future version)
+------------------------------------
 VERSION: 2.6
 DATE: 11/26/2017
 CHANGES:
