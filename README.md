@@ -34,6 +34,3 @@ Check the Wiki for detailed information on all CLI parameters and switches.
 - [ ] Implement notification of when orders are processed
 - [ ] Implement an undo function to remove results of previously ran sessions
 - [ ] Look at possibly reworking the functionality to a C# application with a true UI
-- [x] Significantly simplify orders splitting, editing, and parsing to gather variable information (major update)
-- [x] rewrite from powershell to python
-  
