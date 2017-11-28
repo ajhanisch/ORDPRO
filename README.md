@@ -34,3 +34,4 @@ Check the Wiki for detailed information on all CLI parameters and switches.
 - [ ] Implement notification of when orders are processed
 - [ ] Implement an undo function to remove results of previously ran sessions
 - [ ] Look at possibly reworking the functionality to a C# application with a true UI
+- [ ] Implement functionality to parse directories within directories rather than 1 input directory of files (parse multiple historical data directories at once)
