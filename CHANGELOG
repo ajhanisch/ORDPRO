@@ -1,6 +1,12 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 2.8
+DATE: 11/28/2017
+CHANGES:
+- changed UIC and NAME cleaning to clean non word characters replaced with "_"
+- added more detail to help menu
+- added searching and actions functions to find and perform actions on orders. started not completely finished yet.
 VERSION: 2.7
 DATE: 11/27/2017
 CHANGES:
