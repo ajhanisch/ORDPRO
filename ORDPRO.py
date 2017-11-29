@@ -16,20 +16,33 @@ class Order:
 		'''
 		CREATE ARGUMENT PARSER
 		'''
-		parser = argparse.ArgumentParser(description="Script to process orders from AFCOS.")
+		parser = argparse.ArgumentParser(description="Script to manage orders from AFCOS.")
+		
+		'''
+		PROCESSING ARGUMENTS
+		'''
+		process = parser.add_argument_group('Processing', 'Use these commands for processing order files and creating directory structure.')
+		process.add_argument('--input', metavar='\\\share\dir\input', help='Input directory containing required order files (r.reg, m.prt, c.prt).', type=str)
+		process.add_argument('--output', metavar='\\\share\dir\output', help='Output directory to create directory structure in.', type=str)
+		
+		'''
+		SEARCHING ORDERS
+		'''
+		search = parser.add_argument_group('Searching', 'Use these commands for finding and performing actions on orders.')
+		search.add_argument('--search', nargs='+', metavar='CRITERIA_N', help='Search for orders by name, ssn, order number, etc.')
+		search.add_argument('--path', nargs='+', metavar='PATH_N', help='Path to use for search.')
+		search.add_argument('--action', choices=['REMOVE', 'PRINT', 'COMBINE'], help='Perform action on results found by search.')
 		
 		'''
 		OPTIONAL ARGUMENTS
 		'''
-		parser.add_argument('--input','-i', help="input directory", type=str)
-		parser.add_argument('--output', '-o', help="output directory", type=str)
-		parser.add_argument('--verbose', '-v', action="store_true", help="enable detailed script verbosity")
-		parser.add_argument('--combine', '-c', action="store_true", help="combine main order files")
+		parser.add_argument('--verbose', action='store_true', help='Enable detailed script verbosity.')
+		parser.add_argument('--combine', action='store_true', help='Combine main order files. Use in conjunction with --input and --output.')
 		
 		'''
-		PRINT VERSION
+		VERSION
 		'''
-		parser.add_argument("--version", action="version", version='%(prog)s - Version 2.7. Check https://gitlab.com/ajhanisch/ORDPRO for the most up to date information.')
+		parser.add_argument('--version', action='version', version='%(prog)s - Version 2.8. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
 		
 		args = parser.parse_args()
 		
@@ -123,6 +136,34 @@ class Order:
 			self.order_files = self.order_files[:250]
 			self.start = self.end + 1
 			self.end = self.start + len(self.order_files) - 1		
+			
+	def Find(self, criteria, path):
+		self.criteria = criteria
+		self.path = path
+		
+		self.results = []
+		for c in self.criteria:
+			for p in self.path:
+				print("Looking for [{}] in [{}].".format(c, p))
+				
+				for file in glob.glob("{}/**".format(p), recursive=True):
+					if c in file:
+						print("Found [{}] in [{}].".format(c, file))
+						self.results.append(file)				
+		
+		return self.results
+		
+	def Action(self, action, results):
+		self.action = action
+		self.results = results
+		
+		if self.action == 'PRINT':
+			print("Printing action specified. Printing results now.")
+			pprint(results)
+		if self.action == 'REMOVE':
+			print("Removing action specified. Removing results now.")
+		if self.action == 'COMBINE':
+			print("Combining action specified. Combining results now.")
 '''
 ENTRY POINT
 '''
@@ -230,13 +271,13 @@ if __name__ == '__main__':
 				if key == 'ORDER_FILE_REG':
 					with open(value, 'r') as reg_file:
 						for line in reg_file:
-							lines_processed += 1							
+							lines_processed += 1			
 							order_number = line[:3] + '-' + line[3:6]
 							published_year = line[6:12]
 							published_year = published_year[0:2]
 							format = line[12:15]
 							name = re.sub("\W", "_", line[15:37].strip())
-							uic = line[37:42]
+							uic = re.sub("\W", "_", line[37:42].strip())
 							period_from = line[48:54]
 							period_to = line[54:60]
 							ssn = line[60:63] + "-" + line[63:65] + "-" + line[65:69]
@@ -346,3 +387,7 @@ if __name__ == '__main__':
 		log.info("Combining orders to {} now.".format(directories['LOG_DIRECTORY_WORKING']))
 		o.CombineOrders(o.orders_to_combine, published_year)
 		log.info("Finished combining orders to {}.".format(directories['LOG_DIRECTORY_WORKING']))
+	
+	if args.search and args.path and args.action:
+		results = o.Find(args.search, args.path)
+		o.Action(args.action, results)
