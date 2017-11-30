@@ -1,7 +1,7 @@
 <#
 SCRIPT CONSTANTS
 #>
-$file_path = "\\ng\ngsd-misc\ORDERS\UICS"
+$file_path = ""
 $current_directory = (Get-Item -Path ".\" -Verbose).FullName
 $run_date = (Get-Date -UFormat "%Y-%m-%d_%H-%M-%S")
 $current_year = ((Get-Date).Year).ToString().Substring(2)
