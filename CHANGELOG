@@ -1,6 +1,16 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 2.9
+DATE: 11/29/2017
+CHANGES:
+- added ability to pass multiple input directories (non-wildcard) as input
+- changed orders created output file from csv to txt since it wasnt putting out csv like data
+- modified error counting and presenting
+- fixed if order and directory exists or not checking
+- added more output to order and directory checking
+- added --create and --remove options to either create orders or remove orders from input
+------------------------------------
 VERSION: 2.8
 DATE: 11/28/2017
 CHANGES:
