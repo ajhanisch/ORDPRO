@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse, os, logging, glob, sys, fnmatch, re, time, csv, timeit
+import argparse, os, logging, glob, sys, fnmatch, re, time, csv, timeit, shutil
 from time import gmtime, strftime
 from pprint import pprint
 
@@ -11,6 +11,20 @@ class Order:
 	'''		
 
 	orders_to_combine = []
+	orders_removed = []
+
+	files_processed = 0
+	lines_processed = 0
+	orders_main_count = 0
+	orders_main_missing_count = 0
+	orders_cert_count = 0
+	orders_cert_missing_count = 0
+	warning_count = 0
+	error_count = 0
+	critical_count = 0
+	orders_missing_files_count = 0
+	orders_created_count = 0
+	orders_removed_count = 0
 	
 	def ParseArguments(self):
 		'''
@@ -22,27 +36,34 @@ class Order:
 		PROCESSING ARGUMENTS
 		'''
 		process = parser.add_argument_group('Processing', 'Use these commands for processing order files and creating directory structure.')
-		process.add_argument('--input', metavar='\\\share\dir\input', help='Input directory containing required order files (r.reg, m.prt, c.prt).', type=str)
-		process.add_argument('--output', metavar='\\\share\dir\output', help='Output directory to create directory structure in.', type=str)
+		process.add_argument('--input', nargs='+', metavar='\\\SHARE\INPUT', help='Input directory or directories containing required order files (r.reg, m.prt, c.prt).')
+		process.add_argument('--output', metavar='\\\SHARE\OUTPUT', help='Output directory to create directory structure in.', type=str)
+		process.add_argument('--remove', action='store_true', help='Remove orders instead of creating them.')
+		process.add_argument('--create', action='store_true', help='Process orders.')
 		
 		'''
 		SEARCHING ORDERS
 		'''
 		search = parser.add_argument_group('Searching', 'Use these commands for finding and performing actions on orders.')
-		search.add_argument('--search', nargs='+', metavar='CRITERIA_N', help='Search for orders by name, ssn, order number, etc.')
-		search.add_argument('--path', nargs='+', metavar='PATH_N', help='Path to use for search.')
+		search.add_argument('--search', nargs='+', metavar='CRITERIA', help='Search for orders by name, ssn, etc.')
+		search.add_argument('--path', nargs='+', metavar='PATH', help='Path to use for search.')
 		search.add_argument('--action', choices=['REMOVE', 'PRINT', 'COMBINE'], help='Perform action on results found by search.')
+		
+		'''
+		REPORTING ON UICS
+		'''
+		report = parser.add_argument_group('Reporting', 'Use these commands for reporting and auditing the created directory structure.')
 		
 		'''
 		OPTIONAL ARGUMENTS
 		'''
-		parser.add_argument('--verbose', action='store_true', help='Enable detailed script verbosity.')
+		parser.add_argument('--verbose', action='store_true', help='Enable detailed script console verbosity.')
 		parser.add_argument('--combine', action='store_true', help='Combine main order files. Use in conjunction with --input and --output.')
 		
 		'''
 		VERSION
 		'''
-		parser.add_argument('--version', action='version', version='%(prog)s - Version 2.8. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
+		parser.add_argument('--version', action='version', version='%(prog)s - Version 2.9. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
 		
 		args = parser.parse_args()
 		
@@ -75,19 +96,24 @@ class Order:
 		if not os.path.exists(self.directory): 
 			log.debug("{} doesn't exist. Creating now.".format(self.directory))			
 			os.makedirs("{}".format(self.directory))
+		else:
+			log.debug("{} exists. Not creating.".format(self.directory))			
 	
 	def CreateOrder(self, directory, order_file, order):
 		self.directory = directory
 		self.order_file = order_file
 		self.order = order
 		
-		if not os.path.exists("{}\\{}".format(self.directory, self.order)): 
+		if not os.path.exists("{}\\{}".format(self.directory, self.order_file)): 
 			log.debug("{}\\{} does not exist. Creating now.".format(self.directory, self.order_file))
 			with open("{}\\{}".format(self.directory, self.order_file), 'w') as f:
 				f.write(self.order)
 				
-			if 'UICS' in self.directory and '__cert.doc' not in self.order_file and self.order_file not in Order().orders_to_combine:
+			#if 'UICS' in self.directory and '__cert.doc' not in self.order_file and self.order_file not in Order().orders_to_combine:
+			if '__cert.doc' not in self.order_file and self.order_file not in Order().orders_to_combine:
 				Order().orders_to_combine.append("{}\\{}".format(self.directory, self.order_file))
+		else:
+			log.debug("{}\\{} exists. Not creating.".format(self.directory, self.order_file))
 				
 	def CombineOrders(self, orders_to_combine, year):
 		self.orders_to_combine = orders_to_combine
@@ -153,7 +179,7 @@ class Order:
 		
 		return self.results
 		
-	def Action(self, action, results):
+	def Action(self, action, results): # Need to finish this functions purpose.
 		self.action = action
 		self.results = results
 		
@@ -164,6 +190,29 @@ class Order:
 			print("Removing action specified. Removing results now.")
 		if self.action == 'COMBINE':
 			print("Combining action specified. Combining results now.")
+			
+	def RemoveDirectory(self, directory):
+		self.directory = directory	
+		
+		if os.path.exists(self.directory): 
+			log.debug("{} doesn't exist. Creating now.".format(self.directory))
+			shutil.rmtree(self.directory)
+		else:
+			log.debug("{} exists. Not creating.".format(self.directory))
+	
+	def RemoveOrder(self, directory, order_file, order):
+		self.directory = directory
+		self.order_file = order_file
+		self.order = order
+		
+		if os.path.exists("{}\\{}".format(self.directory, self.order_file)):
+			log.debug("{}\\{} exists. Removing now.".format(self.directory, self.order_file))
+			os.remove("{}\\{}".format(self.directory, self.order_file))
+			if '__cert.doc' not in self.order_file and "{}\\{}".format(self.directory, self.order_file) not in Order().orders_removed:
+				Order().orders_removed.append("{}\\{}".format(self.directory, self.order_file))
+		else:
+			Order().error_count += 1
+			log.error("{}\\{} does not exist. Not removing.".format(self.directory, self.order_file))
 '''
 ENTRY POINT
 '''
@@ -171,27 +220,18 @@ if __name__ == '__main__':
 	o = Order()
 	args = o.ParseArguments()
 	
-	if args.input and args.output:	
+	if args.input and args.output and args.create or args.remove:	
 		
 		start = time.strftime('%m-%d-%y %H:%M:%S')
 		start_time = timeit.default_timer()
 		
 		directories, variables = o.SetVariables() # Accessed via directories['DIRECTORY'] || variables['VARIABLE']
 		
-		files_processed = 0
-		lines_processed = 0
-		orders_main_count = 0
-		orders_main_missing_count = 0
-		orders_cert_count = 0
-		orders_cert_missing_count = 0
-		warning_count = 0
-		error_count = 0
-		
 		orders_missing_files = {}
-		orders_missing_files_count = 0
 		orders_missing_files_csv = "{}\\{}_missing_files.csv".format(directories['LOG_DIRECTORY_WORKING'], variables['RUN_DATE'])
 		
-		orders_to_combine_csv = "{}\\{}_orders_created.csv".format(directories['LOG_DIRECTORY_WORKING'], variables['RUN_DATE'])
+		orders_to_combine_txt = "{}\\{}_orders_created.txt".format(directories['LOG_DIRECTORY_WORKING'], variables['RUN_DATE'])
+		orders_removed_txt = "{}\\{}_orders_removed.txt".format(directories['LOG_DIRECTORY_WORKING'], variables['RUN_DATE'])
 		
 		for key, value in directories.items():
 			if not os.path.exists(value):
@@ -230,164 +270,203 @@ if __name__ == '__main__':
 		for a in args.__dict__:
 			log.info(str(a) + ": " + str(args.__dict__[a]))
 				
-		for f in glob.glob("{}\\*r.reg".format(args.input)):
-			files_processed += 1			
-			if sys.platform == 'win32': # windows
-				f = f.split('\\')[-1]
-			elif sys.platform == 'darwin': # os x
-				f = f.split('//')[-1]
-			elif sys.platform == 'linux' or sys.platform == 'linux2': # linux
-				f = f.split('//')[-1]
 				
-			result = { 'ORDER_FILE_REG' : '', 'ORDER_FILE_MAIN' : '', 'ORDER_FILE_CERT' : '', 'ORDER_FILE_R_PRT' : ''}	
-			order_n = f[3:9]
-			pattern_main = "ord{}m.prt".format(order_n)
-			pattern_cert = "ord{}c.prt".format(order_n)
-			pattern_reg = "reg{}r.reg".format(order_n)
-			pattern_reg_prt = "reg{}r.prt".format(order_n)
-		
-			for root, dirs, files in os.walk(args.input):
-				for name in files:
-					if pattern_main in name:
-						result['ORDER_FILE_MAIN'] = "{}\\{}".format(root, name)
-					elif pattern_cert in name:
-						result['ORDER_FILE_CERT'] = "{}\\{}".format(root, name)
-					elif pattern_reg_prt in name:
-						result['ORDER_FILE_R_PRT'] = "{}\\{}".format(root, name)
-					elif pattern_reg in name:
-						result['ORDER_FILE_REG'] = "{}\\{}".format(root, name)
+		for path in args.input:
+			for f in glob.glob("{}\\*r.reg".format(path)):
+				o.files_processed += 1			
+				if sys.platform == 'win32': # windows
+					f = f.split('\\')[-1]
+				elif sys.platform == 'darwin': # os x
+					f = f.split('//')[-1]
+				elif sys.platform == 'linux' or sys.platform == 'linux2': # linux
+					f = f.split('//')[-1]
+					
+				result = { 'ORDER_FILE_REG' : '', 'ORDER_FILE_MAIN' : '', 'ORDER_FILE_CERT' : '', 'ORDER_FILE_R_PRT' : ''}	
+				order_n = f[3:9]
+				pattern_main = "ord{}m.prt".format(order_n)
+				pattern_cert = "ord{}c.prt".format(order_n)
+				pattern_reg = "reg{}r.reg".format(order_n)
+				pattern_reg_prt = "reg{}r.prt".format(order_n)
 			
-			if result['ORDER_FILE_REG'] and result['ORDER_FILE_MAIN'] and result['ORDER_FILE_CERT']:
-				log.debug("Registry file found is [{}]. Main file found is [{}]. Cer file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))
-			else:
-				error_count += 1	
-				orders_missing_files_count += 1
-				log.error("Registry file found is [{}]. Main file found is [{}]. Cert file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))	
+				for root, dirs, files in os.walk(path):
+					for name in files:
+						if pattern_main in name:
+							result['ORDER_FILE_MAIN'] = "{}\\{}".format(root, name)
+						elif pattern_cert in name:
+							result['ORDER_FILE_CERT'] = "{}\\{}".format(root, name)
+						elif pattern_reg_prt in name:
+							result['ORDER_FILE_R_PRT'] = "{}\\{}".format(root, name)
+						elif pattern_reg in name:
+							result['ORDER_FILE_REG'] = "{}\\{}".format(root, name)
 				
-				orders_missing_files[orders_missing_files_count] = []				
-				orders_missing_files[orders_missing_files_count].append(result)
-				
-			for key, value in result.items():
-				if key == 'ORDER_FILE_REG':
-					with open(value, 'r') as reg_file:
-						for line in reg_file:
-							lines_processed += 1			
-							order_number = line[:3] + '-' + line[3:6]
-							published_year = line[6:12]
-							published_year = published_year[0:2]
-							format = line[12:15]
-							name = re.sub("\W", "_", line[15:37].strip())
-							uic = re.sub("\W", "_", line[37:42].strip())
-							period_from = line[48:54]
-							period_to = line[54:60]
-							ssn = line[60:63] + "-" + line[63:65] + "-" + line[65:69]
-							
-							if result['ORDER_FILE_MAIN']:
-								with open(result['ORDER_FILE_MAIN'], 'r') as main_file:
-									orders_m = main_file.read()
-									orders_m = [x + "\f" for x in orders_m.split("\f")]							
-									order_m = [s for s in orders_m if order_number in s]
-								if order_m:
-									orders_main_count += 1
-									log.info("Found valid main order for {} {} order number {}.".format(name, ssn, order_number))
-									
-									# Turn order_m list into order_m string to write to file
-									order_m = ''.join(order_m)
-									# Remove last line (\f) from the order to make printing work
-									order_m = order_m[:order_m.rfind('\f')]
-									
-									uic_directory = "{}\\{}".format(directories['UICS_DIRECTORY_OUTPUT'], uic)
-									soldier_directory_uics = "{}\\{}___{}".format(uic_directory, name, ssn)
-									uic_soldier_order_file_name_main = "{}___{}___{}___{}___{}___{}.doc".format(published_year, ssn, order_number, period_from, period_to, format)
-									ord_managers_soldier_directory = "{}\\{}___{}".format(directories['ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT'], name, ssn)
-									
-									o.CreateDirectory(soldier_directory_uics)
-									o.CreateDirectory(ord_managers_soldier_directory)
-									o.CreateOrder(soldier_directory_uics, uic_soldier_order_file_name_main, order_m)
-									o.CreateOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_main, order_m)
+				if result['ORDER_FILE_REG'] and result['ORDER_FILE_MAIN'] and result['ORDER_FILE_CERT']:
+					log.debug("Registry file found is [{}]. Main file found is [{}]. Cer file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))
+				else:
+					o.critical_count += 1	
+					o.orders_missing_files_count += 1
+					log.error("Registry file found is [{}]. Main file found is [{}]. Cert file found is [{}].".format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))	
+					
+					orders_missing_files[o.orders_missing_files_count] = []		
+					orders_missing_files[o.orders_missing_files_count].append(result)
+					
+				for key, value in result.items():
+					if key == 'ORDER_FILE_REG':
+						with open(value, 'r') as reg_file:
+							for line in reg_file:
+								o.lines_processed += 1			
+								order_number = line[:3] + '-' + line[3:6]
+								published_year = line[6:12]
+								published_year = published_year[0:2]
+								format = line[12:15]
+								name = re.sub("\W", "_", line[15:37].strip())
+								uic = re.sub("\W", "_", line[37:42].strip())
+								period_from = line[48:54]
+								period_to = line[54:60]
+								ssn = line[60:63] + "-" + line[63:65] + "-" + line[65:69]
+								
+								if result['ORDER_FILE_MAIN']:
+									with open(result['ORDER_FILE_MAIN'], 'r') as main_file:
+										orders_m = main_file.read()
+										orders_m = [x + "\f" for x in orders_m.split("\f")]							
+										order_m = [s for s in orders_m if order_number in s]
+									if order_m:
+										o.orders_main_count += 1
+										log.info("Found valid main order for {} {} order number {}.".format(name, ssn, order_number))
+										
+										# Turn order_m list into order_m string to write to file
+										order_m = ''.join(order_m)
+										# Remove last line (\f) from the order to make printing work
+										order_m = order_m[:order_m.rfind('\f')]
+										
+										uic_directory = "{}\\{}".format(directories['UICS_DIRECTORY_OUTPUT'], uic)
+										soldier_directory_uics = "{}\\{}___{}".format(uic_directory, name, ssn)
+										uic_soldier_order_file_name_main = "{}___{}___{}___{}___{}___{}.doc".format(published_year, ssn, order_number, period_from, period_to, format)
+										ord_managers_soldier_directory = "{}\\{}___{}".format(directories['ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT'], name, ssn)
+										
+										if args.create:
+											o.orders_created_count += 1
+											o.CreateDirectory(soldier_directory_uics)
+											o.CreateDirectory(ord_managers_soldier_directory)
+											o.CreateOrder(soldier_directory_uics, uic_soldier_order_file_name_main, order_m)
+											o.CreateOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_main, order_m)
+										elif args.remove:
+											o.orders_removed_count += 1
+											#o.RemoveDirectory(soldier_directory_uics)
+											#o.RemoveDirectory(ord_managers_soldier_directory)
+											o.RemoveOrder(soldier_directory_uics, uic_soldier_order_file_name_main, order_m)
+											o.RemoveOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_main, order_m)
+											
+									else:
+										o.error_count += 1
+										o.orders_main_missing_count += 1
+										log.error("Failed to find main order for {} {} order number {}.".format(name, ssn, order_number))
 								else:
-									error_count += 1
-									orders_main_missing_count += 1
-									log.error("Failed to find main order for {} {} order number {}.".format(name, ssn, order_number))
-							else:
-								error_count += 1
-								log.error("Missing main order file for {} {} order number {}.".format(name, ssn, order_number))
-									
-							if result['ORDER_FILE_CERT']:
-								order_c = ''
-								with open(result['ORDER_FILE_CERT'], 'r') as cert_file:
-									orders_c = cert_file.read().split("\f")						
-									order_regex = "Order number: {}".format(line[0:6])
-									for order in orders_c:
-										if order_regex in order:
-											order_c += order
-								if order_c:
-									orders_cert_count += 1								
-									log.info("Found valid cert order for {} {} order number {}.".format(name, ssn, order_number))
-									
-									uic_directory = "{}\\{}".format(directories['UICS_DIRECTORY_OUTPUT'], uic)
-									soldier_directory_uics = "{}\\{}___{}".format(uic_directory, name, ssn)
-									uic_soldier_order_file_name_cert = "{}___{}___{}___{}___{}___cert.doc".format(published_year, ssn, order_number, period_from, period_to)
-									ord_managers_soldier_directory = "{}\\{}___{}".format(directories['ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT'], name, ssn)
-									
-									o.CreateDirectory(soldier_directory_uics)
-									o.CreateDirectory(ord_managers_soldier_directory)	
-									o.CreateOrder(soldier_directory_uics, uic_soldier_order_file_name_cert, order_c)
-									o.CreateOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_cert, order_c)
+									o.error_count += 1
+									log.error("Missing main order file for {} {} order number {}.".format(name, ssn, order_number))
+										
+								if result['ORDER_FILE_CERT']:
+									order_c = ''
+									with open(result['ORDER_FILE_CERT'], 'r') as cert_file:
+										orders_c = cert_file.read().split("\f")						
+										order_regex = "Order number: {}".format(line[0:6])
+										for order in orders_c:
+											if order_regex in order:
+												order_c += order
+									if order_c:
+										o.orders_cert_count += 1								
+										log.info("Found valid cert order for {} {} order number {}.".format(name, ssn, order_number))
+										
+										uic_directory = "{}\\{}".format(directories['UICS_DIRECTORY_OUTPUT'], uic)
+										soldier_directory_uics = "{}\\{}___{}".format(uic_directory, name, ssn)
+										uic_soldier_order_file_name_cert = "{}___{}___{}___{}___{}___cert.doc".format(published_year, ssn, order_number, period_from, period_to)
+										ord_managers_soldier_directory = "{}\\{}___{}".format(directories['ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT'], name, ssn)
+										
+										if args.create:
+											o.orders_created_count += 1
+											o.CreateDirectory(soldier_directory_uics)
+											o.CreateDirectory(ord_managers_soldier_directory)	
+											o.CreateOrder(soldier_directory_uics, uic_soldier_order_file_name_cert, order_c)
+											o.CreateOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_cert, order_c)
+										elif args.remove:
+											o.orders_removed_count += 1
+											#o.RemoveDirectory(soldier_directory_uics)
+											#o.RemoveDirectory(ord_managers_soldier_directory)
+											o.RemoveOrder(soldier_directory_uics, uic_soldier_order_file_name_cert, order_c)
+											o.RemoveOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_cert, order_c)
+									else:
+										o.error_count += 1	
+										o.orders_cert_missing_count += 1
+										log.error("Failed to find cert order for {} {} order number {}.".format(name, ssn, order_number))
 								else:
-									error_count += 1	
-									orders_cert_missing_count += 1
-									log.error("Failed to find cert order for {} {} order number {}.".format(name, ssn, order_number))
-							else:
-								error_count += 1
-								orders_cert_missing_count += 1
-								log.error("Missing cert order file for {} {} order number {}.".format(name, ssn, order_number))
-		if len(orders_missing_files) > 0:
-			log.critical("Looks like we have some missing files. Writing missing files results to {} now. Check this file for full results.".format(orders_missing_files_csv))
-		
-			with open(orders_missing_files_csv, 'w') as out_file:
-				writer = csv.writer(out_file, lineterminator='\n')
-				for key, value in orders_missing_files.items():
-					writer.writerow([key, value])
-				
-		if len(o.orders_to_combine) > 0:
-			log.info("Writing orders processed this round to {} now.".format(orders_to_combine_csv))
-			with open(orders_to_combine_csv, 'w') as out_file:
-				writer = csv.writer(out_file, lineterminator='\n')
-				for order in o.orders_to_combine:
-					writer.writerow([order])
-			log.info("Finished writing orders processed this round to {}.".format(orders_to_combine_csv))
+									o.error_count += 1
+									o.orders_cert_missing_count += 1
+									log.error("Missing cert order file for {} {} order number {}.".format(name, ssn, order_number))
+			if len(orders_missing_files) > 0:
+				log.critical("Looks like we have some missing files. Writing missing files results to {} now. Check this file for full results.".format(orders_missing_files_csv))
 			
+				with open(orders_missing_files_csv, 'w') as out_file:
+					writer = csv.writer(out_file, lineterminator='\n')
+					for key, value in orders_missing_files.items():
+						writer.writerow([key, value])
+					
+			if len(o.orders_to_combine) > 0:
+				log.info("Writing orders processed this round to {} now.".format(orders_to_combine_txt))
+				with open(orders_to_combine_txt, 'w') as out_file:
+					writer = csv.writer(out_file, lineterminator='\n')
+					for order in o.orders_to_combine:
+						writer.writerow([order])
+				log.info("Finished writing orders processed this round to {}.".format(orders_to_combine_txt))
+				
+			if len(o.orders_removed) > 0:
+				log.info("Writing orders removed this round to {} now.".format(orders_removed_txt))
+				with open(orders_removed_txt, 'w') as out_file:
+					writer = csv.writer(out_file, lineterminator='\n')
+					for order in o.orders_removed:
+						writer.writerow([order])
+				log.info("Finished writing orders removed this round to {}.".format(orders_removed_txt))
+				
 		end = time.strftime('%m-%d-%y %H:%M:%S')
 		end_time = timeit.default_timer()
 		seconds = round(end_time - start_time)
 		m, s = divmod(seconds, 60)
 		h, m = divmod(m, 60)
 		
+		if args.create:
+			s_action = 'CREATE'
+		elif args.remove:
+			s_action = 'REMOVE'
+			
 		log.info('{:-^30}'.format(''))
 		log.info('{:+^30}'.format('PROCESSING STATS'))
 		log.info('{:-^30}'.format(''))
-		log.info('{:16s} {:13d}'.format('Files processed:', files_processed))
-		log.info('{:16s} {:13d}'.format('Files missing:', len(orders_missing_files)))
-		log.info('{:16s} {:13d}'.format('Lines processed:', lines_processed))
-		log.info('{:16s} {:13d}'.format('Main orders:', orders_main_count))
-		log.info('{:16s} {:13d}'.format('Cert orders:', orders_cert_count))
-		log.info('{:16s} {:13d}'.format('Missing main:', orders_main_missing_count))
-		log.info('{:16s} {:13d}'.format('Missing cert:', orders_cert_missing_count))
-		log.info('{:16s} {:11d}'.format('Warnings occurred:', warning_count))
-		log.info('{:16s} {:13d}'.format('Errors occurred:', error_count))
+		log.info('{:<} {:>}'.format('Process:               ', s_action))
+		log.info('{:<} {:>}'.format('Created:               ', o.orders_created_count))
+		log.info('{:<} {:>}'.format('Removed:               ', o.orders_removed_count))
+		log.info('{:<} {:>}'.format('Files processed:       ', o.files_processed))
+		log.info('{:<} {:>}'.format('Files missing:         ', len(orders_missing_files)))
+		log.info('{:<} {:>}'.format('Lines processed:       ', o.lines_processed))
+		log.info('{:<} {:>}'.format('Main orders:           ', o.orders_main_count))
+		log.info('{:<} {:>}'.format('Cert orders:           ', o.orders_cert_count))
+		log.info('{:<} {:>}'.format('Missing main:          ', o.orders_main_missing_count))
+		log.info('{:<} {:>}'.format('Missing cert:          ', o.orders_cert_missing_count))
+		log.info('{:<} {:>}'.format('Warnings occurred:     ', o.warning_count))
+		log.info('{:<} {:>}'.format('Errors occurred:       ', o.error_count))
+		log.info('{:<} {:>}'.format('Criticals occurred:    ', o.critical_count))
 		log.info('{:-^30}'.format(''))
 		log.info('{:+^30}'.format('RUNNING STATS'))
 		log.info('{:-^30}'.format(''))
 		log.info('{:11s} {:8}'.format('Start time:', start))
 		log.info('{:11s} {:10}'.format('End time:', end))
 		log.info('{:11s} {:d}:{:d}:{:d}'.format('Run time: ', h, m, s))
+
+		if args.combine:
+			log.info("Combining orders to {} now.".format(directories['LOG_DIRECTORY_WORKING']))
+			o.CombineOrders(o.orders_to_combine, published_year)
+			log.info("Finished combining orders to {}.".format(directories['LOG_DIRECTORY_WORKING']))
 	
-	if args.combine:
-		log.info("Combining orders to {} now.".format(directories['LOG_DIRECTORY_WORKING']))
-		o.CombineOrders(o.orders_to_combine, published_year)
-		log.info("Finished combining orders to {}.".format(directories['LOG_DIRECTORY_WORKING']))
-	
+	else:
+		print("Need to specify --create or --remove when processing orders.")
+		
 	if args.search and args.path and args.action:
 		results = o.Find(args.search, args.path)
 		o.Action(args.action, results)
