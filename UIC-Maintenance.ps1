@@ -19,17 +19,31 @@ $active_txt = "$($current_directory)\$($run_date)_active.txt"
 $inactive_txt = "$($current_directory)\$($run_date)_inactive.txt"
 $the_rest_txt = "$($current_directory)\$($run_date)_the_rest.txt"
 
+<#
+PROCESS FILES
+#>
+$start_time = Get-Date
+Write-Host "Start time: $($start_time)"
 Write-Host "Gathering directories and files now."
-#$directories = @(Get-ChildItem -Path $($file_path) -Recurse -Include "*.doc" | ? { $_.FullName -notmatch 'ZZUNK' } | Select Directory, Name)
-$directories = @(Get-ChildItem -Path $($file_path) -Recurse -Include "*.doc" | Select Directory, Name)
+$directories = @(Get-ChildItem -Path $($file_path) -Recurse -Include "*.doc" | ? { $_.FullName -notmatch 'ZZUNK' } | Select Directory, Name)
+#$directories = @(Get-ChildItem -Path $($file_path) -Recurse -Include "*.doc" | Select Directory, Name)
 Write-Host "Finished gathering directories and files."
 
 Write-Host "Determining ACTIVE or INACTIVE."
+Write-Host "Starting ACTIVE ..."
 $active = $directories | ? { $_.File -match ($time_line -join "|") } | Select -ExpandProperty Directory
+Write-Host "Finished with ACTIVE ..."
+Write-Host "Starting INACTIVE ..."
 $inactive = $directories | ? { $active -notcontains $_.Directory }
+Write-Host "Finished INACTIVE ..."
+Write-Host "Starting THE_REST ..."
 $the_rest = $directories | ? { $active -notcontains $_ -and $inactive -notcontains $_ }
+Write-Host "Finished THE_REST ..."
 Write-Host "Finished determining ACTIVE or INACTIVE."
 
+<#
+PRESENT STATS
+#>
 Write-Host "Presenting numbers."
 Write-Host "----------------------------"
 Write-Host "Active: $($active.Count)"
@@ -39,16 +53,35 @@ Write-Host "Total: $($results.Directory.Count)"
 Write-Host "----------------------------"
 Write-Host "Finished presenting numbers."
 
+<#
+REMOVE INACTIVE
+#>
+<#
 Write-Host "Removing INACTIVE."
 foreach($i in $inactive)
 {
     Remove-Item -Path $($i.Directory) -Force -Verbose
 }
 Write-Host "Finished removing INACTIVE."
+#>
 
+<#
+OUTPUT RESULTS
+#>
 Write-Host "Writing results to $($current_directory) now."
+Write-Host "Starting ACTIVE ..."
 $active | Out-File $($active_txt)
+Write-Host "Finished with ACTIVE ..."
+Write-Host "Starting INACTIVE ..."
 $inactive | Out-File $($inactive_txt)
+Write-Host "Finished INACTIVE ..."
+Write-Host "Starting THE_REST ..."
 $the_rest | Out-File $($the_rest_txt)
+Write-Host "Finished THE_REST ..."
+Write-Host "Starting DIRECTORIES_NAMES ..."
 $($directories) | Select Directory, Name | Export-Csv -Path $($directories_names_csv) -NoTypeInformation -Force
+Write-Host "Finished DIRECTORIES_NAMES ..."
 Write-Host "Finished writing results to $($current_directory)."
+$end_time = Get-Date
+Write-Host "Start time: $($start_time)"
+Write-Host "End time: $($end_time)"
