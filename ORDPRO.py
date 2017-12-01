@@ -38,8 +38,9 @@ class Order:
 		process = parser.add_argument_group('Processing', 'Use these commands for processing order files and creating directory structure.')
 		process.add_argument('--input', nargs='+', metavar='\\\SHARE\INPUT', help='Input directory or directories containing required order files (r.reg, m.prt, c.prt).')
 		process.add_argument('--output', metavar='\\\SHARE\OUTPUT', help='Output directory to create directory structure in.', type=str)
-		process.add_argument('--remove', action='store_true', help='Remove orders instead of creating them.')
 		process.add_argument('--create', action='store_true', help='Process orders.')
+		process.add_argument('--remove', action='store_true', help='Remove orders instead of creating them.')
+		process.add_argument('--combine', action='store_true', help='Combine orders.')
 		
 		'''
 		SEARCHING ORDERS
@@ -58,7 +59,6 @@ class Order:
 		OPTIONAL ARGUMENTS
 		'''
 		parser.add_argument('--verbose', action='store_true', help='Enable detailed script console verbosity.')
-		parser.add_argument('--combine', action='store_true', help='Combine main order files. Use in conjunction with --input and --output.')
 		
 		'''
 		VERSION
@@ -351,8 +351,6 @@ if __name__ == '__main__':
 											o.CreateOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_main, order_m)
 										elif args.remove:
 											o.orders_removed_count += 1
-											#o.RemoveDirectory(soldier_directory_uics)
-											#o.RemoveDirectory(ord_managers_soldier_directory)
 											o.RemoveOrder(soldier_directory_uics, uic_soldier_order_file_name_main, order_m)
 											o.RemoveOrder(ord_managers_soldier_directory, uic_soldier_order_file_name_main, order_m)
 											
@@ -401,6 +399,7 @@ if __name__ == '__main__':
 									o.error_count += 1
 									o.orders_cert_missing_count += 1
 									log.error("Missing cert order file for {} {} order number {}.".format(name, ssn, order_number))
+									
 			if len(orders_missing_files) > 0:
 				log.critical("Looks like we have some missing files. Writing missing files results to {} now. Check this file for full results.".format(orders_missing_files_csv))
 			
@@ -424,12 +423,18 @@ if __name__ == '__main__':
 					for order in o.orders_removed:
 						writer.writerow([order])
 				log.info("Finished writing orders removed this round to {}.".format(orders_removed_txt))
-				
+			
+		if args.combine:
+			log.info("Combining orders to {} now.".format(directories['LOG_DIRECTORY_WORKING']))
+			o.CombineOrders(o.orders_to_combine, published_year)
+			log.info("Finished combining orders to {}.".format(directories['LOG_DIRECTORY_WORKING']))
+			
 		end = time.strftime('%m-%d-%y %H:%M:%S')
 		end_time = timeit.default_timer()
 		seconds = round(end_time - start_time)
 		m, s = divmod(seconds, 60)
 		h, m = divmod(m, 60)
+		run_time = "{}:{}:{}".format(h, m, s)
 		
 		if args.create:
 			s_action = 'CREATE'
@@ -439,30 +444,25 @@ if __name__ == '__main__':
 		log.info('{:-^30}'.format(''))
 		log.info('{:+^30}'.format('PROCESSING STATS'))
 		log.info('{:-^30}'.format(''))
-		log.info('{:<} {:>}'.format('Process:               ', s_action))
-		log.info('{:<} {:>}'.format('Created:               ', o.orders_created_count))
-		log.info('{:<} {:>}'.format('Removed:               ', o.orders_removed_count))
-		log.info('{:<} {:>}'.format('Files processed:       ', o.files_processed))
-		log.info('{:<} {:>}'.format('Files missing:         ', len(orders_missing_files)))
-		log.info('{:<} {:>}'.format('Lines processed:       ', o.lines_processed))
-		log.info('{:<} {:>}'.format('Main orders:           ', o.orders_main_count))
-		log.info('{:<} {:>}'.format('Cert orders:           ', o.orders_cert_count))
-		log.info('{:<} {:>}'.format('Missing main:          ', o.orders_main_missing_count))
-		log.info('{:<} {:>}'.format('Missing cert:          ', o.orders_cert_missing_count))
-		log.info('{:<} {:>}'.format('Warnings occurred:     ', o.warning_count))
-		log.info('{:<} {:>}'.format('Errors occurred:       ', o.error_count))
-		log.info('{:<} {:>}'.format('Criticals occurred:    ', o.critical_count))
+		log.info('{:<23} {:>6}'.format('Process:               ', s_action))
+		log.info('{:<23} {:>6}'.format('Created:               ', o.orders_created_count))
+		log.info('{:<23} {:>6}'.format('Removed:               ', o.orders_removed_count))
+		log.info('{:<23} {:>6}'.format('Files processed:       ', o.files_processed))
+		log.info('{:<23} {:>6}'.format('Files missing:         ', len(orders_missing_files)))
+		log.info('{:<23} {:>6}'.format('Lines processed:       ', o.lines_processed))
+		log.info('{:<23} {:>6}'.format('Main orders:           ', o.orders_main_count))
+		log.info('{:<23} {:>6}'.format('Cert orders:           ', o.orders_cert_count))
+		log.info('{:<23} {:>6}'.format('Missing main:          ', o.orders_main_missing_count))
+		log.info('{:<23} {:>6}'.format('Missing cert:          ', o.orders_cert_missing_count))
+		log.info('{:<23} {:>6}'.format('Warnings occurred:     ', o.warning_count))
+		log.info('{:<23} {:>6}'.format('Errors occurred:       ', o.error_count))
+		log.info('{:<23} {:>6}'.format('Criticals occurred:    ', o.critical_count))
 		log.info('{:-^30}'.format(''))
 		log.info('{:+^30}'.format('RUNNING STATS'))
 		log.info('{:-^30}'.format(''))
-		log.info('{:11s} {:8}'.format('Start time:', start))
-		log.info('{:11s} {:10}'.format('End time:', end))
-		log.info('{:11s} {:d}:{:d}:{:d}'.format('Run time: ', h, m, s))
-
-		if args.combine:
-			log.info("Combining orders to {} now.".format(directories['LOG_DIRECTORY_WORKING']))
-			o.CombineOrders(o.orders_to_combine, published_year)
-			log.info("Finished combining orders to {}.".format(directories['LOG_DIRECTORY_WORKING']))
+		log.info('{:<} {:>}'.format('Start time: ', start))
+		log.info('{:<} {:>}'.format('End time:   ', end))
+		log.info('{:<11} {:>7}'.format('Run time:             ', run_time))
 	
 	else:
 		print("Need to specify --create or --remove when processing orders.")
