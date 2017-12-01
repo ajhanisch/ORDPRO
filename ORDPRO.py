@@ -35,12 +35,12 @@ class Order:
 		'''
 		PROCESSING ARGUMENTS
 		'''
-		process = parser.add_argument_group('Processing', 'Use these commands for processing order files and creating directory structure.')
-		process.add_argument('--input', nargs='+', metavar='\\\SHARE\INPUT', help='Input directory or directories containing required order files (r.reg, m.prt, c.prt).')
-		process.add_argument('--output', metavar='\\\SHARE\OUTPUT', help='Output directory to create directory structure in.', type=str)
-		process.add_argument('--create', action='store_true', help='Process orders.')
-		process.add_argument('--remove', action='store_true', help='Remove orders instead of creating them.')
-		process.add_argument('--combine', action='store_true', help='Combine orders.')
+		process = parser.add_argument_group('Processing', 'Use these commands for processing orders.')
+		process.add_argument('--input', nargs='+', metavar='\\\SHARE\INPUT', help='Input directory or directories containing required files (r.reg, m.prt, c.prt).')
+		process.add_argument('--output', metavar='\\\SHARE\OUTPUT', help='Output directory to create orders at.', type=str)
+		process.add_argument('--create', action='store_true', help='Process orders from --input.')
+		process.add_argument('--remove', action='store_true', help='Remove orders from --input within --output.')
+		process.add_argument('--combine', action='store_true', help='Combine orders from --input for PERMS Integrator.')
 		
 		'''
 		SEARCHING ORDERS
