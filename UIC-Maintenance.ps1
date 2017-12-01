@@ -16,8 +16,7 @@ OUTPUT FILES
 #>
 $directories_names_csv = "$($current_directory)\$($run_date)_directories_names.csv"
 $active_txt = "$($current_directory)\$($run_date)_active.txt"
-$inactive_txt = "$($current_directory)\$($run_date)_inactive.txt"
-$the_rest_txt = "$($current_directory)\$($run_date)_the_rest.txt"
+$inactive_csv = "$($current_directory)\$($run_date)_inactive.csv"
 
 Write-Host "Gathering directories and files now."
 #$directories = @(Get-ChildItem -Path $($file_path) -Recurse -Include "*.doc" | ? { $_.FullName -notmatch 'ZZUNK' } | Select Directory, Name)
@@ -25,16 +24,14 @@ $directories = @(Get-ChildItem -Path $($file_path) -Recurse -Include "*.doc" | S
 Write-Host "Finished gathering directories and files."
 
 Write-Host "Determining ACTIVE or INACTIVE."
-$active = $directories | ? { $_.File -match ($time_line -join "|") } | Select -ExpandProperty Directory
+$active = $directories | ? { $_.Name -match ($time_line -join "|") } | Select -ExpandProperty Directory
 $inactive = $directories | ? { $active -notcontains $_.Directory }
-$the_rest = $directories | ? { $active -notcontains $_ -and $inactive -notcontains $_ }
 Write-Host "Finished determining ACTIVE or INACTIVE."
 
 Write-Host "Presenting numbers."
 Write-Host "----------------------------"
 Write-Host "Active: $($active.Count)"
-Write-Host "Inactive: $($inactive.Count)"
-Write-Host "The Rest: $($the_rest.Count)"
+Write-Host "Inactive: $($inactive.Directory.Count)"
 Write-Host "Total: $($results.Directory.Count)"
 Write-Host "----------------------------"
 Write-Host "Finished presenting numbers."
@@ -47,8 +44,7 @@ foreach($i in $inactive)
 Write-Host "Finished removing INACTIVE."
 
 Write-Host "Writing results to $($current_directory) now."
-$active | Out-File $($active_txt)
-$inactive | Out-File $($inactive_txt)
-$the_rest | Out-File $($the_rest_txt)
+$active | Select -ExpandProperty Name | Sort -Unique | Out-File $($active_txt)
+$inactive | Select Directory, Name | Sort |  Export-Csv $($inactive_csv) -NoTypeInformation -Force
 $($directories) | Select Directory, Name | Export-Csv -Path $($directories_names_csv) -NoTypeInformation -Force
 Write-Host "Finished writing results to $($current_directory)."
