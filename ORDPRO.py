@@ -133,40 +133,54 @@ class Order:
 		else:
 			log.debug("{} exists. Not creating.".format(self.directory))
 			
-    # Functions for Auditing
 	def auditing_inactive(self, path):
 		self.path = path
 		self.current_year = str(datetime.now().year)[-2:]
 		self.year_minus_one = str(datetime.now().year -1)[-2:]
 		self.year_minus_two = str(datetime.now().year -2)[-2:]
-		self.directories = []	
+		
+		self.auditing_directories, self.auditing_variables = Order().set_variables()
+
+		self.auditing_active_csv = '{}\\{}_active.csv'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
+		self.auditing_inactive_csv = '{}\\{}_inactive.csv'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
+		self.auditing_dirs_csv = '{}\\{}_directories.csv'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
+		
+		self.dirs = []
 		
 		if os.path.isdir(self.path):
-			# Gather directories and files.
 			for root, dirs, files, in os.walk('{}'.format(self.path)):
 				for file in files:
 					if file.endswith('.doc'):
-						self.result = { 'DIRECTORY': root, 'ORDER': file }
-						self.directories.append(self.result)
+						self.auditing_result = { 'DIRECTORY': root, 'ORDER': file }
+						self.dirs.append(self.auditing_result)
+					
+			self.active = [ x for x in self.dirs if x['ORDER'].startswith('{}'.format(self.current_year)) or x['ORDER'].startswith('{}'.format(self.year_minus_one)) ]
 			
-			# Determine active and inactive.			
-			self.active = [ x for x in self.directories if x['ORDER'].startswith('{}'.format(self.current_year)) or x['ORDER'].startswith('{}'.format(self.year_minus_one)) ]
+			self.inactive = [ x for x in self.dirs if not x['ORDER'].startswith('{}'.format(self.current_year)) and not x['ORDER'].startswith('{}'.format(self.year_minus_one)) and not x['ORDER'].startswith('{}'.format(self.year_minus_two)) ]
 			
-			self.inactive = [ x for x in self.directories if not x['ORDER'].startswith('{}'.format(self.current_year)) and not x['ORDER'].startswith('{}'.format(self.year_minus_one)) and not x['ORDER'].startswith('{}'.format(self.year_minus_two)) ]
+			log.info('{:-^30}'.format(''))
+			log.info('{:+^30}'.format('ACTIVITY STATS'))
+			log.info('{:-^30}'.format(''))
+			log.info('{:<23} {:>5}'.format('ACTIVE:                 ', len(self.active)))
+			log.info('{:<23} {:>5}'.format('INACTIVE:               ', len(self.inactive)))
+			log.info('{:-^30}'.format(''))
 			
-			# Present numbers.
-			print('{:-^30}'.format(''))
-			print('{:+^30}'.format('ACTIVITY STATS'))
-			print('{:-^30}'.format(''))
-			print('{:<23} {:>5}'.format('Active:                 ', len(self.active)))
-			print('{:<23} {:>5}'.format('Inactive:               ', len(self.inactive)))
+			with open('{}'.format(self.auditing_active_csv), 'w', newline="\n", encoding='utf-8') as active_file:
+				w = csv.writer(active_file)
+				for x in self.active:
+					w.writerow([x['DIRECTORY'], x['ORDER']])
 			
-			# Remove inactive.
+			with open('{}'.format(self.auditing_inactive_csv), 'w', newline="\n", encoding='utf-8') as inactive_file:
+				w = csv.writer(inactive_file)
+				for x in self.inactive:
+					w.writerow([x['DIRECTORY'], x['ORDER']])
 			
-			
-			# Write results to files.
-			
-			
+			with open('{}'.format(self.auditing_dirs_csv), 'w', newline="\n", encoding='utf-8') as dirs_file:
+				w = csv.writer(dirs_file)
+				for x in self.dirs:
+					w.writerow([x['DIRECTORY'], x['ORDER']])
+
+			[ shutil.rmtree(x['DIRECTORY']) for x in self.inactive if len(self.inactive) > 0 ]
 		else:
 			log.critical('{} is not a directory. Try again with proper input.'.format(self.path))
 			sys.exit()
@@ -552,15 +566,16 @@ if __name__ == '__main__':
 			log.info('{:<23} {:>6}'.format('Cert orders:           ', o.orders_cert_count))
 			log.info('{:<23} {:>6}'.format('Missing main:          ', o.orders_main_missing_count))
 			log.info('{:<23} {:>6}'.format('Missing cert:          ', o.orders_cert_missing_count))
-			log.info('{:<23} {:>6}'.format('Warnings occurred:     ', o.warning_count))
-			log.info('{:<23} {:>6}'.format('Errors occurred:       ', o.error_count))
-			log.info('{:<23} {:>6}'.format('Criticals occurred:    ', o.critical_count))
+			log.info('{:<23} {:>6}'.format('Warnings:              ', o.warning_count))
+			log.info('{:<23} {:>6}'.format('Errors:                ', o.error_count))
+			log.info('{:<23} {:>6}'.format('Criticals:             ', o.critical_count))
 			log.info('{:-^30}'.format(''))
 			log.info('{:+^30}'.format('RUNNING STATS'))
 			log.info('{:-^30}'.format(''))
 			log.info('{:<} {:>}'.format('Start time: ', start))
 			log.info('{:<} {:>}'.format('End time:   ', end))
 			log.info('{:<11} {:>7}'.format('Run time:             ', run_time))
+			log.info('{:-^30}'.format(''))
 		else:
 			empty_keys = [k for k, v in r_search.items() if v == None]
 			print('Looks like we are missing {}.'.format(empty_keys))
