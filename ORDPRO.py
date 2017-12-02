@@ -223,18 +223,18 @@ class Order:
 		Complete and working.
 		'''
 		process = parser.add_argument_group('Processing', 'Use these commands for processing orders.')
-		process.add_argument('--combine', action='store_true', help='Combine orders from --input for PERMS Integrator.')
-		process.add_argument('--create', action='store_true', help='Process orders from --input.')
-		process.add_argument('--input', nargs='+', metavar=r'\\SHARE\INPUT', help='Input directory or directories containing required files (*r.reg, *m.prt, *c.prt).')
-		process.add_argument('--output', metavar=r'\\SHARE\OUTPUT', type=str, help='Output directory to create orders in.')
-		process.add_argument('--remove', action='store_true', help='Remove orders from --input within --output.')
+		process.add_argument('--combine', action='store_true', help='Combine orders from --input for PERMS Integrator. Orders from --input are created and combined into files containing no more than 250 per file for input into other systems.')
+		process.add_argument('--create', action='store_true', help='Process orders from --input. Processed orders are placed in the created directory structure in --output.')
+		process.add_argument('--input', nargs='+', metavar=r'\\SHARE\INPUT', help='Input directory or directories containing required files (*r.reg, *m.prt, *c.prt). You can pass multiple file paths at once to process multiple batches of orders.')
+		process.add_argument('--output', metavar=r'\\SHARE\OUTPUT', type=str, help=r'Output directory to create orders in. Created directory structure is as follows: .\OUTPUT\UICS containing all UICS processed from --input, designed for unit administrators to retrieve orders for their soldiers quickly. As well as .\OUTPUT\ORD_MANAGERS\ORDERS_BY_SOLDIER containing all SOLDIER_SSN directories from --input only, no UICS. Designed for state level administrators and fund managers to access all unit soldiers in one location. Finally .\OUTPUT\ORD_MANAGERS\IPERMS_INTEGRATOR containing combined order files from --combine.')
+		process.add_argument('--remove', action='store_true', help='Remove orders from --input within --output. Inverse of --create, used to remove orders in the case of errors or undesired orders processed.')
 		
 		'''
 		AUDITING ON DIRECTORY STRUCTURE
 		Under development.
 		'''
 		audit = parser.add_argument_group('Auditing', 'Use these commands for reporting and auditing the created directory structure.')
-		audit.add_argument('--inactive', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Determine inactive soldiers (retired, no longer in, etc.) and remove their orders and directories.')
+		audit.add_argument('--inactive', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Determine inactive soldiers (retired, no longer in, etc.) and remove their orders and directories. Inactive is considered SOLDIER_SSN directories without orders cut from current year to current year minus two years.')
 		audit.add_argument('--uic', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of UICs created.')
 		audit.add_argument('--user', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of users created.')
 		audit.add_argument('--cert', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of certificate orders created.')
@@ -247,9 +247,9 @@ class Order:
 		Under development.
 		'''
 		search = parser.add_argument_group('Searching', 'Use these commands for finding and performing actions on orders.')
-		search.add_argument('--action', choices=['REMOVE', 'PRINT', 'COMBINE'], help='Perform action on results found by search.')
-		search.add_argument('--path', nargs='+', metavar='PATH', help='Path to use for search. Typically output directory.')
-		search.add_argument('--search', nargs='+', metavar='CRITERIA', help='Search for orders by name, ssn, etc.')
+		search.add_argument('--action', choices=['REMOVE', 'PRINT', 'COMBINE'], help='Perform [ACTION] on results found by --search.')
+		search.add_argument('--path', nargs='+', metavar='PATH', help=r'Path to search for orders in. Typically .\OUTPUT\UICS.')
+		search.add_argument('--search', nargs='+', metavar='CRITERIA', help=r'Search for orders by name, ssn, etc. You can use multiple criteria search for. Typically by name LAST_FIRST_MI or ssn 123-45-6789.')
 		
 		'''
 		OPTIONAL ARGUMENTS
