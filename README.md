@@ -7,7 +7,7 @@ Orders Management Automation.
 Author: Ashton J. Hanisch < <ajhanisch@gmail.com> >  
   
 # **SYNOPSIS**  
-Automates splitting, editing, combining, processing, and managing of orders.
+Automates processing, auditing, searching, splitting, editing, combining, creating, removing, and overall management of orders.
   
 # **DESCRIPTION**  
 Script designed to assist in management and processing of orders given in the format of a single file or multiple files containing numerous orders, from one to thousands of orders to organized directory structure by 'UICS\\[UIC]\\[SOLDIER]\\ORDER_N'. This allows for a more organized look and viewing of orders processed on a daily basis or in large batches of historical orders.
@@ -30,8 +30,4 @@ Options:
 Check the Wiki for detailed information on all CLI parameters and switches.
   
 # **WISH LIST / TO DO**  
-- [ ] Assign permissions to each UIC folder as needed automatically
 - [ ] Implement notification of when orders are processed
-- [x] Implement an undo function to remove results of previously ran sessions
-- [ ] Look at possibly reworking the functionality to a C# application with a true UI
-- [ ] Implement functionality to parse directories within directories rather than 1 input directory of files (parse multiple historical data directories at once)
