@@ -11,6 +11,7 @@ CHANGES:
 - added more output to order and directory checking
 - added --create and --remove options to either create orders or remove orders from input
 - fixed stat output to be formatted properly every time
+- added more detail to help menu
 ------------------------------------
 VERSION: 2.8
 DATE: 11/28/2017
