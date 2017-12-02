@@ -13,6 +13,7 @@ import csv
 import timeit
 import shutil
 from time import gmtime, strftime
+from datetime import datetime
 from pprint import pprint
 
 class Order:
@@ -117,7 +118,7 @@ class Order:
 		if os.path.exists("{}\\{}".format(self.directory, self.order_file)):
 			log.debug("{}\\{} exists. Removing now.".format(self.directory, self.order_file))
 			os.remove("{}\\{}".format(self.directory, self.order_file))
-			if '__cert.doc' not in self.order_file and "{}\\{}".format(self.directory, self.order_file) not in Order().orders_removed:
+			if '___cert.doc' not in self.order_file and "{}\\{}".format(self.directory, self.order_file) not in Order().orders_removed:
 				Order().orders_removed.append("{}\\{}".format(self.directory, self.order_file))
 		else:
 			Order().error_count += 1
@@ -133,7 +134,42 @@ class Order:
 			log.debug("{} exists. Not creating.".format(self.directory))
 			
     # Functions for Auditing
-	#def auditing_inactive(self, path):
+	def auditing_inactive(self, path):
+		self.path = path
+		self.current_year = str(datetime.now().year)[-2:]
+		self.year_minus_one = str(datetime.now().year -1)[-2:]
+		self.year_minus_two = str(datetime.now().year -2)[-2:]
+		self.directories = []	
+		
+		if os.path.isdir(self.path):
+			# Gather directories and files.
+			for root, dirs, files, in os.walk('{}'.format(self.path)):
+				for file in files:
+					if file.endswith('.doc'):
+						self.result = { 'DIRECTORY': root, 'ORDER': file }
+						self.directories.append(self.result)
+			
+			# Determine active and inactive.			
+			self.active = [ x for x in self.directories if x['ORDER'].startswith('{}'.format(self.current_year)) or x['ORDER'].startswith('{}'.format(self.year_minus_one)) ]
+			
+			self.inactive = [ x for x in self.directories if not x['ORDER'].startswith('{}'.format(self.current_year)) and not x['ORDER'].startswith('{}'.format(self.year_minus_one)) and not x['ORDER'].startswith('{}'.format(self.year_minus_two)) ]
+			
+			# Present numbers.
+			print('{:-^30}'.format(''))
+			print('{:+^30}'.format('ACTIVITY STATS'))
+			print('{:-^30}'.format(''))
+			print('{:<23} {:>5}'.format('Active:                 ', len(self.active)))
+			print('{:<23} {:>5}'.format('Inactive:               ', len(self.inactive)))
+			
+			# Remove inactive.
+			
+			
+			# Write results to files.
+			
+			
+		else:
+			log.critical('{} is not a directory. Try again with proper input.'.format(self.path))
+			sys.exit()
 	
 	#def auditing_uics(self, path):
 	
@@ -143,7 +179,9 @@ class Order:
 	
 	#def auditing_non_certificate_orders(self, path):
 	
-	#def auditing_inactive_report(self, path):
+	#def auditing_report(self, path):
+	
+	#def auditing_consolidate(self, path):
 	
 
 	def search_find(self, criteria, path):
@@ -200,6 +238,7 @@ class Order:
 		audit.add_argument('--uic', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of UICs created.')
 		audit.add_argument('--user', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of users created.')
 		audit.add_argument('--cert', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of certificate orders created.')
+		audit.add_argument('--consolidate', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Consolidate multiple SOLDIER_SSN directories of same soldier into single directory.')
 		audit.add_argument('--main', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of non-certificate orders created.')
 		audit.add_argument('--report', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of UICs, users, certificate, and main orders/directories created.')
 		
@@ -254,6 +293,39 @@ if __name__ == '__main__':
 	args = o.parse_arguments()
 	directories, variables = o.set_variables() # Accessed via directories['DIRECTORY'] || variables['VARIABLE']
 	
+	for key, value in directories.items():
+		if not os.path.exists(value):
+			os.makedirs(value)
+	
+	'''
+	ENABLE/DISABLE VERBOSITY
+	More logging info here https://docs.python.org/3/library/logging.html#module-logging
+	'''
+	if args.verbose:
+		print("Verbose flag specified. Printing output to screen AND log file.")
+		# Log file requirements
+		log = logging.getLogger('')
+		log.setLevel(logging.DEBUG) # Access via log.LEVEL('MESSAGE') Levels include debug, info, warning, error, critical.
+		format_log = logging.Formatter("[%(asctime)s] - [%(levelname)s] - %(message)s")			
+		handler_file = logging.FileHandler(variables['LOG_FILE'])
+		handler_file.setFormatter(format_log)			
+		logger_root = logging.getLogger()
+		logger_root.addHandler(handler_file)			
+		# Console requirements
+		handler_console = logging.StreamHandler()
+		handler_console.setFormatter(format_log)
+		logger_root.addHandler(handler_console)
+	else:
+		print("Verbose flag not specified. NOT printing to screen, ONLY log file.")
+		# Log file requirements
+		log = logging.getLogger('')
+		log.setLevel(logging.DEBUG) # Access via log.LEVEL('MESSAGE') Levels include debug, info, warning, error, critical.
+		format_log = logging.Formatter("[%(asctime)s] - [%(levelname)s] - %(message)s")
+		handler_file = logging.FileHandler(variables['LOG_FILE'])
+		handler_file.setFormatter(format_log)
+		logger_root = logging.getLogger()
+		logger_root.addHandler(handler_file)
+	
 	# Handling for Processing of orders.
 	if args.input and args.output and args.create:
 		r_process = { 'INPUT':args.input, 'OUTPUT':args.output, 'CREATE':args.create }		
@@ -294,39 +366,6 @@ if __name__ == '__main__':
 			
 			orders_to_combine_txt = "{}\\{}_orders_created.txt".format(directories['LOG_DIRECTORY_WORKING'], variables['RUN_DATE'])
 			orders_removed_txt = "{}\\{}_orders_removed.txt".format(directories['LOG_DIRECTORY_WORKING'], variables['RUN_DATE'])
-			
-			for key, value in directories.items():
-				if not os.path.exists(value):
-					os.makedirs(value)	
-
-			'''
-			ENABLE/DISABLE VERBOSITY
-			More logging info here https://docs.python.org/3/library/logging.html#module-logging
-			'''
-			if args.verbose:
-				print("Verbose flag specified. Printing output to screen AND log file.")
-				# Log file requirements
-				log = logging.getLogger('')
-				log.setLevel(logging.DEBUG) # Access via log.LEVEL('MESSAGE') Levels include debug, info, warning, error, critical.
-				format_log = logging.Formatter("[%(asctime)s] - [%(levelname)s] - %(message)s")			
-				handler_file = logging.FileHandler(variables['LOG_FILE'])
-				handler_file.setFormatter(format_log)			
-				logger_root = logging.getLogger()
-				logger_root.addHandler(handler_file)			
-				# Console requirements
-				handler_console = logging.StreamHandler()
-				handler_console.setFormatter(format_log)
-				logger_root.addHandler(handler_console)
-			else:
-				print("Verbose flag not specified. NOT printing to screen, ONLY log file.")
-				# Log file requirements
-				log = logging.getLogger('')
-				log.setLevel(logging.DEBUG) # Access via log.LEVEL('MESSAGE') Levels include debug, info, warning, error, critical.
-				format_log = logging.Formatter("[%(asctime)s] - [%(levelname)s] - %(message)s")
-				handler_file = logging.FileHandler(variables['LOG_FILE'])
-				handler_file.setFormatter(format_log)
-				logger_root = logging.getLogger()
-				logger_root.addHandler(handler_file)
 					
 			log.info("You are running {} with the following arguments: ".format(variables['SCRIPT_NAME']))
 			for a in args.__dict__:
@@ -534,7 +573,8 @@ if __name__ == '__main__':
 	# Handling for Auditing of orders.
 	if args.inactive:
 		print('Determining INACTIVE soldiers and removing them from [{}].'.format(args.inactive))
-		# results_inactive = o.auditing_inactive(args.inactive)
+		results_inactive = o.auditing_inactive(args.inactive)
+		results_inactive
 	elif args.uic:
 		print('Calculating number of UICs in [{}].'.format(args.uic))
 		# results_uic = o.auditing_uics(args.uic)
@@ -549,7 +589,7 @@ if __name__ == '__main__':
 		# results_main = o.auditing_non_certificate_orders(args.main)
 	elif args.report:
 		print('Calculating number of UICs, Users, Certificate Orders, and Non-Certificate Orders in [{}].'.format(args.report))
-		# results_report = o.auditing_inactive_report(args.report)
+		# results_report = o.auditing_report(args.report)
 		
 	# Handling for Searching of orders.
 	if args.search or args.path or args.action:
