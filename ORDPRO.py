@@ -180,7 +180,10 @@ class Order:
 				for x in self.dirs:
 					w.writerow([x['DIRECTORY'], x['ORDER']])
 
-			[ shutil.rmtree(x['DIRECTORY']) for x in self.inactive if len(self.inactive) > 0 ]
+			try:
+				[ shutil.rmtree(x['DIRECTORY'], ignore_errors=True) for x in self.inactive if len(self.inactive) > 0 ]
+			except FileNotFoundError:
+				pass
 		else:
 			log.critical('{} is not a directory. Try again with proper input.'.format(self.path))
 			sys.exit()
