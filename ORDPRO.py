@@ -596,7 +596,7 @@ if __name__ == '__main__':
 		
 			with open(orders_inactive_removed_csv, 'w', newline="\n", encoding='utf-8')) as out_file:
 				writer = csv.writer(out_file)
-				for line in o.inactive_removed.items():
+				for line in o.inactive_removed:
 					writer.writerow(line)
 			
 	elif args.uic:
