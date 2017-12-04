@@ -14,7 +14,6 @@ import timeit
 import shutil
 from time import gmtime, strftime
 from datetime import datetime
-from pprint import pprint
 
 class Order:
 	'''
@@ -24,6 +23,7 @@ class Order:
 	orders_to_combine = []
 	orders_removed = []
 	inactive_removed = []
+	active_not_removed = []
 
 	files_processed = 0
 	lines_processed = 0
@@ -151,7 +151,7 @@ class Order:
 		self.directories_orders = []
 		self.name_ssn = []
 		
-		if os.path.isdir(self.path):
+		if os.path.isdir(self.path):			
 			# Create list of dictionaries containing directories and files of UICS directory and create list of name_ssn.
 			for root, dirs, files, in os.walk('{}'.format(self.path)):
 				for file in files:
@@ -163,23 +163,43 @@ class Order:
 							self.name_ssn.append(name_ssn)
 				
 			# Look for name_ssn in list within list of dictionaries. Determine active and inactive. If inactive, remove name_ssn directories in all UICS. If active, consolidate to most recent UIC folder.
-			for name in self.name_ssn:							
+			for name in self.name_ssn:
+				self.active = [ y for y in self.directories_orders if name in y['DIRECTORY'] and y['ORDER'][0:2] in self.years_to_consider_active ]
 				
-				self.inactive = [ x for x in self.directories_orders if name in x['DIRECTORY'] and x['ORDER'][0:2] not in self.years_to_consider_active ]
-				
-				if len(self.inactive) > 0:
-					log.info('{} appears to be INACTIVE. Removing {} from any/all UICS.'.format(name, name))
-					# Remove inactive directories.
-					Order().inactive_removed.append(name)
-					
-					try: 
-						[ shutil.rmtree(x['DIRECTORY'], ignore_errors=True) for x in self.inactive if len(self.inactive) > 0 ]
-					except FileNotFoundError:
-						pass
+				if len(self.active) > 0:
+					Order().active_not_removed.append(name)
+					log.info('{} appears to be ACTIVE.'.format(name))					
 				else:
-					# Consolidate orders amongst UICs.
-					log.info('{} appears to be ACTIVE. Consolidating to current UIC.'.format(name))
-					self.active = [ x for x in self.directories_orders if name in x['DIRECTORY'] ]
+					self.inactive = [ x for x in self.directories_orders if name in x['DIRECTORY'] and x['ORDER'][0:2] not in self.years_to_consider_active ]	
+					
+					if len(self.inactive) > 0:
+						Order().inactive_removed.append(name)
+						log.info('{} appears to be INACTIVE. Removing {} from any/all UICS.'.format(name, name))
+						for dir in self.inactive:
+							try:
+								shutil.rmtree(dir['DIRECTORY'], ignore_errors=True)
+							except FileNotFoundError:
+								pass
+								
+			# Write results to csv's for original directory structure, active, and inactive.
+			if len(self.directories_orders) > 0:
+				log.info('Writing original directory structure to {}.'.format(self.auditing_dirs_csv))		
+				with open(self.auditing_dirs_csv, 'w', newline="\n", encoding='utf-8') as dirs_out_file:
+					writer = csv.writer(dirs_out_file)
+					for n in self.directories_orders:
+						writer.writerow([n['DIRECTORY'], n['ORDER']])
+						
+			if len(Order().active_not_removed) > 0:
+				log.info('Writing ACTIVE soldiers to {}.'.format(self.auditing_active_csv))		
+				with open(self.auditing_active_csv, 'w', newline="\n", encoding='utf-8') as active_out_file:
+					writer = csv.writer(active_out_file)
+					writer.writerow(Order().active_not_removed)
+						
+			if len(Order().inactive_removed) > 0:
+				log.info('Writing INACTIVE soldiers to {}.'.format(self.auditing_inactive_csv))			
+				with open(self.auditing_inactive_csv, 'w', newline="\n", encoding='utf-8') as inactive_out_file:
+					writer = csv.writer(inactive_out_file)
+					writer.writerow(Order().inactive_removed)
 		else:
 			log.critical('{} is not a directory. Try again with proper input.'.format(self.path))
 			sys.exit()
@@ -194,8 +214,7 @@ class Order:
 	
 	#def auditing_report(self, path):
 	
-	#def auditing_consolidate(self, path):
-	
+	#def auditing_consolidate(self, path):	
 
 	def search_find(self, criteria, path):
 		self.criteria = criteria
@@ -219,7 +238,6 @@ class Order:
 		
 		if self.action == 'PRINT':
 			print("Printing action specified. Printing results now.")
-			pprint(results)
 		if self.action == 'REMOVE':
 			print("Removing action specified. Removing results now.")
 		if self.action == 'COMBINE':
@@ -587,17 +605,7 @@ if __name__ == '__main__':
 	# Handling for Auditing of orders.
 	if args.inactive:
 		print('Determining INACTIVE soldiers and removing them from [{}].'.format(args.inactive))
-		results_inactive = o.auditing_inactive(args.inactive)
-		
-		orders_inactive_removed_csv = "{}\\{}_inactive_removed.csv".format(directories['LOG_DIRECTORY_WORKING'], variables['RUN_DATE'])
-		
-		if len(o.inactive_removed) > 0:
-			log.critical("Looks like we have some inactive soldiers. Writing inactive removal results to {} now. Check this file for full results.".format(orders_inactive_removed_csv))
-		
-			with open(orders_inactive_removed_csv, 'w', newline="\n", encoding='utf-8')) as out_file:
-				writer = csv.writer(out_file)
-				for line in o.inactive_removed:
-					writer.writerow(line)
+		o.auditing_inactive(args.inactive)
 			
 	elif args.uic:
 		print('Calculating number of UICs in [{}].'.format(args.uic))
