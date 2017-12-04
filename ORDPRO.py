@@ -14,6 +14,7 @@ import timeit
 import shutil
 from time import gmtime, strftime
 from datetime import datetime
+from pprint import pprint
 
 class Order:
 	'''
@@ -149,35 +150,35 @@ class Order:
 		self.auditing_dirs_csv = '{}\\{}_directories.csv'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
 		
 		self.directories_orders = []
-		self.name_ssn = []
+		self.ssn = []
 		
 		if os.path.isdir(self.path):			
-			# Create list of dictionaries containing directories and files of UICS directory and create list of name_ssn.
+			# Create list of dictionaries containing directories and files of UICS directory and create list of ssn.
 			for root, dirs, files, in os.walk('{}'.format(self.path)):
 				for file in files:
 					if file.endswith('.doc'):
-						self.auditing_result = { 'DIRECTORY': root, 'ORDER': file }
-						name_ssn = self.auditing_result['DIRECTORY'].split('\\')[-1]
+						self.auditing_result = { 'SSN': root, 'ORDER': file }
+						ssn = self.auditing_result['SSN'].split('\\')[-1].split('_')[-1]
 						self.directories_orders.append(self.auditing_result)
-						if name_ssn not in self.name_ssn:
-							self.name_ssn.append(name_ssn)
+						if ssn not in self.ssn:
+							self.ssn.append(ssn)
 				
-			# Look for name_ssn in list within list of dictionaries. Determine active and inactive. If inactive, remove name_ssn directories in all UICS. If active, consolidate to most recent UIC folder.
-			for name in self.name_ssn:
-				self.active = [ y for y in self.directories_orders if name in y['DIRECTORY'] and y['ORDER'][0:2] in self.years_to_consider_active ]
+			# Look for ssn in list within list of dictionaries. Determine active and inactive. If inactive, remove ssn directories in all UICS. If active, consolidate to most recent UIC folder.
+			for ssn in self.ssn:
+				self.active = [ y for y in self.directories_orders if ssn in y['SSN'] and y['ORDER'][0:2] in self.years_to_consider_active ]
 				
 				if len(self.active) > 0:
-					Order().active_not_removed.append(name)
-					log.info('{} appears to be ACTIVE.'.format(name))					
+					Order().active_not_removed.append(self.active)
+					log.info('{} appears to be ACTIVE.'.format(ssn))
 				else:
-					self.inactive = [ x for x in self.directories_orders if name in x['DIRECTORY'] and x['ORDER'][0:2] not in self.years_to_consider_active ]	
+					self.inactive = [ x for x in self.directories_orders if ssn in x['SSN'] and x['ORDER'][0:2] not in self.years_to_consider_active ]
 					
 					if len(self.inactive) > 0:
-						Order().inactive_removed.append(name)
-						log.info('{} appears to be INACTIVE. Removing {} from any/all UICS.'.format(name, name))
+						Order().inactive_removed.append(self.inactive)
+						log.info('{} appears to be INACTIVE. Removing {} from any/all UICS.'.format(ssn, ssn))
 						for dir in self.inactive:
 							try:
-								shutil.rmtree(dir['DIRECTORY'], ignore_errors=True)
+								shutil.rmtree(dir['SSN'], ignore_errors=True)
 							except FileNotFoundError:
 								pass
 								
@@ -187,19 +188,21 @@ class Order:
 				with open(self.auditing_dirs_csv, 'w', newline="\n", encoding='utf-8') as dirs_out_file:
 					writer = csv.writer(dirs_out_file)
 					for n in self.directories_orders:
-						writer.writerow([n['DIRECTORY'], n['ORDER']])
+						writer.writerow([n['SSN'], n['ORDER']])
 						
 			if len(Order().active_not_removed) > 0:
-				log.info('Writing ACTIVE soldiers to {}.'.format(self.auditing_active_csv))		
+				log.info('Writing ACTIVE soldiers to {}.'.format(self.auditing_active_csv))
 				with open(self.auditing_active_csv, 'w', newline="\n", encoding='utf-8') as active_out_file:
 					writer = csv.writer(active_out_file)
-					writer.writerow(Order().active_not_removed)
+					for n in Order().active_not_removed:
+						writer.writerow([n['SSN'], n['ORDER']])
 						
 			if len(Order().inactive_removed) > 0:
 				log.info('Writing INACTIVE soldiers to {}.'.format(self.auditing_inactive_csv))			
 				with open(self.auditing_inactive_csv, 'w', newline="\n", encoding='utf-8') as inactive_out_file:
 					writer = csv.writer(inactive_out_file)
-					writer.writerow(Order().inactive_removed)
+					for n in Order().inactive_removed:
+						writer.writerow([n['SSN'], n['ORDER']])
 		else:
 			log.critical('{} is not a directory. Try again with proper input.'.format(self.path))
 			sys.exit()
