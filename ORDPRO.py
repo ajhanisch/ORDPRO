@@ -23,6 +23,7 @@ class Order:
 
 	orders_to_combine = []
 	orders_removed = []
+	inactive_removed = []
 
 	files_processed = 0
 	lines_processed = 0
@@ -135,55 +136,50 @@ class Order:
 			
 	def auditing_inactive(self, path):
 		self.path = path
+		
+		self.auditing_directories, self.auditing_variables = Order().set_variables()
+				
 		self.current_year = str(datetime.now().year)[-2:]
 		self.year_minus_one = str(datetime.now().year -1)[-2:]
 		self.year_minus_two = str(datetime.now().year -2)[-2:]
-		
-		self.auditing_directories, self.auditing_variables = Order().set_variables()
+		self.years_to_consider_active = ['{}'.format(self.current_year), '{}'.format(self.year_minus_one), '{}'.format(self.year_minus_two)]
 
 		self.auditing_active_csv = '{}\\{}_active.csv'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
 		self.auditing_inactive_csv = '{}\\{}_inactive.csv'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
 		self.auditing_dirs_csv = '{}\\{}_directories.csv'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
 		
-		self.dirs = []
+		self.directories_orders = []
+		self.name_ssn = []
 		
 		if os.path.isdir(self.path):
+			# Create list of dictionaries containing directories and files of UICS directory and create list of name_ssn.
 			for root, dirs, files, in os.walk('{}'.format(self.path)):
 				for file in files:
 					if file.endswith('.doc'):
 						self.auditing_result = { 'DIRECTORY': root, 'ORDER': file }
-						self.dirs.append(self.auditing_result)
+						name_ssn = self.auditing_result['DIRECTORY'].split('\\')[-1]
+						self.directories_orders.append(self.auditing_result)
+						if name_ssn not in self.name_ssn:
+							self.name_ssn.append(name_ssn)
+				
+			# Look for name_ssn in list within list of dictionaries. Determine active and inactive. If inactive, remove name_ssn directories in all UICS. If active, consolidate to most recent UIC folder.
+			for name in self.name_ssn:							
+				
+				self.inactive = [ x for x in self.directories_orders if name in x['DIRECTORY'] and x['ORDER'][0:2] not in self.years_to_consider_active ]
+				
+				if len(self.inactive) > 0:
+					log.info('{} appears to be INACTIVE. Removing {} from any/all UICS.'.format(name, name))
+					# Remove inactive directories.
+					Order().inactive_removed.append(name)
 					
-			self.active = [ x for x in self.dirs if x['ORDER'].startswith('{}'.format(self.current_year)) or x['ORDER'].startswith('{}'.format(self.year_minus_one)) ]
-			
-			self.inactive = [ x for x in self.dirs if not x['ORDER'].startswith('{}'.format(self.current_year)) and not x['ORDER'].startswith('{}'.format(self.year_minus_one)) and not x['ORDER'].startswith('{}'.format(self.year_minus_two)) ]
-			
-			log.info('{:-^30}'.format(''))
-			log.info('{:+^30}'.format('ACTIVITY STATS'))
-			log.info('{:-^30}'.format(''))
-			log.info('{:<23} {:>5}'.format('ACTIVE:                 ', len(self.active)))
-			log.info('{:<23} {:>5}'.format('INACTIVE:               ', len(self.inactive)))
-			log.info('{:-^30}'.format(''))
-			
-			with open('{}'.format(self.auditing_active_csv), 'w', newline="\n", encoding='utf-8') as active_file:
-				w = csv.writer(active_file)
-				for x in self.active:
-					w.writerow([x['DIRECTORY'], x['ORDER']])
-			
-			with open('{}'.format(self.auditing_inactive_csv), 'w', newline="\n", encoding='utf-8') as inactive_file:
-				w = csv.writer(inactive_file)
-				for x in self.inactive:
-					w.writerow([x['DIRECTORY'], x['ORDER']])
-			
-			with open('{}'.format(self.auditing_dirs_csv), 'w', newline="\n", encoding='utf-8') as dirs_file:
-				w = csv.writer(dirs_file)
-				for x in self.dirs:
-					w.writerow([x['DIRECTORY'], x['ORDER']])
-
-			try:
-				[ shutil.rmtree(x['DIRECTORY'], ignore_errors=True) for x in self.inactive if len(self.inactive) > 0 ]
-			except FileNotFoundError:
-				pass
+					try: 
+						[ shutil.rmtree(x['DIRECTORY'], ignore_errors=True) for x in self.inactive if len(self.inactive) > 0 ]
+					except FileNotFoundError:
+						pass
+				else:
+					# Consolidate orders amongst UICs.
+					log.info('{} appears to be ACTIVE. Consolidating to current UIC.'.format(name))
+					self.active = [ x for x in self.directories_orders if name in x['DIRECTORY'] ]
 		else:
 			log.critical('{} is not a directory. Try again with proper input.'.format(self.path))
 			sys.exit()
@@ -592,7 +588,17 @@ if __name__ == '__main__':
 	if args.inactive:
 		print('Determining INACTIVE soldiers and removing them from [{}].'.format(args.inactive))
 		results_inactive = o.auditing_inactive(args.inactive)
-		results_inactive
+		
+		orders_inactive_removed_csv = "{}\\{}_inactive_removed.csv".format(directories['LOG_DIRECTORY_WORKING'], variables['RUN_DATE'])
+		
+		if len(o.inactive_removed) > 0:
+			log.critical("Looks like we have some inactive soldiers. Writing inactive removal results to {} now. Check this file for full results.".format(orders_inactive_removed_csv))
+		
+			with open(orders_inactive_removed_csv, 'w', newline="\n", encoding='utf-8')) as out_file:
+				writer = csv.writer(out_file)
+				for line in o.inactive_removed.items():
+					writer.writerow(line)
+			
 	elif args.uic:
 		print('Calculating number of UICs in [{}].'.format(args.uic))
 		# results_uic = o.auditing_uics(args.uic)
