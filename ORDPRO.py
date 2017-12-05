@@ -14,7 +14,6 @@ import timeit
 import shutil
 from time import gmtime, strftime
 from datetime import datetime
-from pprint import pprint
 
 class Order:
 	'''
@@ -135,7 +134,7 @@ class Order:
 		else:
 			log.debug("{} exists. Not creating.".format(self.directory))
 			
-	def auditing_inactive(self, path):
+	def auditing_cleanup(self, path):
 		self.path = path
 		
 		self.auditing_directories, self.auditing_variables = Order().set_variables()
@@ -145,8 +144,8 @@ class Order:
 		self.year_minus_two = str(datetime.now().year -2)[-2:]
 		self.years_to_consider_active = ['{}'.format(self.current_year), '{}'.format(self.year_minus_one), '{}'.format(self.year_minus_two)]
 
-		self.auditing_active_csv = '{}\\{}_active.csv'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
-		self.auditing_inactive_csv = '{}\\{}_inactive.csv'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
+		self.auditing_active_txt = '{}\\{}_active.txt'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
+		self.auditing_inactive_txt = '{}\\{}_inactive.txt'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
 		self.auditing_dirs_csv = '{}\\{}_directories.csv'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
 		
 		self.directories_orders = []
@@ -166,17 +165,44 @@ class Order:
 			# Look for ssn in list within list of dictionaries. Determine active and inactive. If inactive, remove ssn directories in all UICS. If active, consolidate to most recent UIC folder.
 			for ssn in self.ssn:
 				self.active = [ y for y in self.directories_orders if ssn in y['SSN'] and y['ORDER'][0:2] in self.years_to_consider_active ]
-				
+						
 				if len(self.active) > 0:
-					Order().active_not_removed.append(self.active)
 					log.info('{} appears to be ACTIVE.'.format(ssn))
+
+					# Determine most recent order.
+					ssn_most_recent_order = ''
+					ssn_most_recent_dir = ''
+					for i in self.active:
+						if ssn_most_recent_order == '':
+							ssn_most_recent_order = i['ORDER']
+						else:					
+							if i['ORDER'][0:2] >= ssn_most_recent_order[0:2] \
+							or i['ORDER'][19:21] >= ssn_most_recent_order[19:21] \
+							:
+								ssn_most_recent_order = i['ORDER']
+					
+					ssn_most_recent_dir = i['SSN']
+					ssn_most_recent_uic = ssn_most_recent_dir.split('\\')[4]
+					log.info( 'Most recent order: {}. Most recent PATH is {}. Most recent UIC is {}.'.format(ssn_most_recent_order, ssn_most_recent_dir, ssn_most_recent_uic) )
+						
+					# Move self.active to the most recent SSN directory.
+					source_directories = set([ z['SSN'] for z in self.directories_orders if ssn_most_recent_dir not in z['SSN'] and ssn in z['SSN'] ])
+					destination_directory = ssn_most_recent_dir				
+
+					for dir in source_directories:
+						source_files = os.listdir(dir)					
+						for source_file in source_files:
+							log.info('Moving {} to {}.'.format(source_file, destination_directory))
+							shutil.move('{}\{}'.format(dir, source_file), destination_directory)
+					for dir in self.active:
+						Order().active_not_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
 				else:
 					self.inactive = [ x for x in self.directories_orders if ssn in x['SSN'] and x['ORDER'][0:2] not in self.years_to_consider_active ]
 					
 					if len(self.inactive) > 0:
-						Order().inactive_removed.append(self.inactive)
 						log.info('{} appears to be INACTIVE. Removing {} from any/all UICS.'.format(ssn, ssn))
 						for dir in self.inactive:
+							Order().inactive_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))					
 							try:
 								shutil.rmtree(dir['SSN'], ignore_errors=True)
 							except FileNotFoundError:
@@ -184,25 +210,21 @@ class Order:
 								
 			# Write results to csv's for original directory structure, active, and inactive.
 			if len(self.directories_orders) > 0:
-				log.info('Writing original directory structure to {}.'.format(self.auditing_dirs_csv))		
+				log.info('Writing original directory structure to {}.'.format(self.auditing_dirs_csv))
 				with open(self.auditing_dirs_csv, 'w', newline="\n", encoding='utf-8') as dirs_out_file:
 					writer = csv.writer(dirs_out_file)
 					for n in self.directories_orders:
 						writer.writerow([n['SSN'], n['ORDER']])
 						
 			if len(Order().active_not_removed) > 0:
-				log.info('Writing ACTIVE soldiers to {}.'.format(self.auditing_active_csv))
-				with open(self.auditing_active_csv, 'w', newline="\n", encoding='utf-8') as active_out_file:
-					writer = csv.writer(active_out_file)
-					for n in Order().active_not_removed:
-						writer.writerow([n['SSN'], n['ORDER']])
-						
+				log.info('Writing ACTIVE soldiers to {}.'.format(self.auditing_active_txt))
+				with open(self.auditing_active_txt, 'w') as active_out_file:
+					active_out_file.write('\n'.join(Order().active_not_removed))
+			
 			if len(Order().inactive_removed) > 0:
-				log.info('Writing INACTIVE soldiers to {}.'.format(self.auditing_inactive_csv))			
-				with open(self.auditing_inactive_csv, 'w', newline="\n", encoding='utf-8') as inactive_out_file:
-					writer = csv.writer(inactive_out_file)
-					for n in Order().inactive_removed:
-						writer.writerow([n['SSN'], n['ORDER']])
+				log.info('Writing INACTIVE soldiers to {}.'.format(self.auditing_inactive_txt))
+				with open(self.auditing_inactive_txt, 'w') as inactive_out_file:
+					inactive_out_file.write('\n'.join(Order().inactive_removed))
 		else:
 			log.critical('{} is not a directory. Try again with proper input.'.format(self.path))
 			sys.exit()
@@ -268,11 +290,10 @@ class Order:
 		Under development.
 		'''
 		audit = parser.add_argument_group('Auditing', 'Use these commands for reporting and auditing the created directory structure.')
-		audit.add_argument('--inactive', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Determine inactive soldiers (retired, no longer in, etc.) and remove their orders and directories. Inactive is considered SOLDIER_SSN directories without orders cut from current year to current year minus two years.')
+		audit.add_argument('--cleanup', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Determine inactive (retired, no longer in, etc.) and active soldiers. Remove inactive orders and directories. Inactive is considered SOLDIER_SSN directories without orders cut from current year to current year minus two years. Automatically consolidate active soldiers orders spanning multiple years and UICS into current UIC directory.')
 		audit.add_argument('--uic', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of UICs created.')
 		audit.add_argument('--user', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of users created.')
 		audit.add_argument('--cert', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of certificate orders created.')
-		audit.add_argument('--consolidate', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Consolidate multiple SOLDIER_SSN directories of same soldier into single directory.')
 		audit.add_argument('--main', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of non-certificate orders created.')
 		audit.add_argument('--report', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of UICs, users, certificate, and main orders/directories created.')
 		
@@ -293,7 +314,7 @@ class Order:
 		'''
 		VERSION
 		'''
-		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.0. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
+		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.1. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
 		
 		args = parser.parse_args()
 		
@@ -606,9 +627,9 @@ if __name__ == '__main__':
 			sys.exit()
 
 	# Handling for Auditing of orders.
-	if args.inactive:
-		print('Determining INACTIVE soldiers and removing them from [{}].'.format(args.inactive))
-		o.auditing_inactive(args.inactive)
+	if args.cleanup:
+		print('Determining INACTIVE / ACTIVE soldiers. Removing INACTIVE and consolidating ACTIVE from [{}].'.format(args.cleanup))
+		o.auditing_cleanup(args.cleanup)
 			
 	elif args.uic:
 		print('Calculating number of UICs in [{}].'.format(args.uic))
