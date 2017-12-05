@@ -5,6 +5,7 @@ VERSION: 3.2
 DATE: 12/5/2017
 CHANGES:
 - modified inactive/active detection and processing. removing inactive and consolidating active orders into most recent UIC folder
+- added removal of empty directories after the cleanup of inactive/active and consolidation
 ------------------------------------
 VERSION: 3.1
 DATE: 12/3/2017
