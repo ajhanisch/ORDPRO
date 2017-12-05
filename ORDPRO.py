@@ -24,6 +24,7 @@ class Order:
 	orders_removed = []
 	inactive_removed = []
 	active_not_removed = []
+	auditing_empty_dirs_removed = []
 
 	files_processed = 0
 	lines_processed = 0
@@ -125,15 +126,6 @@ class Order:
 			Order().error_count += 1
 			log.error("{}\\{} does not exist. Not removing.".format(self.directory, self.order_file))
 			
-	def processing_remove_directory(self, directory):
-		self.directory = directory	
-		
-		if os.path.exists(self.directory): 
-			log.debug("{} doesn't exist. Creating now.".format(self.directory))
-			shutil.rmtree(self.directory)
-		else:
-			log.debug("{} exists. Not creating.".format(self.directory))
-			
 	def auditing_cleanup(self, path):
 		self.path = path
 		
@@ -147,6 +139,7 @@ class Order:
 		self.auditing_active_txt = '{}\\{}_active.txt'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
 		self.auditing_inactive_txt = '{}\\{}_inactive.txt'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
 		self.auditing_dirs_csv = '{}\\{}_directories.csv'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
+		self.auditing_empty_dirs_txt = '{}\\{}_empty_dirs.txt'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
 		
 		self.directories_orders = []
 		self.ssn = []
@@ -187,13 +180,14 @@ class Order:
 						
 					# Move self.active to the most recent SSN directory.
 					source_directories = set([ z['SSN'] for z in self.directories_orders if ssn_most_recent_dir not in z['SSN'] and ssn in z['SSN'] ])
-					destination_directory = ssn_most_recent_dir				
+					destination_directory = ssn_most_recent_dir	
 
 					for dir in source_directories:
 						source_files = os.listdir(dir)					
 						for source_file in source_files:
 							log.info('Moving {} to {}.'.format(source_file, destination_directory))
 							shutil.move('{}\{}'.format(dir, source_file), destination_directory)
+						
 					for dir in self.active:
 						Order().active_not_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
 				else:
@@ -202,20 +196,30 @@ class Order:
 					if len(self.inactive) > 0:
 						log.info('{} appears to be INACTIVE. Removing {} from any/all UICS.'.format(ssn, ssn))
 						for dir in self.inactive:
-							Order().inactive_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))					
+							Order().inactive_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))			
 							try:
 								shutil.rmtree(dir['SSN'], ignore_errors=True)
 							except FileNotFoundError:
-								pass
+								pass	
+
+			# Remove empty directories in output directory. 
+			for root, dirs, files, in os.walk('{}'.format(self.path), topdown=False):
+				for dir in dirs:
+					if not os.listdir('{}\{}'.format(root, dir)):
+						log.info('{} is empty. Removing {}\{}.'.format(dir, root, dir))
+						os.rmdir('{}\{}'.format(root, dir))
+						o.auditing_empty_dirs_removed.append('{}\{}'.format(root, dir))
+					else:
+						log.info('{} is not empty. Leaving {}\{}.'.format(dir, root, dir))						
 								
-			# Write results to csv's for original directory structure, active, and inactive.
+			# Write results to csv's for original directory structure, active, inactive, and directories removed.
 			if len(self.directories_orders) > 0:
 				log.info('Writing original directory structure to {}.'.format(self.auditing_dirs_csv))
 				with open(self.auditing_dirs_csv, 'w', newline="\n", encoding='utf-8') as dirs_out_file:
 					writer = csv.writer(dirs_out_file)
 					for n in self.directories_orders:
 						writer.writerow([n['SSN'], n['ORDER']])
-						
+
 			if len(Order().active_not_removed) > 0:
 				log.info('Writing ACTIVE soldiers to {}.'.format(self.auditing_active_txt))
 				with open(self.auditing_active_txt, 'w') as active_out_file:
@@ -225,6 +229,11 @@ class Order:
 				log.info('Writing INACTIVE soldiers to {}.'.format(self.auditing_inactive_txt))
 				with open(self.auditing_inactive_txt, 'w') as inactive_out_file:
 					inactive_out_file.write('\n'.join(Order().inactive_removed))
+
+			if len(Order().auditing_empty_dirs_removed) > 0:
+				log.info('Writing EMPTY DIRECTORIES removed to {}.'.format(self.auditing_empty_dirs_txt))
+				with open(self.auditing_empty_dirs_txt, 'w') as empty_dir_out_file:
+					empty_dir_out_file.write('\n'.join(Order().auditing_empty_dirs_removed))
 		else:
 			log.critical('{} is not a directory. Try again with proper input.'.format(self.path))
 			sys.exit()
@@ -314,7 +323,7 @@ class Order:
 		'''
 		VERSION
 		'''
-		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.2. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
+		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.0. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
 		
 		args = parser.parse_args()
 		
