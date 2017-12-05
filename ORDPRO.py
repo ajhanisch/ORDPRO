@@ -314,7 +314,7 @@ class Order:
 		'''
 		VERSION
 		'''
-		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.1. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
+		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.2. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
 		
 		args = parser.parse_args()
 		
