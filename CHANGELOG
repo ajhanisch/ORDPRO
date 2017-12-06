@@ -1,6 +1,13 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 3.3
+DATE: 12/6/2017
+CHANGES:
+- fixed inactive and active detection, removal, and consolidation
+- move from 2 digit year to 4 digit year in order file
+- added statistics presentation to clean up
+------------------------------------
 VERSION: 3.2
 DATE: 12/5/2017
 CHANGES:
