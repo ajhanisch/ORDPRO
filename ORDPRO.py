@@ -14,6 +14,7 @@ import timeit
 import shutil
 from time import gmtime, strftime
 from datetime import datetime
+from pprint import pprint
 
 class Order:
 	'''
@@ -41,6 +42,7 @@ class Order:
 		
 	def processing_combine_orders(self, orders_to_combine, year):
 		self.orders_to_combine = orders_to_combine
+
 		self.year = year
 		
 		self.known_bad_strings = ["                          FOR OFFICIAL USE ONLY - PRIVACY ACT", "                          FOR OFFICIAL USE ONLY - PRIVACY ACT", "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}", "\f"]
@@ -96,9 +98,8 @@ class Order:
 			log.debug("{}\\{} does not exist. Creating now.".format(self.directory, self.order_file))
 			with open("{}\\{}".format(self.directory, self.order_file), 'w') as f:
 				f.write(self.order)
-				
-			#if 'UICS' in self.directory and '__cert.doc' not in self.order_file and self.order_file not in Order().orders_to_combine:
-			if '__cert.doc' not in self.order_file and self.order_file not in Order().orders_to_combine:
+
+			if 'UICS' in self.directory and '__cert.doc' not in self.order_file and self.order_file not in Order().orders_to_combine:
 				Order().orders_to_combine.append("{}\\{}".format(self.directory, self.order_file))
 		else:
 			log.debug("{}\\{} exists. Not creating.".format(self.directory, self.order_file))
