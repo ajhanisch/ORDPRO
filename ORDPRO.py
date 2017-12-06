@@ -14,7 +14,6 @@ import timeit
 import shutil
 from time import gmtime, strftime
 from datetime import datetime
-from pprint import pprint
 
 class Order:
 	'''
@@ -132,9 +131,9 @@ class Order:
 		
 		self.auditing_directories, self.auditing_variables = Order().set_variables()
 				
-		self.current_year = str(datetime.now().year)[-2:]
-		self.year_minus_one = str(datetime.now().year -1)[-2:]
-		self.year_minus_two = str(datetime.now().year -2)[-2:]
+		self.current_year = str(datetime.now().year)
+		self.year_minus_one = str(datetime.now().year -1)
+		self.year_minus_two = str(datetime.now().year -2)
 		self.years_to_consider_active = ['{}'.format(self.current_year), '{}'.format(self.year_minus_one), '{}'.format(self.year_minus_two)]
 
 		self.auditing_active_txt = '{}\\{}_active.txt'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
@@ -146,6 +145,9 @@ class Order:
 		self.ssn = []
 		
 		if os.path.isdir(self.path):			
+			start = time.strftime('%m-%d-%y %H:%M:%S')
+			start_time = timeit.default_timer()
+			
 			# Create list of dictionaries containing directories and files of UICS directory and create list of ssn.
 			for root, dirs, files, in os.walk('{}'.format(self.path)):
 				for file in files:
@@ -158,7 +160,7 @@ class Order:
 				
 			# Look for ssn in list within list of dictionaries. Determine active and inactive. If inactive, remove ssn directories in all UICS. If active, consolidate to most recent UIC folder.
 			for ssn in self.ssn:
-				self.active = [ y for y in self.directories_orders if ssn in y['SSN'] and y['ORDER'][0:2] in self.years_to_consider_active ]
+				self.active = [ y for y in self.directories_orders if ssn in y['SSN'] and y['ORDER'][0:4] in self.years_to_consider_active ]
 						
 				if len(self.active) > 0:
 					log.info('{} appears to be ACTIVE.'.format(ssn))
@@ -169,16 +171,30 @@ class Order:
 					for i in self.active:
 						if ssn_most_recent_order == '':
 							ssn_most_recent_order = i['ORDER']
-						else:					
-							if i['ORDER'][0:2] >= ssn_most_recent_order[0:2] \
-							or i['ORDER'][19:21] >= ssn_most_recent_order[19:21] \
-							:
-								ssn_most_recent_order = i['ORDER']
-					
-					ssn_most_recent_dir = i['SSN']
-					ssn_most_recent_uic = ssn_most_recent_dir.split('\\')[4]
-					log.info( 'Most recent order: {}. Most recent PATH is {}. Most recent UIC is {}.'.format(ssn_most_recent_order, ssn_most_recent_dir, ssn_most_recent_uic) )
-						
+							ssn_most_recent_dir = i['SSN']
+							ssn_most_recent_uic = ssn_most_recent_dir.split('\\')[4]
+							ssn_most_recent_name_ssn = ssn_most_recent_dir.split('\\')[5]
+							log.info('{} is the first order for {} to be evaluated.'.format(ssn_most_recent_order, ssn_most_recent_name_ssn))
+							log.info('Most recent ORDER: {}. Most recent PATH is {}. Most recent UIC is {}.'.format(ssn_most_recent_order, ssn_most_recent_dir, ssn_most_recent_uic))
+							
+						elif i['ORDER'][0:4] > ssn_most_recent_order[0:4]:
+							log.info('Comparing {} to {}.'.format(i['ORDER'], ssn_most_recent_order))
+							log.info('Year of {} is greater than year of {}.'.format(i['ORDER'][0:4], ssn_most_recent_order[0:4]))
+							ssn_most_recent_order = i['ORDER']
+							ssn_most_recent_dir = i['SSN']
+							ssn_most_recent_uic = ssn_most_recent_dir.split('\\')[4]
+							log.info('Most recent ORDER: {}. Most recent PATH is {}. Most recent UIC is {}.'.format(ssn_most_recent_order, ssn_most_recent_dir, ssn_most_recent_uic))
+							
+						elif i['ORDER'][0:4] == ssn_most_recent_order[0:4] \
+						and i['ORDER'][19:26].replace('-','') > ssn_most_recent_order[19:26].replace('-','') \
+						:
+							log.info('Comparing {} to {}.'.format(i['ORDER'], ssn_most_recent_order))
+							log.info('Year of {} is equal to year of {}, but order number {} is greater than order number {}.'.format(i['ORDER'][0:4], ssn_most_recent_order[0:4], i['ORDER'][19:26], ssn_most_recent_order[19:26]))
+							ssn_most_recent_order = i['ORDER']
+							ssn_most_recent_dir = i['SSN']
+							ssn_most_recent_uic = ssn_most_recent_dir.split('\\')[4]
+							log.info('Most recent ORDER: {}. Most recent PATH is {}. Most recent UIC is {}.'.format(ssn_most_recent_order, ssn_most_recent_dir, ssn_most_recent_uic))						
+								
 					# Move self.active to the most recent SSN directory.
 					source_directories = set([ z['SSN'] for z in self.directories_orders if ssn_most_recent_dir not in z['SSN'] and ssn in z['SSN'] ])
 					destination_directory = ssn_most_recent_dir	
@@ -192,7 +208,7 @@ class Order:
 					for dir in self.active:
 						Order().active_not_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
 				else:
-					self.inactive = [ x for x in self.directories_orders if ssn in x['SSN'] and x['ORDER'][0:2] not in self.years_to_consider_active ]
+					self.inactive = [ x for x in self.directories_orders if ssn in x['SSN'] and x['ORDER'][0:4] not in self.years_to_consider_active ]
 					
 					if len(self.inactive) > 0:
 						log.info('{} appears to be INACTIVE. Removing {} from any/all UICS.'.format(ssn, ssn))
@@ -235,6 +251,29 @@ class Order:
 				log.info('Writing EMPTY DIRECTORIES removed to {}.'.format(self.auditing_empty_dirs_txt))
 				with open(self.auditing_empty_dirs_txt, 'w') as empty_dir_out_file:
 					empty_dir_out_file.write('\n'.join(Order().auditing_empty_dirs_removed))
+					
+			# Present statistics on original directoies and orders, active, inactive, and directories removed.
+			end = time.strftime('%m-%d-%y %H:%M:%S')
+			end_time = timeit.default_timer()
+			seconds = round(end_time - start_time)
+			m, s = divmod(seconds, 60)
+			h, m = divmod(m, 60)
+			run_time = "{}:{}:{}".format(h, m, s)
+			
+			log.info('{:-^30}'.format(''))
+			log.info('{:+^30}'.format('CLEAN UP STATS'))
+			log.info('{:-^30}'.format(''))
+			log.info('{:<23} {:>6}'.format('Original Orders:               ', len(self.directories_orders)))
+			log.info('{:<23} {:>6}'.format('Active Orders:                 ', len(Order().active_not_removed)))
+			log.info('{:<23} {:>6}'.format('Inactive Orders:               ', len(Order().inactive_removed)))
+			log.info('{:<23} {:>6}'.format('Directories Removed:           ', len(Order().auditing_empty_dirs_removed)))
+			log.info('{:-^30}'.format(''))
+			log.info('{:+^30}'.format('RUNNING STATS'))
+			log.info('{:-^30}'.format(''))
+			log.info('{:<} {:>}'.format('Start time: ', start))
+			log.info('{:<} {:>}'.format('End time:   ', end))
+			log.info('{:<11} {:>7}'.format('Run time:             ', run_time))
+			log.info('{:-^30}'.format(''))
 		else:
 			log.critical('{} is not a directory. Try again with proper input.'.format(self.path))
 			sys.exit()
@@ -482,6 +521,10 @@ if __name__ == '__main__':
 									order_number = line[:3] + '-' + line[3:6]
 									published_year = line[6:12]
 									published_year = published_year[0:2]
+									if published_year.startswith('9'):
+										published_year = '19{}'.format(published_year)
+									else:
+										published_year = '20{}'.format(published_year)
 									format = line[12:15]
 									name = re.sub("\W", "_", line[15:37].strip())
 									uic = re.sub("\W", "_", line[37:42].strip())
@@ -490,7 +533,7 @@ if __name__ == '__main__':
 									ssn = line[60:63] + "-" + line[63:65] + "-" + line[65:69]
 									
 									if result['ORDER_FILE_MAIN']:
-										with open(result['ORDER_FILE_MAIN'], 'r') as main_file:
+										with open(result['ORDER_FILE_MAIN'], 'r', encoding="utf8") as main_file:
 											orders_m = main_file.read()
 											orders_m = [x + "\f" for x in orders_m.split("\f")]							
 											order_m = [s for s in orders_m if order_number in s]
