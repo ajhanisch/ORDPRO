@@ -271,7 +271,7 @@ class Order:
 			log.info('{:-^30}'.format(''))
 			log.info('{:<} {:>}'.format('Start time: ', start))
 			log.info('{:<} {:>}'.format('End time:   ', end))
-			log.info('{:<11} {:>7}'.format('Run time:                ', run_time))
+			log.info('{:<11} {:>7}'.format('Run time:         ', run_time))
 			log.info('{:-^30}'.format(''))
 		else:
 			log.critical('{} is not a directory. Try again with proper input.'.format(self.path))
@@ -406,7 +406,7 @@ class Order:
 		'''
 		VERSION
 		'''
-		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.4. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
+		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.3. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
 		
 		args = parser.parse_args()
 		
@@ -577,7 +577,7 @@ if __name__ == '__main__':
 									ssn = line[60:63] + "-" + line[63:65] + "-" + line[65:69]
 									
 									if result['ORDER_FILE_MAIN']:
-										with open(result['ORDER_FILE_MAIN'], 'r', encoding="utf8") as main_file:
+										with open(result['ORDER_FILE_MAIN'], 'r') as main_file:
 											orders_m = main_file.read()
 											orders_m = [x + "\f" for x in orders_m.split("\f")]							
 											order_m = [s for s in orders_m if order_number in s]
@@ -712,7 +712,7 @@ if __name__ == '__main__':
 			log.info('{:-^30}'.format(''))
 			log.info('{:<} {:>}'.format('Start time: ', start))
 			log.info('{:<} {:>}'.format('End time:   ', end))
-			log.info('{:<11} {:>7}'.format('Run time:             ', run_time))
+			log.info('{:<11} {:>7}'.format('Run time:         ', run_time))
 			log.info('{:-^30}'.format(''))
 		else:
 			empty_keys = [k for k, v in r_search.items() if v == None]
