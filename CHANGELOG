@@ -1,6 +1,12 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 3.4
+DATE: 12/7/2017
+CHANGES:
+- finished auditing functionality to include reporting on numbers for uics, soldiers, certificate and main orders individually as well as an overall report
+- added error checking for all functions involving paths
+------------------------------------
 VERSION: 3.3
 DATE: 12/6/2017
 CHANGES:
