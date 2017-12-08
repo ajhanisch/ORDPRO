@@ -143,83 +143,88 @@ class Order:
 		
 		self.ssn = []
 		
-		if os.path.isdir(self.path):			
-			start = time.strftime('%m-%d-%y %H:%M:%S')
-			start_time = timeit.default_timer()
-			
-			# Create list of dictionaries containing directories and files of UICS directory and create list of ssn.
-			for root, dirs, files, in os.walk('{}'.format(self.path)):
-				for file in files:
-					if file.endswith('.doc'):
-						self.auditing_result = { 'SSN': root, 'ORDER': file }
-						ssn = self.auditing_result['SSN'].split('\\')[-1].split('_')[-1]
-						Order().directories_orders.append(self.auditing_result)
-						if ssn not in self.ssn:
-							self.ssn.append(ssn)
+		for p in self.path:
+			if os.path.isdir(p):			
+				start = time.strftime('%m-%d-%y %H:%M:%S')
+				start_time = timeit.default_timer()
 				
-			# Look for ssn in list within list of dictionaries. Determine active and inactive. If inactive, remove ssn directories in all UICS. If active, consolidate to most recent UIC folder.
-			for ssn in self.ssn:
-				self.active = [ y for y in Order().directories_orders if ssn in y['SSN'] and y['ORDER'][0:4] in self.years_to_consider_active ]
-						
-				if len(self.active) > 0:
-					log.debug('{} appears to be ACTIVE.'.format(ssn))
-
-					# Determine most recent order.
-					ssn_most_recent_order = ''
-					ssn_most_recent_dir = ''
-					for i in self.active:
-						if ssn_most_recent_order == '':
-							ssn_most_recent_order = i['ORDER']
-							ssn_most_recent_dir = i['SSN']
-							ssn_most_recent_uic = ssn_most_recent_dir.split('\\')[4]
-							ssn_most_recent_name_ssn = ssn_most_recent_dir.split('\\')[5]
-							log.debug('{} is the first order for {} to be evaluated.'.format(ssn_most_recent_order, ssn_most_recent_name_ssn))
-							log.debug('Most recent ORDER: {}. Most recent PATH is {}. Most recent UIC is {}.'.format(ssn_most_recent_order, ssn_most_recent_dir, ssn_most_recent_uic))
-							
-						elif i['ORDER'][0:4] > ssn_most_recent_order[0:4]:
-							log.debug('Comparing {} to {}.'.format(i['ORDER'], ssn_most_recent_order))
-							log.debug('Year of {} is greater than year of {}.'.format(i['ORDER'][0:4], ssn_most_recent_order[0:4]))
-							ssn_most_recent_order = i['ORDER']
-							ssn_most_recent_dir = i['SSN']
-							ssn_most_recent_uic = ssn_most_recent_dir.split('\\')[4]
-							log.debug('Most recent ORDER: {}. Most recent PATH is {}. Most recent UIC is {}.'.format(ssn_most_recent_order, ssn_most_recent_dir, ssn_most_recent_uic))
-							
-						elif i['ORDER'][0:4] == ssn_most_recent_order[0:4] \
-						and i['ORDER'][19:26].replace('-','') > ssn_most_recent_order[19:26].replace('-','') \
-						:
-							log.debug('Comparing {} to {}.'.format(i['ORDER'], ssn_most_recent_order))
-							log.debug('Year of {} is equal to year of {}, but order number {} is greater than order number {}.'.format(i['ORDER'][0:4], ssn_most_recent_order[0:4], i['ORDER'][19:26], ssn_most_recent_order[19:26]))
-							ssn_most_recent_order = i['ORDER']
-							ssn_most_recent_dir = i['SSN']
-							ssn_most_recent_uic = ssn_most_recent_dir.split('\\')[4]
-							log.debug('Most recent ORDER: {}. Most recent PATH is {}. Most recent UIC is {}.'.format(ssn_most_recent_order, ssn_most_recent_dir, ssn_most_recent_uic))						
-								
-					# Move self.active to the most recent SSN directory.
-					source_directories = set([ z['SSN'] for z in Order().directories_orders if ssn_most_recent_dir not in z['SSN'] and ssn in z['SSN'] ])
-					destination_directory = ssn_most_recent_dir	
-
-					for dir in source_directories:
-						source_files = os.listdir(dir)					
-						for source_file in source_files:
-							log.debug('Moving {} to {}.'.format(source_file, destination_directory))
-							shutil.move('{}\{}'.format(dir, source_file), destination_directory)
-						
-					for dir in self.active:
-						Order().active_not_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
-				else:
-					self.inactive = [ x for x in Order().directories_orders if ssn in x['SSN'] and x['ORDER'][0:4] not in self.years_to_consider_active ]
+				# Create list of dictionaries containing directories and files of UICS directory and create list of ssn.
+				for root, dirs, files, in os.walk('{}'.format(p)):
+					for file in files:
+						if file.endswith('.doc'):
+							self.auditing_result = { 'SSN': root, 'ORDER': file }
+							ssn = self.auditing_result['SSN'].split('\\')[-1].split('_')[-1]
+							Order().directories_orders.append(self.auditing_result)
+							if ssn not in self.ssn:
+								self.ssn.append(ssn)
 					
-					if len(self.inactive) > 0:
-						log.debug('{} appears to be INACTIVE. Removing {} from any/all UICS.'.format(ssn, ssn))
-						for dir in self.inactive:
-							Order().inactive_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
-							try:
-								shutil.rmtree(dir['SSN'], ignore_errors=True)
-							except FileNotFoundError:
-								pass	
+				# Look for ssn in list within list of dictionaries. Determine active and inactive. If inactive, remove ssn directories in all UICS. If active, consolidate to most recent UIC folder.
+				for ssn in self.ssn:
+					self.active = [ y for y in Order().directories_orders if ssn in y['SSN'] and y['ORDER'].split('___')[0] in self.years_to_consider_active ]
+							
+					if len(self.active) > 0:
+						log.debug('{} appears to be ACTIVE.'.format(ssn))
+
+						# Determine most recent order.
+						ssn_most_recent_order = ''
+						ssn_most_recent_dir = ''
+						for i in self.active:
+							if ssn_most_recent_order == '':
+								ssn_most_recent_order = i['ORDER']
+								ssn_most_recent_dir = i['SSN']
+								ssn_most_recent_uic = ssn_most_recent_dir.split('\\')[4]
+								ssn_most_recent_name_ssn = ssn_most_recent_dir.split('\\')[5]
+								log.debug('{} is the first order for {} to be evaluated.'.format(ssn_most_recent_order, ssn_most_recent_name_ssn))
+								log.debug('Most recent ORDER: {}. Most recent PATH is {}. Most recent UIC is {}.'.format(ssn_most_recent_order, ssn_most_recent_dir, ssn_most_recent_uic))
+								
+							elif i['ORDER'].split('___')[0] > ssn_most_recent_order.split('___')[0]:
+								log.debug('Comparing {} to {}.'.format(i['ORDER'], ssn_most_recent_order))
+								log.debug('Year of {} is greater than year of {}.'.format(i['ORDER'].split('___')[0], ssn_most_recent_order.split('___')[0]))
+								ssn_most_recent_order = i['ORDER']
+								ssn_most_recent_dir = i['SSN']
+								ssn_most_recent_uic = ssn_most_recent_dir.split('\\')[4]
+								log.debug('Most recent ORDER: {}. Most recent PATH is {}. Most recent UIC is {}.'.format(ssn_most_recent_order, ssn_most_recent_dir, ssn_most_recent_uic))
+								
+							elif i['ORDER'].split('___')[0] == ssn_most_recent_order.split('___')[0] \
+							and i['ORDER'].split('___')[2].replace('-','') > ssn_most_recent_order.split('___')[2].replace('-','') \
+							:
+								log.debug('Comparing {} to {}.'.format(i['ORDER'], ssn_most_recent_order))
+								log.debug('Year of {} is equal to year of {}, but order number {} is greater than order number {}.'.format(i['ORDER'].split('___')[0], ssn_most_recent_order.split('___')[0], i['ORDER'].split('___')[2], ssn_most_recent_order.split('___')[2]))
+								ssn_most_recent_order = i['ORDER']
+								ssn_most_recent_dir = i['SSN']
+								ssn_most_recent_uic = ssn_most_recent_dir.split('\\')[4]
+								log.debug('Most recent ORDER: {}. Most recent PATH is {}. Most recent UIC is {}.'.format(ssn_most_recent_order, ssn_most_recent_dir, ssn_most_recent_uic))						
+									
+						# Move self.active to the most recent SSN directory.
+						source_directories = set([ z['SSN'] for z in Order().directories_orders if ssn_most_recent_dir not in z['SSN'] and ssn in z['SSN'] ])
+						destination_directory = ssn_most_recent_dir	
+
+						for dir in source_directories:
+							source_files = os.listdir(dir)					
+							for source_file in source_files:
+								log.debug('Moving {} to {}.'.format(source_file, destination_directory))
+								shutil.move('{}\{}'.format(dir, source_file), destination_directory)
+							
+						for dir in self.active:
+							Order().active_not_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
+					else:
+						self.inactive = [ x for x in Order().directories_orders if ssn in x['SSN'] and x['ORDER'].split('___')[0] not in self.years_to_consider_active ]
+						
+						if len(self.inactive) > 0 and '{}'.format(self.auditing_directories['ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT']) not in p:
+							log.debug('{} appears to be INACTIVE, but {} is for historical data for state level managers. Not removing {} from {}.'.format(ssn, p, ssn, p))
+							for dir in self.inactive:
+								Order().inactive_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
+						elif len(self.inactive) > 0 and '{}'.format(self.auditing_directories['UICS_DIRECTORY_OUTPUT']) in p:
+							log.debug('{} appears to be INACTIVE. Removing {} from all locations within {}.'.format(ssn, ssn, p))
+							for dir in self.inactive:
+								Order().inactive_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
+								try:
+									shutil.rmtree(dir['SSN'], ignore_errors=True)
+								except FileNotFoundError:
+									pass	
 
 			# Remove empty directories in output directory. 
-			for root, dirs, files, in os.walk('{}'.format(self.path), topdown=False):
+			for root, dirs, files, in os.walk('{}'.format(p), topdown=False):
 				for dir in dirs:
 					if not os.listdir('{}\{}'.format(root, dir)):
 						log.debug('{} is empty. Removing {}\{}.'.format(dir, root, dir))
@@ -274,7 +279,7 @@ class Order:
 			log.info('{:<11} {:>7}'.format('Run time:         ', run_time))
 			log.info('{:-^30}'.format(''))
 		else:
-			log.critical('{} is not a directory. Try again with proper input.'.format(self.path))
+			log.critical('{} is not a directory. Try again with proper input.'.format(p))
 			sys.exit()
 	
 	def auditing_uics(self, path):
@@ -294,7 +299,7 @@ class Order:
 		self.path = path 
 		
 		if os.path.exists(self.path):
-			print('Calculating number of users in [{}].'.format(args.user))
+			print('Calculating number of users in [{}].'.format(self.path))
 			self.users = len([x for x in glob.glob('{}/*/*'.format(self.path))])
 			print('Looks like we have {} users in [{}].'.format(self.users, self.path))
 		else:
@@ -307,7 +312,7 @@ class Order:
 		self.path = path
 		
 		if os.path.exists(self.path):
-			print('Calculating number of certificate orders in [{}].'.format(args.cert))
+			print('Calculating number of certificate orders in [{}].'.format(self.path))
 			self.certificate_orders = len( [ x for x in glob.glob("{}/*/*/*".format(self.path)) if '___cert.doc' in x ] )
 			print('Looks like we have {} certificate orders in [{}].'.format(self.certificate_orders, self.path))
 		else:
@@ -320,7 +325,7 @@ class Order:
 		self.path = path
 		
 		if os.path.exists(self.path):
-			print('Calculating number of certificate orders in [{}].'.format(args.cert))
+			print('Calculating number of certificate orders in [{}].'.format(self.path))
 			self.non_certificate_orders = len( [ x for x in glob.glob("{}/*/*/*".format(self.path)) if '___cert.doc' not in x ] )
 			print('Looks like we have {} certificate orders in [{}].'.format(self.non_certificate_orders, self.path))
 		else:
@@ -382,7 +387,7 @@ class Order:
 		Complete and working.
 		'''
 		audit = parser.add_argument_group('Auditing', 'Use these commands for reporting and auditing the created directory structure.')
-		audit.add_argument('--cleanup', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Determine inactive (retired, no longer in, etc.) and active soldiers. Remove inactive orders and directories. Inactive is considered SOLDIER_SSN directories without orders cut from current year to current year minus two years. Automatically consolidate active soldiers orders spanning multiple years and UICS into current UIC directory.')
+		audit.add_argument('--cleanup', nargs='+', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Determine inactive (retired, no longer in, etc.) and active soldiers. Remove inactive orders and directories. Inactive is considered SOLDIER_SSN directories without orders cut from current year to current year minus two years. Automatically consolidate active soldiers orders spanning multiple years and directories into current directory. If UICS directory is given, inactive will be removed and consolidation by SSN will happen. If ORD_MANAGERS\ORDERS_BY_SOLDIER is given, inactive will not be removed and consolidation by SSN will happen. You can pass multiple directories as input if desired.')
 		audit.add_argument('--uic', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of UICs within output directory.')
 		audit.add_argument('--user', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of users within output directory.')
 		audit.add_argument('--cert', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of certificate orders within output directory.')
@@ -406,7 +411,7 @@ class Order:
 		'''
 		VERSION
 		'''
-		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.3. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
+		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.5. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
 		
 		args = parser.parse_args()
 		
@@ -728,21 +733,13 @@ if __name__ == '__main__':
 		print('Determining INACTIVE / ACTIVE soldiers. Removing INACTIVE and consolidating ACTIVE from [{}].'.format(args.cleanup))
 		o.auditing_cleanup(args.cleanup)
 	elif args.uic:
-		print('Calculating number of UICs in [{}].'.format(args.uic))
-		results_uic = o.auditing_uics(args.uic)
-		print('Looks like we have {} UICs in [{}].'.format(results_uic, args.uic))
+		o.auditing_uics(args.uic)
 	elif args.user:
-		print('Calculating number of users in [{}].'.format(args.user))
-		results_user = o.auditing_users(args.user)
-		print('Looks like we have {} users in [{}].'.format(results_user, args.user))
+		o.auditing_users(args.user)
 	elif args.cert:
-		print('Calculating number of certificate orders in [{}].'.format(args.cert))
-		results_cert = o.auditing_certificate_orders(args.cert)
-		print('Looks like we have {} certificate orders in [{}].'.format(results_cert, args.cert))
+		o.auditing_certificate_orders(args.cert)
 	elif args.main:
-		print('Calculating number of non-certificate orders in [{}].'.format(args.main))
-		results_main = o.auditing_non_certificate_orders(args.main)
-		print('Looks like we have {} main orders in [{}].'.format(results_main, args.main))
+		o.auditing_non_certificate_orders(args.main)
 	elif args.report:
 		print('Calculating number of UICs, Users, Certificate Orders, and Non-Certificate Orders in [{}].'.format(args.report))
 		results_uic = o.auditing_uics(args.report)
