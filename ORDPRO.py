@@ -210,19 +210,22 @@ class Order:
 					else:
 						self.inactive = [ x for x in Order().directories_orders if ssn in x['SSN'] and x['ORDER'].split('___')[0] not in self.years_to_consider_active ]
 						
-						if len(self.inactive) > 0 and '{}'.format(self.auditing_directories['ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT']) not in p:
-							log.debug('{} appears to be INACTIVE, but {} is for historical data for state level managers. Not removing {} from {}.'.format(ssn, p, ssn, p))
-							for dir in self.inactive:
-								Order().inactive_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
-						elif len(self.inactive) > 0 and '{}'.format(self.auditing_directories['UICS_DIRECTORY_OUTPUT']) in p:
-							log.debug('{} appears to be INACTIVE. Removing {} from all locations within {}.'.format(ssn, ssn, p))
-							for dir in self.inactive:
-								Order().inactive_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
-								try:
-									shutil.rmtree(dir['SSN'], ignore_errors=True)
-								except FileNotFoundError:
-									pass	
-
+						try:
+							if len(self.inactive) > 0 and '{}'.format(self.auditing_directories['ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT']) not in p:
+								log.debug('{} appears to be INACTIVE, but {} is for historical data for state level managers. Not removing {} from {}.'.format(ssn, p, ssn, p))
+								for dir in self.inactive:
+									Order().inactive_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
+							elif len(self.inactive) > 0 and '{}'.format(self.auditing_directories['UICS_DIRECTORY_OUTPUT']) in p:
+								log.debug('{} appears to be INACTIVE. Removing {} from all locations within {}.'.format(ssn, ssn, p))
+								for dir in self.inactive:
+									Order().inactive_removed.append('{}\{}'.format(dir['SSN'], dir['ORDER']))
+									try:
+										shutil.rmtree(dir['SSN'], ignore_errors=True)
+									except FileNotFoundError:
+										pass	
+						except FileNotFoundError:
+							pass
+							
 			# Remove empty directories in output directory. 
 			for root, dirs, files, in os.walk('{}'.format(p), topdown=False):
 				for dir in dirs:
@@ -411,7 +414,7 @@ class Order:
 		'''
 		VERSION
 		'''
-		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.5. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
+		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.4. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
 		
 		args = parser.parse_args()
 		
