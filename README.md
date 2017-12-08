@@ -16,7 +16,7 @@ Script designed to assist in management and processing of orders given in the fo
 Automated parsing, splitting, editing, and organizing, orders. Detailed verbosity of script processing during runtime. Detailed logging of all parameters and output.
     
 # **DOCUMENTATION**  
-Check out the README and Wiki page for detailed information.
+Check out the README and Wiki page for detailed information. ++ WIKI UNDER CONSTRUCTION ++. Since translating from powershell to python, the wiki is currently out of date.
 
 # **USAGE**  
 Running the tool:  
