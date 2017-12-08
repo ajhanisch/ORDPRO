@@ -7,6 +7,9 @@ CHANGES:
 - added ability to pass multiple paths to --cleanup
 - modified --cleanup to only remove inactive when ORDERS_BY_SSN is not one of the directories that is passed. consolidation in UICS and ORD_MANAGERS, but removal of inactive only in UICS
 - modified order_number testing from substring static lengths to splitting file name and grabbing order number by index in list
+- multiple source formatting changes
+- fixed problems with consolidation and cleaning functions
+- fixed problems with allowing multiple input directories to --cleanup function
 ------------------------------------
 VERSION: 3.4
 DATE: 12/7/2017
