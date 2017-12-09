@@ -13,6 +13,7 @@ import timeit
 import shutil
 from time import gmtime, strftime
 from datetime import datetime
+from pprint import pprint
 
 class Order:
 	'''
@@ -388,19 +389,13 @@ class Order:
 		self.criteria = criteria
 		self.path = path
 		
-		if os.path.exists(self.path):
-			self.results = []
-			for c in self.criteria:
-				for p in self.path:
-					print('Looking for [{}] in [{}].'.format(c, p))
-					
-					for file in glob.glob('{}/**'.format(p), recursive=True):
-						if c in file:
-							print('Found [{}] in [{}].'.format(c, file))
-							self.results.append(file)	
-		else:
-			print('{} does not exist. Try again with proper input.'.format(self.path))
-			sys.exit()			
+		self.results = []
+		for c in self.criteria:
+			for p in self.path:
+				log.info('Looking for [{}] in [{}].'.format(c, p))				
+				for file in glob.glob('{}/**'.format(p), recursive=True):
+					if c in file:
+						self.results.append(file)	
 		
 		return self.results
 		
@@ -408,12 +403,14 @@ class Order:
 		self.action = action
 		self.results = results
 		
-		if self.action == 'PRINT':
-			print('Printing action specified. Printing results now.')
-		if self.action == 'REMOVE':
+		if self.action == 'print':
+			print('Printing action specified. Printing results now.')			
+		elif self.action == 'remove':
 			print('Removing action specified. Removing results now.')
-		if self.action == 'COMBINE':
-			print('Combining action specified. Combining results now.')	
+		elif self.action == 'combine':
+			print('Combining action specified. Combining results now.')
+		elif self.action == 'move':
+			print('Move action specified. Moving results now.')
 			
 	def parse_arguments(self):
 		'''
@@ -437,7 +434,7 @@ class Order:
 		Complete and working.
 		'''
 		audit = parser.add_argument_group('Auditing', 'Use these commands for reporting and auditing the created directory structure.')
-		audit.add_argument('--cleanup', nargs='+', metavar=r'\\SHARE\OUTPUT\UICS', help='Determine inactive (retired, no longer in, etc.) and active soldiers. Remove inactive orders and directories. Inactive is considered SOLDIER_SSN directories without orders cut from current year to current year minus two years. Automatically consolidate active soldiers orders spanning multiple years and directories into current directory. If UICS directory is given, inactive will be removed and consolidation by SSN will happen. If ORD_MANAGERS\ORDERS_BY_SOLDIER is given, inactive will not be removed and consolidation by SSN will happen. You can pass multiple directories as input if desired.')
+		audit.add_argument('--cleanup', nargs='+', metavar=r'\\SHARE\OUTPUT\UICS', help='Determine inactive (retired, no longer in, etc.) and active soldiers. Remove inactive orders and directories. Inactive is considered SOLDIER_SSN directories without orders cut from current year to current year minus two years. Automatically consolidate active soldiers orders spanning multiple years and directories into most recent directory. If UICS directory is given, inactive WILL be removed and consolidation by SSN will happen. If ORD_MANAGERS\ORDERS_BY_SOLDIER is given, inactive will NOT be removed and consolidation by SSN will happen. You can pass UICS and ORDERS_BY_SOLDIER as input if desired.')
 		audit.add_argument('--uic', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of UICs within output directory.')
 		audit.add_argument('--soldier', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of soldiers within output directory.')
 		audit.add_argument('--cert', metavar=r'\\SHARE\OUTPUT\UICS', type=str, help='Present number of certificate orders within output directory.')
@@ -449,7 +446,7 @@ class Order:
 		Under development.
 		'''
 		search = parser.add_argument_group('Searching', 'Use these commands for finding and performing actions on orders.')
-		search.add_argument('--action', choices=['REMOVE', 'PRINT', 'COMBINE'], help='Perform [ACTION] on results found by --search.')
+		search.add_argument('--action', choices=['remove', 'print', 'combine', 'move'], help='Perform [ACTION] on results found by --search.')
 		search.add_argument('--path', nargs='+', metavar='PATH', help=r'Path to search for orders in. Typically .\OUTPUT\UICS.')
 		search.add_argument('--search', nargs='+', metavar='CRITERIA', help=r'Search for orders by name, ssn, etc. You can use multiple criteria search for. Typically by name LAST_FIRST_MI or ssn 123-45-6789.')
 		
@@ -481,10 +478,21 @@ class Order:
 		self.ordmanagers_directory_output = '{}\\ORD_MANAGERS'.format(args.output)
 		self.ordmanagers_orders_by_soldier_output = '{}\\ORDERS_BY_SOLDIER'.format(self.ordmanagers_directory_output)
 		self.ordmanagers_iperms_integrator_output = '{}\\IPERMS_INTEGRATOR'.format(self.ordmanagers_directory_output)
+		self.ordmanagers_registers_output = '{}\\ORDERS_REGISTERS'.format(self.ordmanagers_directory_output)
 
-		self.directories = { 'CURRENT_DIRECTORY_WORKING': self.current_directory_working, 'LOG_DIRECTORY_WORKING': self.log_directory_working, 'UICS_DIRECTORY_OUTPUT': self.uics_directory_output, 'ORDMANAGERS_DIRECTORY_OUTPUT': self.ordmanagers_directory_output, 'ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT': self.ordmanagers_orders_by_soldier_output, 'ORDMANAGERS_IPERMS_INTEGRATOR_OUTPUT': self.ordmanagers_iperms_integrator_output }
+		self.directories = { 'CURRENT_DIRECTORY_WORKING': self.current_directory_working,
+							 'LOG_DIRECTORY_WORKING': self.log_directory_working,
+							 'UICS_DIRECTORY_OUTPUT': self.uics_directory_output,
+							 'ORDMANAGERS_DIRECTORY_OUTPUT': self.ordmanagers_directory_output,
+							 'ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT': self.ordmanagers_orders_by_soldier_output,
+							 'ORDMANAGERS_IPERMS_INTEGRATOR_OUTPUT': self.ordmanagers_iperms_integrator_output,
+							 'ORDMANAGERS_REGISTERS_OUTPUT':self.ordmanagers_registers_output
+							 }
 		
-		self.variables = { 'SCRIPT_NAME': self.script_name, 'RUN_DATE': self.run_date, 'LOG_FILE': self.log_file }
+		self.variables = { 'SCRIPT_NAME': self.script_name,
+						   'RUN_DATE': self.run_date,
+						   'LOG_FILE': self.log_file 
+						   }
 		
 		return self.directories, self.variables
 		
