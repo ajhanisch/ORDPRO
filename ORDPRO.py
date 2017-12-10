@@ -13,7 +13,6 @@ import timeit
 import shutil
 from time import gmtime, strftime
 from datetime import datetime
-from pprint import pprint
 
 class Order:
 	'''
@@ -26,6 +25,7 @@ class Order:
 	active_not_removed = []
 	auditing_empty_dirs_removed = []
 	directories_orders = []
+	years_processed = []
 
 	files_processed = 0
 	lines_processed = 0
@@ -45,7 +45,8 @@ class Order:
 
 		self.year = year
 		
-		self.known_bad_strings = ["                          FOR OFFICIAL USE ONLY - PRIVACY ACT", "                          FOR OFFICIAL USE ONLY - PRIVACY ACT", "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}", "\f"]
+		self.known_bad_strings = ["                          FOR OFFICIAL USE ONLY - PRIVACY ACT", 
+		"                          FOR OFFICIAL USE ONLY - PRIVACY ACT", "ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}", "\f"]
 		
 		self.order_files = self.orders_to_combine[:250]
 		self.order_files_count = len(self.order_files)
@@ -100,12 +101,19 @@ class Order:
 				f.write(self.order)
 
 			if 'UICS' in self.directory and '__cert.doc' not in self.order_file and self.order_file not in Order().orders_to_combine:
+				'''
+				order_to_combine = { 
+					'DIRECTORY': self.directory,
+					'FILE': self.order_file
+				}
+				Order().orders_to_combine.append(order_to_combine.copy())
+				'''
 				Order().orders_to_combine.append('{}\\{}'.format(self.directory, self.order_file))
 		else:
 			log.debug('{}\\{} exists. Not creating.'.format(self.directory, self.order_file))
 			
 	def processing_create_directory(self, directory):		
-		self.directory = directory	
+		self.directory = directory
 		
 		if not os.path.exists(self.directory): 
 			log.debug('{} does not exist. Creating now.'.format(self.directory))			
@@ -135,7 +143,11 @@ class Order:
 		self.current_year = str(datetime.now().year)
 		self.year_minus_one = str(datetime.now().year -1)
 		self.year_minus_two = str(datetime.now().year -2)
-		self.years_to_consider_active = ['{}'.format(self.current_year), '{}'.format(self.year_minus_one), '{}'.format(self.year_minus_two)]
+		self.years_to_consider_active = [
+		'{}'.format(self.current_year), 
+		'{}'.format(self.year_minus_one), 
+		'{}'.format(self.year_minus_two)
+		]
 
 		self.auditing_active_txt = '{}\\{}_active.txt'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
 		self.auditing_inactive_txt = '{}\\{}_inactive.txt'.format(self.auditing_directories['LOG_DIRECTORY_WORKING'], self.auditing_variables['RUN_DATE'])
@@ -145,8 +157,7 @@ class Order:
 		self.ssn = []
 		
 		for path_input in self.path:
-			if os.path.isdir(path_input):	
-				print('Determining INACTIVE / ACTIVE soldiers from {}.'.format(self.path))
+			if os.path.isdir(path_input):
 				log.info('Working on [{}]. All input is {}.'.format(path_input, self.path))
 
 				start = time.strftime('%m-%d-%y %H:%M:%S')
@@ -212,7 +223,7 @@ class Order:
 						
 						if len(self.inactive) > 0 and '{}'.format('ORD_MANAGERS\\ORDERS_BY_SOLDIER') in path_input:
 							log.debug('[{}] appears to be INACTIVE, but [{}] is for historical data for state level managers. Consolidating orders for [{}] in [{}].'.format(ssn, path_input, ssn, path_input))
-							
+
 							# Determine most recent order.
 							inactive_ssn_most_recent_order = ''
 							inactive_ssn_most_recent_dir = ''
@@ -222,7 +233,7 @@ class Order:
 									inactive_ssn_most_recent_dir = j['SSN']
 									log.debug('[{}] is the first order for [{}] to be evaluated.'.format(inactive_ssn_most_recent_order, inactive_ssn_most_recent_dir))
 									log.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(inactive_ssn_most_recent_order, inactive_ssn_most_recent_dir))
-									
+
 								elif j['ORDER'].split('___')[0] > inactive_ssn_most_recent_order.split('___')[0]:
 									log.debug('Comparing [{}] to [{}].'.format(j['ORDER'], inactive_ssn_most_recent_order))
 									log.debug('Year of [{}] is greater than year of [{}].'.format(j['ORDER'].split('___')[0], inactive_ssn_most_recent_order.split('___')[0]))
@@ -238,7 +249,7 @@ class Order:
 									inactive_ssn_most_recent_order = j['ORDER']
 									inactive_ssn_most_recent_dir = j['SSN']
 									log.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(inactive_ssn_most_recent_order, inactive_ssn_most_recent_dir))
-										
+
 							# Move self.inactive to the most recent SSN directory.
 							inactive_source_directories = set([ z['SSN'] for z in Order().directories_orders if path_input in z['SSN'] and inactive_ssn_most_recent_dir not in z['SSN'] and ssn in z['SSN'] ])
 							destination_directory = inactive_ssn_most_recent_dir	
@@ -251,7 +262,7 @@ class Order:
 							
 						elif len(self.inactive) > 0 and '{}'.format('UICS') in path_input:
 							log.debug('[{}] appears to be INACTIVE. Removing [{}] from all locations within [{}].'.format(ssn, ssn, path_input))
-														
+
 							for inactive_dir in self.inactive:
 								Order().inactive_removed.append('{}\{}'.format(inactive_dir['SSN'], inactive_dir['ORDER']))
 								try:
@@ -261,19 +272,9 @@ class Order:
 			else:
 				log.critical('{} is not a directory. Try again with proper input.'.format(path_input))
 				sys.exit()
-				
+
 		# Remove empty directories in output directory. 
-		for path_input in self.path:
-			log.info('Finished cleaning and consolidating {}. Removing directories from {}.'.format(self.path, path_input))
-			for root, dirs, files, in os.walk('{}'.format(path_input), topdown=False):
-				for dir in dirs:
-					if not os.listdir('{}\{}'.format(root, dir)):
-						log.debug('{} is empty. Removing {}\{}.'.format(dir, root, dir))
-						os.rmdir('{}\{}'.format(root, dir))
-						o.auditing_empty_dirs_removed.append('{}\{}'.format(root, dir))
-					else:
-						log.debug('{} is not empty. Leaving {}\{}.'.format(dir, root, dir))
-		log.info('Finished removing empty directories from {}.'.format(self.path))
+		Order().remove_empty_directories(self.path)
 		
 		# Write results to csv's for original directory structure, active, inactive, and directories removed.
 		if len(Order().directories_orders) > 0:
@@ -331,7 +332,7 @@ class Order:
 		log.info('{:<11} {:>7}'.format('Run time:             ', run_time))
 		log.info('{:-^30}'.format(''))
 		
-		print('Finished determining INACTIVE / ACTIVE soldiers from {}.'.format(self.path))
+		log.info('Finished determining INACTIVE / ACTIVE soldiers from {}.'.format(self.path))
 	
 	def auditing_uics(self, path):
 		self.path = path
@@ -339,9 +340,14 @@ class Order:
 		if os.path.exists(self.path):
 			print('Calculating number of UICs in [{}].'.format(self.path))
 			self.uics = len(os.listdir('{}'.format(self.path)))
-			print('Looks like we have {} UICs in [{}].'.format(self.uics, self.path))
+			print('{:-^30}'.format(''))
+			print('{:+^30}'.format('REPORTING STATS'))
+			print('{:-^30}'.format(''))
+			print('{:<23} {:>6}'.format('Path:                 ', self.path))
+			print('{:<23} {:>6}'.format('UICs:                 ', self.uics))
+			print('{:-^30}'.format(''))		
 		else:
-			print('{} does not exist. Try again with proper input.'.format(self.path))
+			print('[{}] does not exist. Try again with proper input.'.format(self.path))
 			sys.exit()
 			
 		return self.uics
@@ -350,11 +356,16 @@ class Order:
 		self.path = path 
 		
 		if os.path.exists(self.path):
-			print('Calculating number of soldiers in [{}].'.format(self.path))
+			print('Calculating number of SOLDIERS in [{}].'.format(self.path))
 			self.soldiers = len([x for x in glob.glob('{}/*/*'.format(self.path))])
-			print('Looks like we have {} soldiers in [{}].'.format(self.soldiers, self.path))
+			print('{:-^30}'.format(''))
+			print('{:+^30}'.format('REPORTING STATS'))
+			print('{:-^30}'.format(''))
+			print('{:<23} {:>6}'.format('Path:                 ', self.path))
+			print('{:<23} {:>6}'.format('Soldiers:             ', self.soldiers))
+			print('{:-^30}'.format(''))
 		else:
-			print('{} does not exist. Try again with proper input.'.format(self.path))
+			print('{} does not exist. Try again with proper input.'.format(self.soldiers))
 			sys.exit()
 		
 		return self.soldiers
@@ -365,7 +376,12 @@ class Order:
 		if os.path.exists(self.path):
 			print('Calculating number of certificate orders in [{}].'.format(self.path))
 			self.certificate_orders = len( [ x for x in glob.glob('{}/*/*/*'.format(self.path)) if '___cert.doc' in x ] )
-			print('Looks like we have {} certificate orders in [{}].'.format(self.certificate_orders, self.path))
+			print('{:-^30}'.format(''))
+			print('{:+^30}'.format('REPORTING STATS'))
+			print('{:-^30}'.format(''))
+			print('{:<23} {:>6}'.format('Path:                 ', self.path))
+			print('{:<23} {:>6}'.format('Certificates:         ', self.certificate_orders))
+			print('{:-^30}'.format(''))
 		else:
 			print('{} does not exist. Try again with proper input.'.format(self.path))
 			sys.exit()
@@ -378,7 +394,12 @@ class Order:
 		if os.path.exists(self.path):
 			print('Calculating number of non certificate orders in [{}].'.format(self.path))
 			self.non_certificate_orders = len( [ x for x in glob.glob('{}/*/*/*'.format(self.path)) if '___cert.doc' not in x ] )
-			print('Looks like we have {} non certificate orders in [{}].'.format(self.non_certificate_orders, self.path))
+			print('{:-^30}'.format(''))
+			print('{:+^30}'.format('REPORTING STATS'))
+			print('{:-^30}'.format(''))
+			print('{:<23} {:>6}'.format('Path:                 ', self.path))
+			print('{:<23} {:>6}'.format('Non-Certificates:     ', self.non_certificate_orders))
+			print('{:-^30}'.format(''))
 		else:
 			print('{} does not exist. Try again with proper input.'.format(self.path))
 			sys.exit()
@@ -412,6 +433,22 @@ class Order:
 		elif self.action == 'move':
 			print('Move action specified. Moving results now.')
 			
+	def remove_empty_directories(self, path):
+		self.path = path
+		
+		for path_input in self.path:
+			log.info('Removing empty directories from {}. Working on {} now.'.format(self.path, path_input))
+			for root, dirs, files, in os.walk('{}'.format(path_input), topdown=False):
+				for dir in dirs:
+					if not os.listdir('{}\{}'.format(root, dir)):
+						log.debug('{} is empty. Removing {}\{}.'.format(dir, root, dir))
+						os.rmdir('{}\{}'.format(root, dir))
+						Order().auditing_empty_dirs_removed.append('{}\{}'.format(root, dir))
+					else:
+						log.debug('{} is not empty. Leaving {}\{}.'.format(dir, root, dir))
+			log.info('Finished working on {}.'.format(path_input))
+		log.info('Finished removing empty directories from {}.'.format(self.path))
+	
 	def parse_arguments(self):
 		'''
 		CREATE ARGUMENT PARSER
@@ -458,7 +495,7 @@ class Order:
 		'''
 		VERSION
 		'''
-		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.5. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
+		parser.add_argument('--version', action='version', version='%(prog)s - Version 3.6. Check https://github.com/ajhanisch/ORDPRO for the most up to date information.')
 		
 		args = parser.parse_args()
 		
@@ -480,19 +517,21 @@ class Order:
 		self.ordmanagers_iperms_integrator_output = '{}\\IPERMS_INTEGRATOR'.format(self.ordmanagers_directory_output)
 		self.ordmanagers_registers_output = '{}\\ORDERS_REGISTERS'.format(self.ordmanagers_directory_output)
 
-		self.directories = { 'CURRENT_DIRECTORY_WORKING': self.current_directory_working,
-							 'LOG_DIRECTORY_WORKING': self.log_directory_working,
-							 'UICS_DIRECTORY_OUTPUT': self.uics_directory_output,
-							 'ORDMANAGERS_DIRECTORY_OUTPUT': self.ordmanagers_directory_output,
-							 'ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT': self.ordmanagers_orders_by_soldier_output,
-							 'ORDMANAGERS_IPERMS_INTEGRATOR_OUTPUT': self.ordmanagers_iperms_integrator_output,
-							 'ORDMANAGERS_REGISTERS_OUTPUT':self.ordmanagers_registers_output
-							 }
+		self.directories = { 
+		 'CURRENT_DIRECTORY_WORKING': self.current_directory_working,
+		 'LOG_DIRECTORY_WORKING': self.log_directory_working,
+		 'UICS_DIRECTORY_OUTPUT': self.uics_directory_output,
+		 'ORDMANAGERS_DIRECTORY_OUTPUT': self.ordmanagers_directory_output,
+		 'ORDMANAGERS_ORDERS_BY_SOLDIER_OUTPUT': self.ordmanagers_orders_by_soldier_output,
+		 'ORDMANAGERS_IPERMS_INTEGRATOR_OUTPUT': self.ordmanagers_iperms_integrator_output,
+		 'ORDMANAGERS_REGISTERS_OUTPUT':self.ordmanagers_registers_output
+		}
 		
-		self.variables = { 'SCRIPT_NAME': self.script_name,
-						   'RUN_DATE': self.run_date,
-						   'LOG_FILE': self.log_file 
-						   }
+		self.variables = { 
+		'SCRIPT_NAME': self.script_name,
+		'RUN_DATE': self.run_date,
+		'LOG_FILE': self.log_file 
+		}
 		
 		return self.directories, self.variables
 		
@@ -504,6 +543,7 @@ if __name__ == '__main__':
 	args = o.parse_arguments()
 	directories, variables = o.set_variables() # Accessed via directories['DIRECTORY'] || variables['VARIABLE']
 	
+	# Create all required directories.
 	for key, value in directories.items():
 		if not os.path.exists(value):
 			os.makedirs(value)
@@ -608,7 +648,7 @@ if __name__ == '__main__':
 								result['ORDER_FILE_REG'] = '{}\\{}'.format(root, name)
 					
 					if result['ORDER_FILE_REG'] and result['ORDER_FILE_MAIN'] and result['ORDER_FILE_CERT']:
-						log.debug('Registry file found is [{}]. Main file found is [{}]. Cer file found is [{}].'.format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))
+						log.debug('Registry file found is [{}]. Main file found is [{}]. Cert file found is [{}].'.format(result['ORDER_FILE_REG'], result['ORDER_FILE_MAIN'], result['ORDER_FILE_CERT']))
 					else:
 						o.critical_count += 1	
 						o.orders_missing_files_count += 1
@@ -635,7 +675,7 @@ if __name__ == '__main__':
 									period_from = line[48:54]
 									period_to = line[54:60]
 									ssn = line[60:63] + '-' + line[63:65] + '-' + line[65:69]
-									
+
 									if result['ORDER_FILE_MAIN']:
 										with open(result['ORDER_FILE_MAIN'], 'r') as main_file:
 											orders_m = main_file.read()
@@ -709,85 +749,103 @@ if __name__ == '__main__':
 										o.error_count += 1
 										o.orders_cert_missing_count += 1
 										log.error('Missing cert order file for [{}] [{}] order number [{}].'.format(name, ssn, order_number))
-										
-				if len(orders_missing_files) > 0:
-					log.critical('Looks like we have some missing files. Writing missing files results to [{}] now. Check this file for full results.'.format(orders_missing_files_csv))
-				
-					with open(orders_missing_files_csv, 'w') as out_file:
-						writer = csv.writer(out_file, lineterminator='\n')
-						for key, value in orders_missing_files.items():
-							writer.writerow([key, value])
-				else:
-					log.info('No missing files. Not writing to [{}].'.format(orders_missing_files_csv))
+
+						# Add year to o.years_processed for combining later.
+						if published_year not in o.years_processed:
+							o.years_processed.append(published_year)
 						
-				if len(o.orders_to_combine) > 0:
-					log.info('Writing orders processed this round to [{}] now.'.format(orders_to_combine_txt))
-					with open(orders_to_combine_txt, 'w') as out_file:
-						writer = csv.writer(out_file, lineterminator='\n')
-						for order in o.orders_to_combine:
-							writer.writerow([order])
-					log.info('Finished writing orders processed this round to [{}].'.format(orders_to_combine_txt))
+						# Make historical [YR] folder, if it doesn't exist.
+						historical_directory_registers = '{}_orders'.format(published_year)
+						if not os.path.exists('{}\\{}'.format(directories['ORDMANAGERS_REGISTERS_OUTPUT'], historical_directory_registers)):
+							os.makedirs('{}\\{}'.format(directories['ORDMANAGERS_REGISTERS_OUTPUT'], historical_directory_registers))
+						
+						# Copy m.prt, c.prt, r.reg, and r.prt files to ORD_MANAGERS\ORDERS_REGISTERS\[YR]_registers
+						for hist_key, hist_value in result.items():
+							if not os.path.exists('{}\\{}\\{}'.format(directories['ORDMANAGERS_REGISTERS_OUTPUT'], historical_directory_registers, value)):
+								log.debug('Copying [{}] to [{}\\{}] for historical records.'.format(value, directories['ORDMANAGERS_REGISTERS_OUTPUT'], historical_directory_registers))
+								shutil.copy('{}'.format(value), '{}\\{}'.format(directories['ORDMANAGERS_REGISTERS_OUTPUT'], historical_directory_registers))
+
+		# Combine each year of orders.
+		if args.combine:
+			for year in o.years_processed:
+				log.info('Working on {}'.format(year))
+				combine_these_orders_for_current_input_path = [ u for u in Order().orders_to_combine if u.split('\\')[-1].split('___')[0] == str(year) ]
+				if len(combine_these_orders_for_current_input_path) > 0:
+					log.info('Combining [{}] orders to [{}] now.'.format(year, directories['ORDMANAGERS_IPERMS_INTEGRATOR_OUTPUT']))
+					o.processing_combine_orders(combine_these_orders_for_current_input_path, year)
+					log.info('Finished combining [{}] orders to [{}].'.format(year, directories['ORDMANAGERS_IPERMS_INTEGRATOR_OUTPUT']))
 				else:
-					log.info('No orders to combine. Not writing to [{}].'.format(orders_to_combine_txt))
-					
-				if len(o.orders_removed) > 0:
-					log.info('Writing orders removed this round to [{}] now.'.format(orders_removed_txt))
-					with open(orders_removed_txt, 'w') as out_file:
-						writer = csv.writer(out_file, lineterminator='\n')
-						for order in o.orders_removed:
-							writer.writerow([order])
-					log.info('Finished writing orders removed this round to [{}].'.format(orders_removed_txt))
-				else:
-					log.info('No orders removed. Not writing to [{}].'.format(orders_removed_txt))
-				
-			if args.combine:
-				log.info('Combining orders to [{}] now.'.format(directories['LOG_DIRECTORY_WORKING']))
-				o.processing_combine_orders(o.orders_to_combine, published_year)
-				log.info('Finished combining orders to [{}].'.format(directories['LOG_DIRECTORY_WORKING']))
-				
-			end = time.strftime('%m-%d-%y %H:%M:%S')
-			end_time = timeit.default_timer()
-			seconds = round(end_time - start_time)
-			m, s = divmod(seconds, 60)
-			h, m = divmod(m, 60)
-			run_time = '{}:{}:{}'.format(h, m, s)
-			
-			if args.create:
-				s_action = 'CREATE'
-			elif args.remove:
-				s_action = 'REMOVE'
-				
-			log.info('{:-^30}'.format(''))
-			log.info('{:+^30}'.format('PROCESSING STATS'))
-			log.info('{:-^30}'.format(''))
-			log.info('{:<23} {:>6}'.format('Process:               ', s_action))
-			log.info('{:<23} {:>6}'.format('Created:               ', o.orders_created_count))
-			log.info('{:<23} {:>6}'.format('Removed:               ', o.orders_removed_count))
-			log.info('{:<23} {:>6}'.format('Files processed:       ', o.files_processed))
-			log.info('{:<23} {:>6}'.format('Files missing:         ', len(orders_missing_files)))
-			log.info('{:<23} {:>6}'.format('Lines processed:       ', o.lines_processed))
-			log.info('{:<23} {:>6}'.format('Main orders:           ', o.orders_main_count))
-			log.info('{:<23} {:>6}'.format('Cert orders:           ', o.orders_cert_count))
-			log.info('{:<23} {:>6}'.format('Missing main:          ', o.orders_main_missing_count))
-			log.info('{:<23} {:>6}'.format('Missing cert:          ', o.orders_cert_missing_count))
-			log.info('{:<23} {:>6}'.format('Warnings:              ', o.warning_count))
-			log.info('{:<23} {:>6}'.format('Errors:                ', o.error_count))
-			log.info('{:<23} {:>6}'.format('Criticals:             ', o.critical_count))
-			log.info('{:-^30}'.format(''))
-			log.info('{:+^30}'.format('RUNNING STATS'))
-			log.info('{:-^30}'.format(''))
-			log.info('{:<} {:>}'.format('Start time: ', start))
-			log.info('{:<} {:>}'.format('End time:   ', end))
-			log.info('{:<11} {:>7}'.format('Run time:         ', run_time))
-			log.info('{:-^30}'.format(''))
+					log.info('[{}] appears to have no orders to combine. Is this right?'.format(year))
+
+		# Write results to output files.
+		if len(orders_missing_files) > 0:
+			log.critical('Looks like we have some missing files. Writing missing files results to [{}] now. Check this file for full results.'.format(orders_missing_files_csv))
+			with open(orders_missing_files_csv, 'w') as out_file:
+				writer = csv.writer(out_file, lineterminator='\n')
+				for key, value in orders_missing_files.items():
+					writer.writerow([key, value])
 		else:
-			empty_keys = [k for k, v in r_search.items() if v == None]
-			print('Looks like we are missing {}.'.format(empty_keys))
-			print('\nExample 1: Process Orders.')
-			print(r'{} --input \\SHARE\INPUT --output \\SHARE\OUTPUT --create'.format(variables['SCRIPT_NAME']))
-			print('\n\nExample 2: Remove Orders.')
-			print(r'{} --input \\SHARE\INPUT --output \\SHARE\OUTPUT --remove'.format(variables['SCRIPT_NAME']))
-			sys.exit()
+			log.info('No missing files. Not writing to [{}].'.format(orders_missing_files_csv))			
+
+		if len(Order().orders_to_combine) > 0:
+			log.info('Writing orders processed this round to [{}] now.'.format(orders_to_combine_txt))
+			with open(orders_to_combine_txt, 'w') as out_file:
+				out_file.write('\n'.join(Order().orders_to_combine))
+			log.info('Finished writing orders processed this round to [{}].'.format(orders_to_combine_txt))
+		else:
+			log.info('No orders to combine. Not writing to [{}].'.format(orders_to_combine_txt))
+
+		if len(Order().orders_removed) > 0:
+			log.info('Writing orders removed this round to [{}] now.'.format(orders_removed_txt))
+			with open(orders_removed_txt, 'w') as out_file:
+				out_file.write('\n'.join(Order().orders_removed))
+			log.info('No orders removed. Not writing to [{}].'.format(orders_removed_txt))
+		else:
+			log.info('No orders removed. Not writing to [{}].'.format(orders_removed_txt))
+			
+		end = time.strftime('%m-%d-%y %H:%M:%S')
+		end_time = timeit.default_timer()
+		seconds = round(end_time - start_time)
+		m, s = divmod(seconds, 60)
+		h, m = divmod(m, 60)
+		run_time = '{}:{}:{}'.format(h, m, s)
+		
+		if args.create:
+			s_action = 'CREATE'
+		elif args.remove:
+			s_action = 'REMOVE'
+			
+		log.info('{:-^30}'.format(''))
+		log.info('{:+^30}'.format('PROCESSING STATS'))
+		log.info('{:-^30}'.format(''))
+		log.info('{:<23} {:>6}'.format('Process:               ', s_action))
+		log.info('{:<23} {:>6}'.format('Created:               ', o.orders_created_count))
+		log.info('{:<23} {:>6}'.format('Removed:               ', o.orders_removed_count))
+		log.info('{:<23} {:>6}'.format('Files processed:       ', o.files_processed))
+		log.info('{:<23} {:>6}'.format('Files missing:         ', len(orders_missing_files)))
+		log.info('{:<23} {:>6}'.format('Lines processed:       ', o.lines_processed))
+		log.info('{:<23} {:>6}'.format('Main orders:           ', o.orders_main_count))
+		log.info('{:<23} {:>6}'.format('Cert orders:           ', o.orders_cert_count))
+		log.info('{:<23} {:>6}'.format('Missing main:          ', o.orders_main_missing_count))
+		log.info('{:<23} {:>6}'.format('Missing cert:          ', o.orders_cert_missing_count))
+		log.info('{:<23} {:>6}'.format('Warnings:              ', o.warning_count))
+		log.info('{:<23} {:>6}'.format('Errors:                ', o.error_count))
+		log.info('{:<23} {:>6}'.format('Criticals:             ', o.critical_count))
+		log.info('{:-^30}'.format(''))
+		log.info('{:+^30}'.format('RUNNING STATS'))
+		log.info('{:-^30}'.format(''))
+		log.info('{:<} {:>}'.format('Start time: ', start))
+		log.info('{:<} {:>}'.format('End time:   ', end))
+		log.info('{:<11} {:>7}'.format('Run time:             ', run_time))
+		log.info('{:-^30}'.format(''))
+	else:
+		empty_keys = [k for k, v in r_search.items() if v == None]
+		print('Looks like we are missing {}.'.format(empty_keys))
+		print('\nExample 1: Process Orders.')
+		print(r'{} --input \\SHARE\INPUT --output \\SHARE\OUTPUT --create'.format(variables['SCRIPT_NAME']))
+		print('\n\nExample 2: Remove Orders.')
+		print(r'{} --input \\SHARE\INPUT --output \\SHARE\OUTPUT --remove'.format(variables['SCRIPT_NAME']))
+		sys.exit()
 
 	# Handling for Auditing of orders.
 	if args.cleanup:
@@ -825,4 +883,4 @@ if __name__ == '__main__':
 		else:
 			empty_keys = [k for k, v in r_search.items() if v == None]
 			print('Looks like we are missing {}.'.format(empty_keys))
-			print(r'Example {} --search 123-45-6789 --path \\SHARE\OUTPUT\UICS --action (REMOVE, PRINT, COMBINE)'.format(variables['SCRIPT_NAME']))
+			print(r'Example {} --search 123-45-6789 --path \\SHARE\OUTPUT\UICS --action (remove, print, combine, move)'.format(variables['SCRIPT_NAME']))
