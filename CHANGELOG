@@ -7,6 +7,7 @@ CHANGES:
 - modified orders combining functionality to work properly for multiple directories/years of input
 - fixed created orders output files to properly show created orders and the amount
 - various formatting and reporting fixes and changes
+- fixed text reporting output
 ------------------------------------
 VERSION: 3.5
 DATE: 12/8/2017
