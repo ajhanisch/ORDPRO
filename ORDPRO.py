@@ -101,13 +101,6 @@ class Order:
 				f.write(self.order)
 
 			if 'UICS' in self.directory and '__cert.doc' not in self.order_file and self.order_file not in Order().orders_to_combine:
-				'''
-				order_to_combine = { 
-					'DIRECTORY': self.directory,
-					'FILE': self.order_file
-				}
-				Order().orders_to_combine.append(order_to_combine.copy())
-				'''
 				Order().orders_to_combine.append('{}\\{}'.format(self.directory, self.order_file))
 		else:
 			log.debug('{}\\{} exists. Not creating.'.format(self.directory, self.order_file))
@@ -317,20 +310,20 @@ class Order:
 		h, m = divmod(m, 60)
 		run_time = '{}:{}:{}'.format(h, m, s)
 		
-		log.info('{:-^30}'.format(''))
-		log.info('{:+^30}'.format('CLEAN UP STATS'))
-		log.info('{:-^30}'.format(''))
-		log.info('{:<23} {:>6}'.format('Original Orders:       ', len(Order().directories_orders)))
-		log.info('{:<23} {:>6}'.format('Active Orders:         ', len(Order().active_not_removed)))
-		log.info('{:<23} {:>6}'.format('Inactive Removed:      ', len(Order().inactive_removed)))
-		log.info('{:<23} {:>6}'.format('Directories Removed:   ', len(Order().auditing_empty_dirs_removed)))
-		log.info('{:-^30}'.format(''))
-		log.info('{:+^30}'.format('RUNNING STATS'))
-		log.info('{:-^30}'.format(''))
+		log.info('{:-^60}'.format(''))
+		log.info('{:+^60}'.format('CLEAN UP STATS'))
+		log.info('{:-^60}'.format(''))
+		log.info('{:<53} {:>6}'.format('Original Orders:       ', len(Order().directories_orders)))
+		log.info('{:<53} {:>6}'.format('Active Orders:         ', len(Order().active_not_removed)))
+		log.info('{:<53} {:>6}'.format('Inactive Removed:      ', len(Order().inactive_removed)))
+		log.info('{:<53} {:>6}'.format('Directories Removed:   ', len(Order().auditing_empty_dirs_removed)))
+		log.info('{:-^60}'.format(''))
+		log.info('{:+^60}'.format('RUNNING STATS'))
+		log.info('{:-^60}'.format(''))
 		log.info('{:<} {:>}'.format('Start time: ', start))
 		log.info('{:<} {:>}'.format('End time:   ', end))
 		log.info('{:<11} {:>7}'.format('Run time:             ', run_time))
-		log.info('{:-^30}'.format(''))
+		log.info('{:-^60}'.format(''))
 		
 		log.info('Finished determining INACTIVE / ACTIVE soldiers from {}.'.format(self.path))
 	
@@ -338,14 +331,13 @@ class Order:
 		self.path = path
 		
 		if os.path.exists(self.path):
-			print('Calculating number of UICs in [{}].'.format(self.path))
+			print('UICs in [{}].'.format(self.path))
 			self.uics = len(os.listdir('{}'.format(self.path)))
-			print('{:-^30}'.format(''))
-			print('{:+^30}'.format('REPORTING STATS'))
-			print('{:-^30}'.format(''))
-			print('{:<23} {:>6}'.format('Path:                 ', self.path))
-			print('{:<23} {:>6}'.format('UICs:                 ', self.uics))
-			print('{:-^30}'.format(''))		
+			print('{:-^60}'.format(''))
+			print('{:+^60}'.format('UIC STATS'))
+			print('{:-^60}'.format(''))
+			print('{:<53} {:>6}'.format('UIC: ', self.uics))
+			print('{:-^60}'.format(''))		
 		else:
 			print('[{}] does not exist. Try again with proper input.'.format(self.path))
 			sys.exit()
@@ -356,14 +348,13 @@ class Order:
 		self.path = path 
 		
 		if os.path.exists(self.path):
-			print('Calculating number of SOLDIERS in [{}].'.format(self.path))
+			print('SOLDIERS in [{}].'.format(self.path))
 			self.soldiers = len([x for x in glob.glob('{}/*/*'.format(self.path))])
-			print('{:-^30}'.format(''))
-			print('{:+^30}'.format('REPORTING STATS'))
-			print('{:-^30}'.format(''))
-			print('{:<23} {:>6}'.format('Path:                 ', self.path))
-			print('{:<23} {:>6}'.format('Soldiers:             ', self.soldiers))
-			print('{:-^30}'.format(''))
+			print('{:-^60}'.format(''))
+			print('{:+^60}'.format('SOLDIER STATS'))
+			print('{:-^60}'.format(''))
+			print('{:<53} {:>6}'.format('Soldier: ', self.soldiers))
+			print('{:-^60}'.format(''))
 		else:
 			print('{} does not exist. Try again with proper input.'.format(self.soldiers))
 			sys.exit()
@@ -374,14 +365,13 @@ class Order:
 		self.path = path
 		
 		if os.path.exists(self.path):
-			print('Calculating number of certificate orders in [{}].'.format(self.path))
+			print('Certificate orders in [{}].'.format(self.path))
 			self.certificate_orders = len( [ x for x in glob.glob('{}/*/*/*'.format(self.path)) if '___cert.doc' in x ] )
-			print('{:-^30}'.format(''))
-			print('{:+^30}'.format('REPORTING STATS'))
-			print('{:-^30}'.format(''))
-			print('{:<23} {:>6}'.format('Path:                 ', self.path))
-			print('{:<23} {:>6}'.format('Certificates:         ', self.certificate_orders))
-			print('{:-^30}'.format(''))
+			print('{:-^60}'.format(''))
+			print('{:+^60}'.format('CERTIFICATE STATS'))
+			print('{:-^60}'.format(''))
+			print('{:<53} {:>6}'.format('Certificate: ', self.certificate_orders))
+			print('{:-^60}'.format(''))
 		else:
 			print('{} does not exist. Try again with proper input.'.format(self.path))
 			sys.exit()
@@ -392,14 +382,13 @@ class Order:
 		self.path = path
 		
 		if os.path.exists(self.path):
-			print('Calculating number of non certificate orders in [{}].'.format(self.path))
+			print('Non-certificate orders in [{}].'.format(self.path))
 			self.non_certificate_orders = len( [ x for x in glob.glob('{}/*/*/*'.format(self.path)) if '___cert.doc' not in x ] )
-			print('{:-^30}'.format(''))
-			print('{:+^30}'.format('REPORTING STATS'))
-			print('{:-^30}'.format(''))
-			print('{:<23} {:>6}'.format('Path:                 ', self.path))
-			print('{:<23} {:>6}'.format('Non-Certificates:     ', self.non_certificate_orders))
-			print('{:-^30}'.format(''))
+			print('{:-^60}'.format(''))
+			print('{:+^60}'.format('NON-CERTIFICATE STATS'))
+			print('{:-^60}'.format(''))
+			print('{:<53} {:>6}'.format('Non-Certificate: ', self.non_certificate_orders))
+			print('{:-^60}'.format(''))
 		else:
 			print('{} does not exist. Try again with proper input.'.format(self.path))
 			sys.exit()
@@ -453,7 +442,7 @@ class Order:
 		'''
 		CREATE ARGUMENT PARSER
 		'''
-		parser = argparse.ArgumentParser(description='Script to automatically process, create, organize, combine, and manage orders from AFCOS.')
+		parser = argparse.ArgumentParser(description='Script to automatically process, create, organize, combine, manage, and much more with orders from AFCOS.')
 		
 		'''
 		PROCESSING ARGUMENTS
@@ -581,6 +570,39 @@ if __name__ == '__main__':
 	for a in args.__dict__:
 		log.info(str(a) + ': ' + str(args.__dict__[a]))
 
+	# Handling for Auditing of orders.
+	if args.cleanup:
+		o.auditing_cleanup(args.cleanup)
+		sys.exit()
+	if args.uic:
+		o.auditing_uics(args.uic)
+		sys.exit()
+	if args.soldier:
+		o.auditing_soldiers(args.soldier)
+		sys.exit()
+	if args.cert:
+		o.auditing_certificate_orders(args.cert)
+		sys.exit()
+	if args.main:
+		o.auditing_non_certificate_orders(args.main)
+		sys.exit()
+	if args.report:
+		print('UICs, soldiers, Certificate Orders, and Non-Certificate Orders in [{}].'.format(args.report))
+		results_uic = o.auditing_uics(args.report)
+		results_user = o.auditing_soldiers(args.report)
+		results_cert = o.auditing_certificate_orders(args.report)
+		results_main = o.auditing_non_certificate_orders(args.report)		
+		print('{:-^60}'.format(''))
+		print('{:+^60}'.format('REPORTING STATS'))
+		print('{:-^60}'.format(''))
+		print('{:<53} {:>6}'.format('UIC: ', results_uic))
+		print('{:<53} {:>6}'.format('Soldier: ', results_user))
+		print('{:<53} {:>6}'.format('Certificate: ', results_cert))
+		print('{:<53} {:>6}'.format('Non-Certificate: ', results_main))
+		print('{:<53} {:>6}'.format('Total Order: ', results_main + results_cert))
+		print('{:-^60}'.format(''))
+		sys.exit()
+		
 	# Handling for Processing of orders.
 	if args.input and args.output and args.create:
 		requirements_check = { 'INPUT':args.input, 'OUTPUT':args.output, 'CREATE':args.create }		
@@ -594,6 +616,17 @@ if __name__ == '__main__':
 		print(r'{} --input \\SHARE\INPUT --output \\SHARE\OUTPUT --remove'.format(variables['SCRIPT_NAME']))
 		sys.exit()
 		
+	# Handling for Searching of orders.
+	if args.search or args.path or args.action:
+		requirements_check = { 'SEARCH':args.search, 'PATH':args.path, 'ACTION':args.action }
+		if not any((value == None for value in requirements_check.values())):
+			results_search = o.search_find(args.search, args.path)
+			o.search_action(args.action, results_search)
+		else:
+			empty_keys = [k for k, v in requirements_check.items() if v == None]
+			print('Looks like we are missing {}.'.format(empty_keys))
+			print(r'Example {} --search 123-45-6789 --path \\SHARE\OUTPUT\UICS --action (remove, print, combine, move)'.format(variables['SCRIPT_NAME']))
+
 	try:
 		requirements_check
 	except NameError:
@@ -775,7 +808,8 @@ if __name__ == '__main__':
 					o.processing_combine_orders(combine_these_orders_for_current_input_path, year)
 					log.info('Finished combining [{}] orders to [{}].'.format(year, directories['ORDMANAGERS_IPERMS_INTEGRATOR_OUTPUT']))
 				else:
-					log.info('[{}] appears to have no orders to combine. Is this right?'.format(year))
+					log.i.nfo('[{}] appears to have no orders to combine. Is this right?'.format(year))
+					sys.exit()
 
 		# Write results to output files.
 		if len(orders_missing_files) > 0:
@@ -815,72 +849,36 @@ if __name__ == '__main__':
 		elif args.remove:
 			s_action = 'REMOVE'
 			
-		log.info('{:-^30}'.format(''))
-		log.info('{:+^30}'.format('PROCESSING STATS'))
-		log.info('{:-^30}'.format(''))
-		log.info('{:<23} {:>6}'.format('Process:               ', s_action))
-		log.info('{:<23} {:>6}'.format('Created:               ', o.orders_created_count))
-		log.info('{:<23} {:>6}'.format('Removed:               ', o.orders_removed_count))
-		log.info('{:<23} {:>6}'.format('Files processed:       ', o.files_processed))
-		log.info('{:<23} {:>6}'.format('Files missing:         ', len(orders_missing_files)))
-		log.info('{:<23} {:>6}'.format('Lines processed:       ', o.lines_processed))
-		log.info('{:<23} {:>6}'.format('Main orders:           ', o.orders_main_count))
-		log.info('{:<23} {:>6}'.format('Cert orders:           ', o.orders_cert_count))
-		log.info('{:<23} {:>6}'.format('Missing main:          ', o.orders_main_missing_count))
-		log.info('{:<23} {:>6}'.format('Missing cert:          ', o.orders_cert_missing_count))
-		log.info('{:<23} {:>6}'.format('Warnings:              ', o.warning_count))
-		log.info('{:<23} {:>6}'.format('Errors:                ', o.error_count))
-		log.info('{:<23} {:>6}'.format('Criticals:             ', o.critical_count))
-		log.info('{:-^30}'.format(''))
-		log.info('{:+^30}'.format('RUNNING STATS'))
-		log.info('{:-^30}'.format(''))
+		log.info('{:-^60}'.format(''))
+		log.info('{:+^60}'.format('PROCESSING STATS'))
+		log.info('{:-^60}'.format(''))
+		log.info('{:<53} {:>6}'.format('Process: ', s_action))
+		log.info('{:<53} {:>6}'.format('Created: ', o.orders_created_count))
+		log.info('{:<53} {:>6}'.format('Removed: ', o.orders_removed_count))
+		log.info('{:<53} {:>6}'.format('Files processed: ', o.files_processed))
+		log.info('{:<53} {:>6}'.format('Files missing: ', len(orders_missing_files)))
+		log.info('{:<53} {:>6}'.format('Lines processed: ', o.lines_processed))
+		log.info('{:<53} {:>6}'.format('Main orders: ', o.orders_main_count))
+		log.info('{:<53} {:>6}'.format('Cert orders: ', o.orders_cert_count))
+		log.info('{:<53} {:>6}'.format('Missing main: ', o.orders_main_missing_count))
+		log.info('{:<53} {:>6}'.format('Missing cert: ', o.orders_cert_missing_count))
+		log.info('{:<53} {:>6}'.format('Warnings: ', o.warning_count))
+		log.info('{:<53} {:>6}'.format('Errors: ', o.error_count))
+		log.info('{:<53} {:>6}'.format('Criticals: ', o.critical_count))
+		log.info('{:-^60}'.format(''))
+		log.info('{:+^60}'.format('RUNNING STATS'))
+		log.info('{:-^60}'.format(''))
 		log.info('{:<} {:>}'.format('Start time: ', start))
-		log.info('{:<} {:>}'.format('End time:   ', end))
-		log.info('{:<11} {:>7}'.format('Run time:             ', run_time))
-		log.info('{:-^30}'.format(''))
+		log.info('{:<} {:>}'.format('End time: ', end))
+		log.info('{:<11} {:>7}'.format('Run time: ', run_time))
+		log.info('{:-^60}'.format(''))
+		sys.exit()
 	else:
-		empty_keys = [k for k, v in r_search.items() if v == None]
+		requirements_check = { 'SEARCH':args.search, 'PATH':args.path, 'ACTION':args.action }
+		empty_keys = [k for k, v in requirements_check.items() if v == None]
 		print('Looks like we are missing {}.'.format(empty_keys))
 		print('\nExample 1: Process Orders.')
 		print(r'{} --input \\SHARE\INPUT --output \\SHARE\OUTPUT --create'.format(variables['SCRIPT_NAME']))
 		print('\n\nExample 2: Remove Orders.')
 		print(r'{} --input \\SHARE\INPUT --output \\SHARE\OUTPUT --remove'.format(variables['SCRIPT_NAME']))
 		sys.exit()
-
-	# Handling for Auditing of orders.
-	if args.cleanup:
-		o.auditing_cleanup(args.cleanup)
-	elif args.uic:
-		o.auditing_uics(args.uic)
-	elif args.soldier:
-		o.auditing_soldiers(args.soldier)
-	elif args.cert:
-		o.auditing_certificate_orders(args.cert)
-	elif args.main:
-		o.auditing_non_certificate_orders(args.main)
-	elif args.report:
-		print('Calculating number of UICs, soldiers, Certificate Orders, and Non-Certificate Orders in [{}].'.format(args.report))
-		results_uic = o.auditing_uics(args.report)
-		results_user = o.auditing_soldiers(args.report)
-		results_cert = o.auditing_certificate_orders(args.report)
-		results_main = o.auditing_non_certificate_orders(args.report)		
-		print('{:-^30}'.format(''))
-		print('{:+^30}'.format('REPORTING STATS'))
-		print('{:-^30}'.format(''))
-		print('{:<23} {:>6}'.format('UICs:                 ', results_uic))
-		print('{:<23} {:>6}'.format('Soldiers:             ', results_user))
-		print('{:<23} {:>6}'.format('Certificates:         ', results_cert))
-		print('{:<23} {:>6}'.format('Non-Certificates:     ', results_main))
-		print('{:<23} {:>6}'.format('Total Orders:         ', results_main + results_cert))
-		print('{:-^30}'.format(''))
-		
-	# Handling for Searching of orders.
-	if args.search or args.path or args.action:
-		r_search = { 'SEARCH':args.search, 'PATH':args.path, 'ACTION':args.action }
-		if not any((value == None for value in r_search.values())):
-			results_search = o.search_find(args.search, args.path)
-			o.search_action(args.action, results_search)
-		else:
-			empty_keys = [k for k, v in r_search.items() if v == None]
-			print('Looks like we are missing {}.'.format(empty_keys))
-			print(r'Example {} --search 123-45-6789 --path \\SHARE\OUTPUT\UICS --action (remove, print, combine, move)'.format(variables['SCRIPT_NAME']))
