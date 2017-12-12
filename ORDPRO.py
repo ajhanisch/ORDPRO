@@ -502,9 +502,9 @@ class Order:
 
 		self.uics_directory_output = '{}\\UICS'.format(args.output)
 		self.ordmanagers_directory_output = '{}\\ORD_MANAGERS'.format(args.output)
+		self.ordmanagers_registers_output = '{}\\ORD_REGISTERS'.format(args.output)
 		self.ordmanagers_orders_by_soldier_output = '{}\\ORDERS_BY_SOLDIER'.format(self.ordmanagers_directory_output)
 		self.ordmanagers_iperms_integrator_output = '{}\\IPERMS_INTEGRATOR'.format(self.ordmanagers_directory_output)
-		self.ordmanagers_registers_output = '{}\\ORDERS_REGISTERS'.format(self.ordmanagers_directory_output)
 
 		self.directories = { 
 		 'CURRENT_DIRECTORY_WORKING': self.current_directory_working,
