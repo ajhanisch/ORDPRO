@@ -20,10 +20,10 @@ Check out the README and Wiki page for detailed information. ++ WIKI UNDER CONST
 
 # **USAGE**  
 Running the tool:  
-.\ORDPRO.py [options]
+.\ordpro.py [options]
   
 Typical Usage Example:  
-.\ORDPRO.py --input \\\path\to\input --output \\\path\to\output --create
+.\ordpro.py --input \\\path\to\input --output \\\path\to\output --create
   
 Options:   
   
