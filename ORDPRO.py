@@ -515,7 +515,8 @@ class Order:
 		self.log_directory_working = '{}\\LOGS'.format(self.current_directory_working)
 		
 		self.script_name = os.path.basename(__file__)
-		self.run_date = strftime('%Y-%m-%d_%H-%M-%S', gmtime())
+		#self.run_date = strftime('%Y-%m-%d_%H-%M-%S', gmtime())
+		self.run_date = strftime('%Y-%m-%d_%H-%M-%S')
 		self.log_file = '{}\\{}_ORDPRO.log'.format(self.log_directory_working, self.run_date)
 
 		self.uics_directory_output = '{}\\UICS'.format(args.output)
