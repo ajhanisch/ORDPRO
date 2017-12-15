@@ -16,14 +16,20 @@ Script designed to assist in management and processing of orders given in the fo
 Automated parsing, splitting, editing, and organizing, orders. Detailed verbosity of script processing during runtime. Detailed logging of all parameters and output.
     
 # **DOCUMENTATION**  
-Check out the README and Wiki page for detailed information. ++ WIKI UNDER CONSTRUCTION ++. Since translating from powershell to python, the wiki is currently out of date.
+++ WIKI UNDER CONSTRUCTION ++. Since translating from powershell to python, the wiki is currently out of date. Working to update this.
+
+# **INSTALLATION**  
+There are two different ways to get ordpro up and running. Both are very painless, one easier than the other.  
+1. [Recommended] - **ordpro.exe** -- No installation required. Simply place **ordpro.exe** on the machine you deem your orders processing machine and it is ready to run immediately.
+
+2. **ordpro.py** -- Installation of Python 3.6 is required on any machine running **ordpro.py**. While this is not complicated, it is simply an additional step that is needed in order to be up and running for processing orders.
 
 # **USAGE**  
 Running the tool:  
-.\ordpro.py [options]
+.\ordpro.exe [options]
   
 Typical Usage Example:  
-.\ordpro.py --input \\\path\to\input --output \\\path\to\output --create
+.\ordpro.exe --input \\\path\to\input --output \\\path\to\output --create
   
 Options:   
   
