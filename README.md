@@ -36,10 +36,10 @@ There are two different ways to get ordpro up and running. Both are very painles
 
 # **USAGE**  
 Running the tool:  
-.\ordpro.exe [options]
+`.\ordpro.exe [options]`
   
 Typical Usage Example:  
-.\ordpro.exe --input \\\path\to\input --output \\\path\to\output --create
+`.\ordpro.exe --input \\\path\to\input --output \\\path\to\output --create`
   
 Options:   
   
