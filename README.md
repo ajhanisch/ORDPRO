@@ -26,7 +26,7 @@ Detailed logging of any and all actions performed by Ordpro will be within the L
 Detailed verbosity of script processing, mirroring the output within the log files, can be enabled in the console to allow the user to see the actions happen in real time. This is completely optional for the user. As a disclaimer for the user, this feature may slow down performance when processing thousands of orders and files.
     
 # **DOCUMENTATION**  
-++ WIKI UNDER CONSTRUCTION ++. Since translating from powershell to python, the wiki is currently out of date. Working to update this.
+Check out the Wiki page for all documentation.
 
 # **INSTALLATION**  
 There are two different ways to get ordpro up and running. Both are very painless, one easier than the other.  
