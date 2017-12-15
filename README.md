@@ -31,3 +31,5 @@ Check the Wiki for detailed information on all CLI parameters and switches.
   
 # **WISH LIST / TO DO**  
 - [ ] Implement notification of when orders are processed
+- [ ] Implement individual UIC 'registry file' for admins to see who/what/when orders were cut for that UIC
+- [ ] Implement ability for soldiers' directories within UIC to move more often then when orders are cut
