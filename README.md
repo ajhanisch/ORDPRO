@@ -39,7 +39,7 @@ Running the tool:
 `.\ordpro.exe [options]`
   
 Typical Usage Example:  
-`.\ordpro.exe --input \\\path\to\input --output \\\path\to\output --create`
+`.\ordpro.exe --input \\\path\to\input --output \\\path\to\output --create --combine`
   
 Options:   
   
