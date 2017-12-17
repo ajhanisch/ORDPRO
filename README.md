@@ -49,3 +49,4 @@ Check the Wiki for detailed information on all CLI parameters and switches.
 - [ ] Implement notification of when orders are processed
 - [ ] Implement individual UIC 'registry file' for admins to see who/what/when orders were cut for that UIC
 - [ ] Implement ability for soldiers' directories within UIC to move more often then when orders are cut
+- [ ] Rewrite to incorporate more of Python's true OOP aspects. Using very little right now.
