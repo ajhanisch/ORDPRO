@@ -17,7 +17,7 @@ Orders Processor (Ordpro) is a program originally written in PowerShell, transla
   
 Detailed logging of any and all actions performed by Ordpro will be within the LOGS directory of the working directory Ordpro is placed. Logging information is extremely detailed within each log file including times when all actions were taken, log level of each action, what action was performed, the success or failure of each action, as well as statistics of actions performed presented throughout. The log files are detailed and designed to allow users to answer questions about what actually happened when they used Ordpro, as well as make any potential debugging and or troubleshooting that much simpler. Detailed logging takes place regardless of verbosity enabled or disabled during time of processing.  
 
-* iPERMS Automation  
+* PERMS Automation  
   
  Ordpro bridges the gap of orders being processed and them quickly making it to each soldiers PERMS. When the user specifies the `–combine` option when creating orders, ordpro will combine the created orders into files that contain no more than two-hundred and fifty (250) orders in them to be immediately input into PERMS integrator with no manual editing or user interaction. This feature does the required editing and combining of orders, previously manually done by the unit administrator for each soldier. This feature allows a soldiers orders to be put into PERMS the same day, or hour for that matter, the order was published and distributed within AFCOS. This feature has helped a state-wide amount of soldiers PERMS data to be caught up from more than two (2) years behind in initial building of Ordpro in a matter of minutes.  
  
