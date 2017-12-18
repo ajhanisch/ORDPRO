@@ -622,6 +622,17 @@ if __name__ == '__main__':
 		print('{:-^60}'.format(''))
 		sys.exit()
 		
+	# Handling for Searching of orders.
+	if args.search or args.path or args.action:
+		requirements_check = { 'SEARCH':args.search, 'PATH':args.path, 'ACTION':args.action }
+		if not any((value == None for value in requirements_check.values())):
+			results_search = o.search_find(args.search, args.path)
+			o.search_action(args.action, results_search)
+		else:
+			empty_keys = [k for k, v in requirements_check.items() if v == None]
+			print('Looks like we are missing {}.'.format(empty_keys))
+			print(r'Example {} --search 123-45-6789 --path \\SHARE\OUTPUT\UICS --action (remove, print, combine, move)'.format(variables['SCRIPT_NAME']))		
+		
 	# Handling for Processing of orders.
 	if args.input and args.output and args.create:
 		requirements_check = { 'INPUT':args.input, 'OUTPUT':args.output, 'CREATE':args.create }		
@@ -634,18 +645,6 @@ if __name__ == '__main__':
 		print('\n\nExample 2: Remove Orders.')
 		print(r'{} --input \\SHARE\INPUT --output \\SHARE\OUTPUT --remove'.format(variables['SCRIPT_NAME']))
 		sys.exit()
-		
-	# Handling for Searching of orders.
-	if args.search or args.path or args.action:
-		requirements_check = { 'SEARCH':args.search, 'PATH':args.path, 'ACTION':args.action }
-		if not any((value == None for value in requirements_check.values())):
-			results_search = o.search_find(args.search, args.path)
-			o.search_action(args.action, results_search)
-		else:
-			empty_keys = [k for k, v in requirements_check.items() if v == None]
-			print('Looks like we are missing {}.'.format(empty_keys))
-			print(r'Example {} --search 123-45-6789 --path \\SHARE\OUTPUT\UICS --action (remove, print, combine, move)'.format(variables['SCRIPT_NAME']))
-
 	try:
 		requirements_check
 	except NameError:
