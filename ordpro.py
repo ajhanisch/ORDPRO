@@ -826,8 +826,7 @@ if __name__ == '__main__':
 					o.processing_combine_orders(combine_these_orders_for_current_input_path, year)
 					log.info('Finished combining [{}] orders to [{}].'.format(year, directories['ORDMANAGERS_IPERMS_INTEGRATOR_OUTPUT']))
 				else:
-					log.i.nfo('[{}] appears to have no orders to combine. Is this right?'.format(year))
-					sys.exit()
+					log.info('[{}] appears to have no orders to combine. Is this right?'.format(year))
 
 		# Write results to output files.
 		if len(orders_missing_files) > 0:
