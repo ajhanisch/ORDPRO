@@ -1,6 +1,26 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 3.7
+DATE: 12/30/2017
+CHANGES:
+- removed 'r.glb' files from being processed since they are not needed or used
+- reworked orders combination and is working once again
+- reworked orders removal and is working once again
+- reworked empty directory removal and is working once again
+- reworked cleanup and is working once again
+- run time calculations and presentations
+- reworked processing statistics calculation and presentation
+- reworked output files for actions taken and is working once again
+- added additional statistics and output files for more detailed actions taken results
+- fixed missing registry file detection and actions after detection
+- modified logging to include a date-time folder and then files within there instead of all logs going to LOG with date-time stamps
+- reworked auditing calculate/presentation for uics, soldiers, main orders, certificate orders
+- redefined logging output throughout entire script from debug to info
+- redefined default logging output level to info instead of debug
+- reworked auditing functionality and it is working once again new and improved with less options and more functionality
+- added more detailed auditing output to screen and output files with a print or outfile option
+------------------------------------
 VERSION: 3.6
 DATE: 12/10/2017
 CHANGES:
