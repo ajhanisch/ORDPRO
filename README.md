@@ -19,27 +19,27 @@ Detailed logging of any and all actions performed by Ordpro will be within the L
 
 * PERMS Automation  
   
- Ordpro bridges the gap of orders being processed and them quickly making it to each soldiers PERMS. When the user specifies the `–combine` option when creating orders, ordpro will combine the created orders into files that contain no more than two-hundred and fifty (250) orders in them to be immediately input into PERMS integrator with no manual editing or user interaction. This feature does the required editing and combining of orders, previously manually done by the unit administrator for each soldier. This feature allows a soldiers orders to be put into PERMS the same day, or hour for that matter, the order was published and distributed within AFCOS. This feature has helped a state-wide amount of soldiers PERMS data to be caught up from more than two (2) years behind in initial building of Ordpro in a matter of minutes.  
+ Ordpro bridges the gap of orders being processed and them quickly making it to each soldiers PERMS. When the user specifies the `--combine` option when creating orders, ordpro will combine the created orders into files that contain no more than two-hundred and fifty (250) orders in them to be immediately input into PERMS integrator with no manual editing or user interaction. This feature does the required editing and combining of orders, previously manually done by the unit administrator for each soldier. This feature allows a soldiers orders to be put into PERMS the same day, or hour for that matter, the order was published and distributed within AFCOS. This feature has helped a state-wide amount of soldiers PERMS data to be caught up from more than two (2) years behind in initial building of Ordpro in a matter of minutes.  
  
 * Verbosity  
   
-Detailed verbosity of script processing, mirroring the output within the log files, can be enabled in the console to allow the user to see the actions happen in real time. This is completely optional for the user. As a disclaimer for the user, this feature may slow down performance when processing thousands of orders and files.
+Detailed verbosity of script processing, mirroring the output within the log files, can be enabled in the console to allow the user to see the actions happen in real time. This is completely optional for the user. User can change verbosity levels using `--verbose LEVEL` with options of level [debug, info, warning, error, critical] with debug including all script processing and critical including only critical errors.
     
 # **DOCUMENTATION**  
 Check out the Wiki page for all documentation.
 
 # **INSTALLATION**  
 There are two different ways to get ordpro up and running. Both are very painless, one easier than the other.  
-1. [Recommended] - **ordpro.exe** -- No installation required. Simply place **ordpro.exe** on the machine you deem your orders processing machine and it is ready to run immediately.
+1. **ordpro.exe** -- No installation required. Simply place **ordpro.exe** on the machine you deem your orders processing machine and it is ready to run immediately.
 
 2. **ordpro.py** -- Installation of Python 3.6 is required on any machine running **ordpro.py**. While this is not complicated, it is simply an additional step that is needed in order to be up and running for processing orders.
 
 # **USAGE**  
 Running the tool:  
-`.\ordpro.exe [options]`
+`.\ordpro.py [options]`
   
 Typical Usage Example:  
-`.\ordpro.exe --input \\\path\to\input --output \\\path\to\output --create --combine`
+`.\ordpro.py --input \\\path\to\input --output \\\path\to\output --create --combine`
   
 Options:   
   
@@ -49,4 +49,4 @@ Check the Wiki for detailed information on all CLI parameters and switches.
 - [ ] Implement notification of when orders are processed
 - [ ] Implement individual UIC 'registry file' for admins to see who/what/when orders were cut for that UIC
 - [ ] Implement ability for soldiers' directories within UIC to move more often then when orders are cut
-- [ ] Rewrite to incorporate more of Python's true OOP aspects. Using very little right now.
+- [x] Rewrite to incorporate more of Python's true OOP aspects. Using very little right now.
