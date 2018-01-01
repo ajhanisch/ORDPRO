@@ -19,7 +19,7 @@ Detailed logging of any and all actions performed by Ordpro will be within the L
 
 * PERMS Automation  
 
- Ordpro bridges the gap of orders being processed and them quickly making it to each soldiers PERMS. When the user specifies the `--combine` option when creating orders, ordpro will combine the created orders into files that contain no more than two-hundred and fifty (250) orders in them to be immediately input into PERMS integrator with no manual editing or user interaction. This feature does the required editing and combining of orders, previously manually done by the unit administrator for each soldier. This feature allows a soldiers orders to be put into PERMS the same day, or hour for that matter, the order was published and distributed within AFCOS. This feature has helped a state-wide amount of soldiers PERMS data to be caught up from more than two (2) years behind in initial building of Ordpro in a matter of minutes.  
+ Ordpro bridges the gap of orders being processed and them quickly making it to each soldiers PERMS. When the user specifies the `--combine` option when creating orders, Ordpro will combine the created orders into files that contain no more than two-hundred and fifty (250) orders in them to be immediately input into PERMS integrator with no manual editing or user interaction. This feature does the required editing and combining of orders, previously manually done by the unit administrator for each soldier. This feature allows a soldiers orders to be put into PERMS the same day, or hour for that matter, the order was published and distributed within AFCOS. This feature has helped a state-wide amount of soldiers PERMS data to be caught up from more than two (2) years behind in initial building of Ordpro in a matter of minutes.  
 
 * Verbosity  
 
@@ -29,10 +29,7 @@ Detailed verbosity of script processing, mirroring the output within the log fil
 Check out the Wiki page for all documentation.
 
 # **INSTALLATION**  
-There are two different ways to get Ordpro up and running. Both are very painless, one easier than the other.  
-1. **ordpro.exe** -- No installation required. Simply place **ordpro.exe** on the machine you deem your orders processing machine and it is ready to run immediately.
-
-2. **ordpro.py** -- Installation of Python 3.6.X is required on any machine running **ordpro.py**. While this is not complicated, it is simply an additional step that is needed in order to be up and running for processing orders.
+1. **ordpro.py** -- Installation of Python 3.6.X is required on any machine running **ordpro.py**. While this is not complicated, it is simply an additional step that is needed in order to be up and running for processing orders.
 
 # **USAGE**  
 Running the tool:  
@@ -46,6 +43,7 @@ Options:
 Check the Wiki for detailed information on all CLI parameters and switches.
 
 # **WISH LIST / TO DO**  
+- [ ] Implement web application front end using virtual environment and flask
 - [ ] Implement multithreading
 - [ ] Implement search and action features
 - [ ] Implement notification of when orders are processed
