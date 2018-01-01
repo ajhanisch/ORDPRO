@@ -21,9 +21,9 @@ class Order:
 
 	def combine(self):
 		self.list_known_bad_strings = [
-			"                          FOR OFFICIAL USE ONLY - PRIVACY ACT", 
-			"                          FOR OFFICIAL USE ONLY - PRIVACY ACT", 
-			"ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}", 
+			"                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
+			"                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
+			"ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",
 			"\f"
 		]
 		self.combine_order_files = self.list_orders_to_combine[:250]
@@ -80,14 +80,14 @@ class Order:
 			os.makedirs(self.directory_ord_managers)
 		if not os.path.exists(os.path.join(self.directory_uics, self.file_order)):
 			with open(os.path.join(self.directory_uics, self.file_order), 'w') as f:
-				f.write(self.order)			
+				f.write(self.order)
 		if not os.path.exists(os.path.join(self.directory_ord_managers, self.file_order)):
 			with open(os.path.join(self.directory_ord_managers, self.file_order), 'w') as f:
 				f.write(self.order)
-				
+
 	def remove(self):
 		if os.path.exists(os.path.join(self.directory_uics, self.file_order)):
-			logging.debug('Found [{}} in [{}] Removing.'.format(self.file_order, self.directory_uics))
+			logging.debug('Found [{}] in [{}] Removing.'.format(self.file_order, self.directory_uics))
 			os.remove(os.path.join(self.directory_uics, self.file_order))
 		if os.path.exists(os.path.join(self.directory_ord_managers, self.file_order)):
 			logging.debug('Found [{}] in [{}]. Removing.'.format(self.directory_ord_managers, self.directory_uics))
@@ -100,13 +100,13 @@ class Process:
 
 	def cleanup(self):
 		start = time.strftime('%m-%d-%y %H:%M:%S')
-		start_time = timeit.default_timer()		
+		start_time = timeit.default_timer()
 		'''
 		Lists for statistics for cleanup.
-		'''		
+		'''
 		list_stats_active = []
 		list_stats_inactive = []
-		
+
 		for p in self.list_cleanup_path:
 			if os.path.isdir(p):
 				logging.info('Working on [{}]. All input is {}.'.format(p, self.list_cleanup_path))
@@ -120,7 +120,7 @@ class Process:
 							ssn = self.dict_auditing_result['LAST_FIRST_M___SSN'].split(os.sep)[-1].split('_')[-1]
 							self.list_cleanup_directories_orders.append(self.dict_auditing_result)
 							if ssn not in self.list_cleanup_ssn:
-								self.list_cleanup_ssn.append(ssn)				
+								self.list_cleanup_ssn.append(ssn)
 				'''
 				Look for ssn in list within list of dictionaries. Determine active and inactive. If inactive, remove ssn directories in all UICS. If active, consolidate to most recent UIC folder.
 				'''
@@ -193,7 +193,7 @@ class Process:
 									inactive_ssn_most_recent_order = j['ORDER']
 									inactive_ssn_most_recent_dir = j['LAST_FIRST_M___SSN']
 									logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(inactive_ssn_most_recent_order, inactive_ssn_most_recent_dir))
-									
+
 								elif j['ORDER'].split('___')[0] == inactive_ssn_most_recent_order.split('___')[0] \
 								and j['ORDER'].split('___')[2].replace('-','') > inactive_ssn_most_recent_order.split('___')[2].replace('-','') \
 								:
@@ -235,7 +235,7 @@ class Process:
 			'list_empty_directories' : self.list_cleanup_path
 		}
 		Process(**dict_data).remove_empty_directories()
-		
+
 		'''
 		Calculate and present statistics.
 		'''
@@ -256,7 +256,7 @@ class Process:
 			'start_time' : start_time,
 			'end_time' : end_time,
 			'run_time' : run_time
-		}		
+		}
 
 		Statistics(**dict_data).output()
 		Statistics(**dict_data).present()
@@ -287,7 +287,7 @@ class Process:
 		list_stats_main_orders_combined = []
 		stats_registry_lines_processed = 0
 		stats_error_warning = 0
-		stats_error_critical = 0		
+		stats_error_critical = 0
 		'''
 		List for creation statistics calculations and output results files.
 		'''
@@ -297,12 +297,12 @@ class Process:
 		list_stats_certificate_orders_created_ord_managers = []
 		'''
 		List for removal statistics calculations and output results files.
-		'''		
+		'''
 		list_stats_main_orders_removed_uics = []
 		list_stats_certificate_orders_removed_uics = []
 		list_stats_main_orders_removed_ord_managers = []
 		list_stats_certificate_orders_removed_ord_managers = []
-		
+
 		logging.info('Processing {}.'.format(self.args.input))
 		for key, value in self.process_files_input.items():
 			logging.info('Processing [{}].'.format(key))
@@ -470,7 +470,7 @@ class Process:
 						if dict_data['published_year']:
 							if dict_data['published_year'] not in self.list_years_processed:
 								logging.debug('Adding [{}] to list_years_processed'.format(dict_data['published_year']))
-								self.list_years_processed.append(dict_data['published_year'])								
+								self.list_years_processed.append(dict_data['published_year'])
 							'''
 							Make historical year folder, if it doesn't exist.
 							'''
@@ -528,7 +528,7 @@ class Process:
 		seconds = round(end_time - start_time)
 		m, s = divmod(seconds, 60)
 		h, m = divmod(m, 60)
-		run_time = '{}:{}:{}'.format(h, m, s)		
+		run_time = '{}:{}:{}'.format(h, m, s)
 		dict_data_statistics = {
 			'list_files_processed' : list_stats_files_processed,
 			'list_registry_files_processed' : list_stats_registry_files_processed,
@@ -540,7 +540,7 @@ class Process:
 			'list_main_orders_created_uics' : list_stats_main_orders_created_uics,
 			'list_certificate_orders_created_uics' : list_stats_certificate_orders_created_uics,
 			'list_main_orders_created_ord_managers' : list_stats_main_orders_created_ord_managers,
-			'list_certificate_orders_created_ord_managers' : list_stats_certificate_orders_created_ord_managers,			
+			'list_certificate_orders_created_ord_managers' : list_stats_certificate_orders_created_ord_managers,
 			'list_main_orders_removed_uics' : list_stats_main_orders_removed_uics,
 			'list_certificate_orders_removed_uics' : list_stats_certificate_orders_removed_uics,
 			'list_main_orders_removed_ord_managers' : list_stats_main_orders_removed_ord_managers,
@@ -558,13 +558,13 @@ class Process:
 			'end_time' : end_time,
 			'run_time' : run_time
 		}
-		
+
 		Statistics(**dict_data_statistics).output()
 		Statistics(**dict_data_statistics).present()
 
 	def remove_empty_directories(self):
 		list_directories_removed = []
-		
+
 		for i in self.list_empty_directories:
 			logging.info('Removing empty directories from {}. Working on {} now.'.format(self.list_empty_directories, i))
 			for root, dirs, files, in os.walk(i, topdown=False):
@@ -577,9 +577,9 @@ class Process:
 						logging.debug('{} is NOT empty. Leaving {}.'.format(dir, os.path.join(root, dir)))
 			logging.info('Finished working on {}.'.format(i))
 		logging.info('Finished removing empty directories from {}.'.format(self.list_empty_directories))
-		
+
 		return list_directories_removed
-		
+
 	def report(self):
 		list_report_uics = [ x[0] for x in os.walk(self.directory_output_uics) if len(x[0].split(os.sep)[-1]) == 5 ]
 		list_report_soldiers = [ x[0] for x in os.walk(self.directory_output_uics) if len(x[0].split(os.sep)[-1]) > 5 ]
@@ -593,7 +593,7 @@ class Process:
 						list_report_certificate_orders.append(os.path.join(x[0], i))
 					else:
 						logging.debug('Adding [{}] to list_report_main_orders.'.format(i))
-						list_report_main_orders.append(os.path.join(x[0], i))						
+						list_report_main_orders.append(os.path.join(x[0], i))
 		if self.args.report == 'print':
 			logging.debug('Print option specified. Printing statistics to screen now.')
 			logging.info('{:-^60}'.format(''))
@@ -612,7 +612,7 @@ class Process:
 				'report_soldiers' : list_report_soldiers,
 				'report_main_orders' : list_report_main_orders,
 				'report_certificate_orders' : list_report_certificate_orders
-			}			
+			}
 			dict_report_files = {
 				'report_uics' : os.path.join(self.setup.directory_working_log, '{}_report_uics.txt'.format(self.setup.date)),
 				'report_soldiers' : os.path.join(self.setup.directory_working_log, '{}_report_soldiers.txt'.format(self.setup.date)),
@@ -633,7 +633,7 @@ class Process:
 					logging.info('Writing [{}] to [{}].'.format(key, file_output))
 					with open(file_output, 'w') as f:
 						f.write('\n'.join(sorted(value)))
-					logging.info('Finished writing [{}] to [{}].'.format(key, file_output))					
+					logging.info('Finished writing [{}] to [{}].'.format(key, file_output))
 			file_output = dict_report_files['report_results_numbers']
 			for key, value in dict_report_statistics.items():
 				logging.info('Writing [{}] count to [{}].'.format(key, file_output))
@@ -668,28 +668,28 @@ class Setup:
 	'''
 	process = parser.add_argument_group('Processing', 'Use these commands for processing orders.')
 	process.add_argument(
-						'--combine', 
-						action='store_true', 
+						'--combine',
+						action='store_true',
 						help='Combine orders from --input for PERMS Integrator. Orders from --input are created and combined into files containing no more than 250 per file for input into other systems.'
 	)
 	process.add_argument(
-						'--create', 
-						action='store_true', 
+						'--create',
+						action='store_true',
 						help='Process orders from --input. Processed orders are placed in the created directory structure in --output.'
 	)
 	process.add_argument(
-						'--input', 
-						nargs='+', 
+						'--input',
+						nargs='+',
 						help='Input directory or directories containing required files (*r.reg, *m.prt, *c.prt). You can pass multiple file paths at once to process multiple batches of orders.'
 	)
 	process.add_argument(
-						'--output', 
-						type=str, 
+						'--output',
+						type=str,
 						help=r'Output directory to create orders in. Created directory structure is as follows: .\OUTPUT\UICS containing all UICS processed from --input, designed for unit administrators to retrieve orders for their soldiers quickly. As well as .\OUTPUT\ORD_MANAGERS\ORDERS_BY_SOLDIER containing all SOLDIER_SSN directories from --input only, no UICS. Designed for state level administrators and fund managers to access all unit soldiers in one location. Finally .\OUTPUT\ORD_MANAGERS\IPERMS_INTEGRATOR containing combined order files from --combine.'
 	)
 	process.add_argument(
-						'--remove', 
-						action='store_true', 
+						'--remove',
+						action='store_true',
 						help='Remove orders from --input within --output. Inverse of --create, used to remove orders in the case of errors or undesired orders processed.'
 	)
 
@@ -699,12 +699,12 @@ class Setup:
 	'''
 	audit = parser.add_argument_group('Auditing', 'Use these commands for reporting and auditing the created directory structure.')
 	audit.add_argument(
-					'--cleanup', 
-					nargs='+', 
+					'--cleanup',
+					nargs='+',
 					help='Determine inactive (retired, no longer in, etc.) and active soldiers. Remove inactive orders and directories. Inactive is considered SOLDIER_SSN directories without orders cut from current year to current year minus two years. Automatically consolidate active soldiers orders spanning multiple years and directories into most recent directory. If UICS directory is given, inactive WILL be removed and consolidation by SSN will happen. If ORD_MANAGERS\ORDERS_BY_SOLDIER is given, inactive will NOT be removed and consolidation by SSN will happen. You can pass UICS and ORDERS_BY_SOLDIER as input if desired.'
 	)
 	audit.add_argument(
-					'--report', 
+					'--report',
 					choices=['print', 'outfile'],
 					help='Calculate number of UICs, soldiers, certificate, and main orders within output directory and present accordingly. Print will show you simple numbers on screen. Outfile will put detailed results to files.'
 	)
@@ -716,18 +716,18 @@ class Setup:
 	'''
 	search = parser.add_argument_group('Searching', 'Use these commands for finding and performing actions on orders. This section under development.')
 	search.add_argument(
-					'--action', 
-					choices=['remove', 'print', 'combine', 'move'], 
+					'--action',
+					choices=['remove', 'print', 'combine', 'move'],
 					help='Perform [ACTION] on results found by --search.'
 	)
 	search.add_argument(
-					'--path', 
-					nargs='+', 
+					'--path',
+					nargs='+',
 					help=r'Path to search for orders in. Typically .\OUTPUT\UICS.'
 	)
 	search.add_argument(
-					'--search', 
-					nargs='+', 
+					'--search',
+					nargs='+',
 					help=r'Search for orders by name, ssn, etc. You can use multiple criteria search for. Typically by name LAST_FIRST_MI or ssn 123-45-6789.'
 	)
 
@@ -735,7 +735,7 @@ class Setup:
 	OPTIONAL ARGUMENTS
 	'''
 	parser.add_argument(
-					'--verbose', 
+					'--verbose',
 					choices=[ 'debug', 'info', 'warning', 'error', 'critical' ],
 					default='info',
 					help='Enable specific program verbosity. Default is info. Set to debug for complete script processing in logs and screen. Set to warning or critical for minimal script processing in logs and screen.'
@@ -745,13 +745,13 @@ class Setup:
 	VERSION
 	'''
 	parser.add_argument(
-					'--version', 
-					action='version', 
+					'--version',
+					action='version',
 					version='[{}] - Version [{}]. Check [{}] for the most up to date information.'.format(program, version, repository)
 	)
 
 	args = parser.parse_args()
-	
+
 	'''
 	DIRECTORIES
 	'''
@@ -768,7 +768,7 @@ class Setup:
 	FILES
 	'''
 	file_working_log = os.path.join(directory_working_log, '{}_{}.log'.format(date, program))
-	
+
 	'''
 	DICTIONARIES
 	'''
@@ -778,7 +778,7 @@ class Setup:
 			'directory_working_log' : directory_working_log,
 			'directory_output_uics' : directory_output_uics,
 			'directory_output_ord_managers' : directory_output_ord_managers,
-			'directory_output_ord_registers' : directory_output_ord_registers, 
+			'directory_output_ord_registers' : directory_output_ord_registers,
 			'directory_output_orders_by_soldier' : directory_output_orders_by_soldier,
 			'directory_output_iperms_integrator' : directory_output_iperms_integrator
 		}
@@ -896,7 +896,7 @@ def main():
 	Main function. Everything starts here.
 	'''
 	setup = Setup()
-	args = setup.args	
+	args = setup.args
 
 	'''
 	Create required directories from setup.
@@ -924,7 +924,7 @@ def main():
 		format= format,
 		handlers = handlers
 	)
-	
+
 	'''
 	Present what arguments and parameters are being used. Useful for developer and user of script to easily start troubleshooting by having as much info in logs as possible.
 	'''
@@ -951,7 +951,7 @@ def main():
 			'dict_directory_files' : {}
 		}
 		dict_directory_files = Process(**dict_data).gather_files()
-		
+
 		dict_data = {
 			'action' : var_statistics_action,
 			'setup' : setup,
@@ -988,7 +988,7 @@ def main():
 				'var_output' : args.report,
 				'directory_output_uics' : setup.directory_output_uics,
 				'directory_output_orders_by_soldier' : setup.directory_output_orders_by_soldier
-			}		
+			}
 			Process(**dict_data).report()
 		sys.exit()
 	elif args.cleanup:
@@ -1018,7 +1018,7 @@ def main():
 			'var_output' : args.report,
 			'directory_output_uics' : setup.directory_output_uics,
 			'directory_output_orders_by_soldier' : setup.directory_output_orders_by_soldier
-		}		
+		}
 		Process(**dict_data).report()
 		sys.exit()
 	else:
@@ -1028,10 +1028,9 @@ def main():
 			'setup' : setup,
 		}
 		Statistics(**dict_data).present()
-		
+
 '''
 Entry point of script.
 '''
-
 if __name__ == '__main__':
 	main()
