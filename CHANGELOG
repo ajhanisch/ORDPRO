@@ -1,6 +1,12 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 3.8
+DATE: 1/2/2018
+CHANGES:
+- reworked argument handling to be much more explicit
+- fixed minor errors happening during cleanup when orders already existed when trying to move
+------------------------------------
 VERSION: 3.7
 DATE: 12/30/2017
 CHANGES:
