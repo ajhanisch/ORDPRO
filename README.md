@@ -10,7 +10,7 @@ Author: Ashton J. Hanisch < <ajhanisch@gmail.com> >
 Orders Processor (Ordpro) is a script written in Python designed to automate processing orders.
 
 # **DESCRIPTION**  
-Orders Processor (Ordpro) is a program originally written in PowerShell, translated to and enhanced by Python, compiled to an .exe designed to help automate the processing, handling, splitting, editing, combining, copying, moving, organizing, and archiving of orders given in the format of one or more documents containing one to many orders on a daily basis and or processing any number of historical orders originally generated and output from an orders generating system called AFCOS. Allowing state-level and unit-level administrators to access, view, print, and manage orders for their unit/state easily.
+Orders Processor (Ordpro) is a program originally written in PowerShell, translated to and enhanced by Python, additionally compiled to an .exe designed to help automate the processing, handling, splitting, editing, combining, copying, moving, organizing, and archiving of orders given in the format of one or more documents containing one to many orders on a daily basis and or processing any number of historical orders originally generated and output from an orders generating system called AFCOS. Allowing state-level and unit-level administrators to access, view, print, and manage orders for their unit/state easily.
 
 # **FEATURES**  
 * Logging  
@@ -30,7 +30,7 @@ Check out the Wiki page for all documentation.
 
 # **INSTALLATION**  
 1. **ordpro.py** -- Installation of Python 3.6.X is required on any machine running **ordpro.py**. While this is not complicated, it is simply an additional step that is needed in order to be up and running for processing orders.
-
+2. **ordpro.exe** -- NO INSTALLATION of Python 3.6.X is required for the compiled .exe version of Ordpro. This is included for windows users to save the step of Python installation in their environment if desired. With this version, users simply need to place ordpro.exe on any machine(s) they desire to process orders on.
 # **USAGE**  
 Running the tool:  
 `.\ordpro.py [options]`
@@ -40,11 +40,11 @@ Typical Usage Example:
 
 Options:   
 
-Check the Wiki for detailed information on all CLI parameters and switches.
+Check the Wiki for detailed information on all options and initial use examples.
 
 # **WISH LIST / TO DO**  
 - [ ] Implement web application front end using virtual environment and flask
-- [ ] Implement multithreading
+- [ ] Implement multi threading
 - [ ] Implement search and action features
 - [ ] Implement notification of when orders are processed
 - [ ] Implement individual UIC 'registry file' for admins to see who/what/when orders were cut for that UIC
