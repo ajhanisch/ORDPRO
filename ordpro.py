@@ -952,9 +952,9 @@ def main():
 	'''
 	Present what arguments and parameters are being used. Useful for developer and user of script to easily start troubleshooting by having as much info in logs as possible.
 	'''
-	logging.debug('Hello {}! You are running [{}] with the following arguments: '.format(setup.user, setup.program))
+	logging.info('Hello {}! You are running [{}] with the following arguments: '.format(setup.user, setup.program))
 	for a in args.__dict__:
-		logging.debug(str(a) + ' : ' + str(args.__dict__[a]))
+		logging.info(str(a) + ' : ' + str(args.__dict__[a]))
 
 	start = time.strftime('%m-%d-%y %H:%M:%S')
 	start_time = timeit.default_timer()
@@ -981,6 +981,26 @@ def main():
 			'list_years_processed' : []
 		}
 		Process(**dict_data).process_files()
+		if args.cleanup:
+			dict_data = {
+				'list_cleanup_path' : args.cleanup,
+				'list_cleanup_directories_orders' : [],
+				'cleanup_current_year' : str(datetime.now().year),
+				'cleanup_current_year_minus_one' : str(datetime.now().year - 1),
+				'cleanup_current_year_minus_two' : str(datetime.now().year - 2),
+				'file_cleanup_active_txt' : os.path.join(setup.directory_working_log, '{}_active.txt'.format(setup.user)),
+				'file_cleanup_inactive_txt' : os.path.join(setup.directory_working_log, '{}_inactive.txt'.format(setup.user)),
+				'file_cleanup_original_directories_csv' : os.path.join(setup.directory_working_log, '{}_directories.csv'.format(setup.user)),
+				'file_cleanup_empty_directories_txt' : os.path.join(setup.directory_working_log, '{}_empty_dirs.txt'.format(setup.user)),
+				'list_cleanup_ssn' : []
+			}
+			dict_data['list_cleanup_years_to_consider_active'] = [
+				dict_data['cleanup_current_year'],
+				dict_data['cleanup_current_year_minus_one'],
+				dict_data['cleanup_current_year_minus_two']
+			]
+			Process(**dict_data).cleanup()
+		sys.exit()
 	if args.input and args.output and args.remove:
 		var_statistics_action = 'REMOVE'
 		dict_data = {
@@ -1000,6 +1020,26 @@ def main():
 			'list_years_processed' : []
 		}
 		Process(**dict_data).process_files()
+		if args.cleanup:
+			dict_data = {
+				'list_cleanup_path' : args.cleanup,
+				'list_cleanup_directories_orders' : [],
+				'cleanup_current_year' : str(datetime.now().year),
+				'cleanup_current_year_minus_one' : str(datetime.now().year - 1),
+				'cleanup_current_year_minus_two' : str(datetime.now().year - 2),
+				'file_cleanup_active_txt' : os.path.join(setup.directory_working_log, '{}_active.txt'.format(setup.user)),
+				'file_cleanup_inactive_txt' : os.path.join(setup.directory_working_log, '{}_inactive.txt'.format(setup.user)),
+				'file_cleanup_original_directories_csv' : os.path.join(setup.directory_working_log, '{}_directories.csv'.format(setup.user)),
+				'file_cleanup_empty_directories_txt' : os.path.join(setup.directory_working_log, '{}_empty_dirs.txt'.format(setup.user)),
+				'list_cleanup_ssn' : []
+			}
+			dict_data['list_cleanup_years_to_consider_active'] = [
+				dict_data['cleanup_current_year'],
+				dict_data['cleanup_current_year_minus_one'],
+				dict_data['cleanup_current_year_minus_two']
+			]
+			Process(**dict_data).cleanup()
+		sys.exit()
 	if args.report and args.output:
 		dict_data = {
 			'setup' : Setup(),
@@ -1009,25 +1049,26 @@ def main():
 			'directory_output_orders_by_soldier' : setup.directory_output_orders_by_soldier
 		}
 		Process(**dict_data).report()
-	if args.cleanup:
-		dict_data = {
-			'list_cleanup_path' : args.cleanup,
-			'list_cleanup_directories_orders' : [],
-			'cleanup_current_year' : str(datetime.now().year),
-			'cleanup_current_year_minus_one' : str(datetime.now().year - 1),
-			'cleanup_current_year_minus_two' : str(datetime.now().year - 2),
-			'file_cleanup_active_txt' : os.path.join(setup.directory_working_log, '{}_active.txt'.format(setup.user)),
-			'file_cleanup_inactive_txt' : os.path.join(setup.directory_working_log, '{}_inactive.txt'.format(setup.user)),
-			'file_cleanup_original_directories_csv' : os.path.join(setup.directory_working_log, '{}_directories.csv'.format(setup.user)),
-			'file_cleanup_empty_directories_txt' : os.path.join(setup.directory_working_log, '{}_empty_dirs.txt'.format(setup.user)),
-			'list_cleanup_ssn' : []
-		}
-		dict_data['list_cleanup_years_to_consider_active'] = [
-			dict_data['cleanup_current_year'],
-			dict_data['cleanup_current_year_minus_one'],
-			dict_data['cleanup_current_year_minus_two']
-		]
-		Process(**dict_data).cleanup()
+		if args.cleanup:
+			dict_data = {
+				'list_cleanup_path' : args.cleanup,
+				'list_cleanup_directories_orders' : [],
+				'cleanup_current_year' : str(datetime.now().year),
+				'cleanup_current_year_minus_one' : str(datetime.now().year - 1),
+				'cleanup_current_year_minus_two' : str(datetime.now().year - 2),
+				'file_cleanup_active_txt' : os.path.join(setup.directory_working_log, '{}_active.txt'.format(setup.user)),
+				'file_cleanup_inactive_txt' : os.path.join(setup.directory_working_log, '{}_inactive.txt'.format(setup.user)),
+				'file_cleanup_original_directories_csv' : os.path.join(setup.directory_working_log, '{}_directories.csv'.format(setup.user)),
+				'file_cleanup_empty_directories_txt' : os.path.join(setup.directory_working_log, '{}_empty_dirs.txt'.format(setup.user)),
+				'list_cleanup_ssn' : []
+			}
+			dict_data['list_cleanup_years_to_consider_active'] = [
+				dict_data['cleanup_current_year'],
+				dict_data['cleanup_current_year_minus_one'],
+				dict_data['cleanup_current_year_minus_two']
+			]
+			Process(**dict_data).cleanup()
+		sys.exit()
 	else:
 		var_statistics_action = 'ERROR'
 		dict_data = {
