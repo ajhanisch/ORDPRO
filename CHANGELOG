@@ -2,6 +2,16 @@
 CHANGELOG
 ------------------------------------
 VERSION: 3.8
+DATE: 1/3/2018
+CHANGES:
+- moved cleanup argument handling into each set of handled arguments and
+exiting after each set has ran to avoid errors when handling multiple
+arguments
+- changed greeting and arguments presenting from debug to info in
+logging output
+- included license information
+------------------------------------
+VERSION: 3.8
 DATE: 1/2/2018
 CHANGES:
 - reworked argument handling to be much more explicit
