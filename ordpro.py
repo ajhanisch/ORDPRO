@@ -299,7 +299,6 @@ class Process:
 	def process_files(self):
 		start = time.strftime('%m-%d-%y %H:%M:%S')
 		start_time = timeit.default_timer()
-
 		'''
 		Lists for general statistics for both creation and removal.
 		'''
@@ -590,7 +589,6 @@ class Process:
 
 	def remove_empty_directories(self):
 		list_directories_removed = []
-
 		for i in self.list_empty_directories:
 			logging.info('Removing empty directories from {}. Working on {} now.'.format(self.list_empty_directories, i))
 			for root, dirs, files, in os.walk(i, topdown=False):
@@ -604,6 +602,14 @@ class Process:
 			logging.info('Finished working on {}.'.format(i))
 		logging.info('Finished removing empty directories from {}.'.format(self.list_empty_directories))
 
+		if len(list_directories_removed) > 0:
+			file_directories_removed = os.path.join(self.setup.directory_working_log, '{}_empty_dir_removed.txt'.format(self.setup.date))
+			logging.info('Writing results to [{}].'.format(file_directories_removed))
+			with open(file_directories_removed, 'w') as f:
+				f.write('\n'.join(reversed(sorted(list_directories_removed))))
+			logging.info('Finished writing results to [{}].'.format(file_directories_removed))
+		else:
+			logging.info('Did not remove any directories from [{}].'.format(self.list_empty_directories))
 		return list_directories_removed
 
 	def report(self):
@@ -876,6 +882,11 @@ class Setup:
 					choices=['print', 'outfile'],
 					help='Calculate number of UICs, soldiers, certificate, and main orders within output directory and present accordingly. Print will show you simple numbers on screen. Outfile will put detailed results to files.'
 	)
+	audit.add_argument(
+					'--empty',
+					nargs='+',
+					help='Remove empty directories from path. You can pass multiple directories [UICS and/or ORDERS_BY_SOLDIER] typically will be used.'
+	)
 
 
 	'''
@@ -1065,14 +1076,12 @@ def main():
 	'''
 	setup = Setup()
 	args = setup.args
-
 	'''
 	Create required directories from setup.
 	'''
 	for key, value in setup.dict_directories.items():
 		if not os.path.exists(value):
 			os.makedirs(value)
-
 	'''
 	Setup logging.
 	'''
@@ -1092,7 +1101,6 @@ def main():
 		format = format,
 		handlers = handlers
 	)
-
 	'''
 	Present what arguments and parameters are being used. Useful for developer and user of script to easily start troubleshooting by having as much info in logs as possible.
 	'''
@@ -1102,7 +1110,6 @@ def main():
 
 	start = time.strftime('%m-%d-%y %H:%M:%S')
 	start_time = timeit.default_timer()
-
 	'''
 	Argument handling.
 	'''
@@ -1233,6 +1240,14 @@ def main():
 			'list_search_results' : []
 		}
 		Process(**dict_data).search()
+		sys.exit()
+	if args.empty:
+		dict_data = {
+			'setup' : setup,
+			'args' : args,
+			'list_empty_directories' : args.empty
+		}
+		Process(**dict_data).remove_empty_directories()
 		sys.exit()
 	else:
 		var_statistics_action = 'ERROR'

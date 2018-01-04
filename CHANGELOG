@@ -4,6 +4,7 @@ CHANGELOG
 VERSION: 3.8
 DATE: 1/3/2018
 CHANGES:
+- added --empty parameter which takes any number of input paths to remove empty directories from
 - added searching functionality with user defined patterns to find and exclusion capability along with various actions to perform on the results (move, combine, remove, zip, print, write to file)
 - moved cleanup argument handling into each set of handled arguments and
 exiting after each set has ran to avoid errors when handling multiple
