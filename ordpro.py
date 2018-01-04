@@ -22,10 +22,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import re
 import os
 import sys
+import zlib
 import time
 import glob
 import shutil
 import timeit
+import zipfile
 import getpass
 import logging
 import argparse
@@ -630,7 +632,7 @@ class Process:
 			logging.info('{:.<49}{:.>11}'.format('TOTAL ORDERs:', len(list_report_main_orders) + len(list_report_certificate_orders)))
 			logging.info('{:-^60}'.format(''))
 		elif self.args.report == 'outfile':
-			logging.debug('Outfile option specificed. Outputting detailed results to files now.')
+			logging.debug('Outfile option specified. Outputting detailed results to files now.')
 			dict_report_lists = {
 				'report_uics' : list_report_uics,
 				'report_soldiers' : list_report_soldiers,
@@ -664,6 +666,148 @@ class Process:
 				with open(file_output, 'a') as f:
 					f.write('{}: {}\n'.format(key.upper(), (str(value))))
 				logging.info('Finished writing [{}] count to [{}].'.format(key, file_output))
+
+	def search(self):
+		for search_path in self.list_search_path:
+			for search_pattern in self.list_search_pattern:
+				for root, dirs, files, in os.walk(search_path):
+					for f in files:
+						if search_pattern in f:
+							if f not in self.list_search_results:
+								self.list_search_results.append(os.path.join(root, f))
+		if self.args.exclude:
+			for search_exclude in self.list_search_exclude:
+				self.list_search_results = [ x for x in self.list_search_results if search_exclude not in x ]
+		if len(self.list_search_results) > 0:
+			while True:
+				if sys.platform == 'win32':
+					clear = os.system('cls')
+				elif sys.platform == 'linux' or platform == 'linux2':
+					clear = os.system('clear')
+				clear
+				logging.info('Pattern(s): {}. Search Path(s): {}.'.format(self.list_search_pattern, self.list_search_path))
+				logging.info('Looks like we have [{}] result(s). What would you like to do?'.format(len(self.list_search_results)))
+				logging.info('Combine [c] | Move [m] | Print [p] | Remove [r] | Write [w] | Zip [z] | Help [h] | Exit [e]')
+				choice = input(str('Enter your choice: ')).lower().strip()
+				options = ['c', 'e', 'm', 'p', 'r', 'w', 'h', 'z']
+				if choice in options:
+					if choice == 'c':
+						file_search_results_combine = os.path.join(self.setup.directory_working_log, '{}_{}_search_results_combine.doc'.format(self.setup.date, str(len(self.list_search_results))))
+						list_known_bad_strings = [
+							"                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
+							"                          FOR OFFICIAL USE ONLY - PRIVACY ACT",
+							"ORDERS\s{2}\d{3}-\d{3}\s{2}\w{2}\s{1}\w{2}\s{1}\w{2}\W{1}\s{1}\w{4},\s{2}\d{2}\s{1}\w{1,}\s{1}\d{4}",
+							"\f"
+						]
+						logging.info('Combining [{}] results to [{}].'.format(len(self.list_search_results), file_search_results_combine))
+						'''
+						Combine the files within self.combine_order_files into file_search_results_combine.
+						'''
+						with open(file_search_results_combine, 'w') as f:
+							for fname in self.list_search_results:
+								with open(fname) as infile:
+									f.write(infile.read())
+						'''
+						Remove known bad strings so file_search_results_combine is ready to be loaded into PERMS Integrator immediately.
+						'''
+						for s in list_known_bad_strings:
+							with open(file_search_results_combine, 'r') as f:
+								f_data = f.read()
+								pattern = re.compile(s)
+								f_data = pattern.sub('', f_data)
+								with open(file_search_results_combine, 'w') as f:
+									f.write(f_data)
+						logging.info('Finished combining [{}] results to [{}].'.format(len(self.list_search_results), file_search_results_combine))
+						input('Enter to continue.')
+					elif choice == 'm':
+						is_destination = False
+						while is_destination == False:
+							destination = str(input('Enter FULL path to destination directory to move results: ')).strip()
+							if destination:
+								logging.info('Moving [{}] results to [{}].'.format(len(self.list_search_results), destination))
+								for i in self.list_search_results:
+									try:
+										logging.debug('Moving [{}] to [{}].'.format(i, destination))
+										shutil.move(i, destination)
+										logging.debug('Finished moving [{}] to [{}].'.format(i, destination))
+									except:
+										logging.warning('Issue while moving [{}] to [{}]. [{}] most likely already exists. Continuing.'.format(i, destination, i))
+								logging.info('Finished moving [{}] results to [{}].'.format(len(self.list_search_results), destination))
+								is_destination = True
+								input('Enter to continue.')
+							else:
+								input('No input detected. Try again.')
+								is_destination = False
+					elif choice == 'p':
+						logging.info('Printing [{}] results to screen.'.format(len(self.list_search_results)))
+						for i in self.list_search_results:
+							print(i)
+						logging.info('Finished printing [{}] results to screen.'.format(len(self.list_search_results)))
+						input('Enter to continue.')
+					elif choice == 'r':
+						options = ['y', 'Y', 'n', 'N']
+						confirmation = ''
+						while confirmation not in options:
+							confirmation = str(input('Are you sure you wish to remove [{}] files? [Y\\N]'.format(len(self.list_search_results)))).strip()
+							if confirmation == 'y' or confirmation == 'Y':
+								logging.info('OK. Removing [{}] files now.'.format(len(self.list_search_results)))
+								for i in self.list_search_results:
+									try:
+										logging.debug('Removing [{}].'.format(i))
+										os.remove(i)
+										logging.debug('Finished removing [{}].'.format(i))
+									except:
+										logging.warning('Issues while removing [{}].'.format(i))
+								logging.info('Finished removing [{}] file.'.format(len(self.list_search_results)))
+								input('Enter to continue.')
+								break
+							if confirmation == 'n' or confirmation == 'N':
+								logging.info('OK. NOT removing [{}] files now.'.format(len(self.list_search_results)))
+								input('Enter to continue.')
+					elif choice == 'w':
+						file_search_results_write = os.path.join(self.setup.directory_working_log, '{}_{}_search_results_write.txt'.format(self.setup.date, str(len(self.list_search_results))))
+						logging.info('Writing [{}] results to [{}].'.format(len(self.list_search_results), file_search_results_write))
+						with open(file_search_results_write, 'w') as f:
+							f.write('\n'.join(reversed(sorted(self.list_search_results))))
+						logging.info('Finished writing [{}] results to [{}].'.format(len(self.list_search_results), file_search_results_write))
+						input('Enter to continue.')
+					elif choice == 'z':
+						file_search_results_zip = os.path.join(self.setup.directory_working_log, '{}_{}_search_results.zip'.format(self.setup.date, str(len(self.list_search_results))))
+						compression = zipfile.ZIP_DEFLATED
+						logging.info('Zipping [{}] results to [{}].'.format(len(self.list_search_results), file_search_results_zip))
+						for i in self.list_search_results:
+							with zipfile.ZipFile(file_search_results_zip, mode='a') as f:
+								logging.debug('Adding [{}] to archive.'.format(i))
+								f.write(file_without_path, compress_type = compression)
+								logging.debug('Finished adding [{}] to archive.'.format(i))
+						logging.info('Finished zipping [{}] results to [{}].'.format(len(self.list_search_results), file_search_results_zip))
+						input('Enter to continue.')
+					elif choice == 'h':
+						logging.info('Printing help menu.')
+						print('---------------------------------------------------------------------')
+						print(' Option || Description')
+						print('---------------------------------------------------------------------')
+						print(' c      || Combine results into single .doc file for PERMS Integrator.')
+						print('---------------------------------------------------------------------')
+						print(' m      || Move results to DESTINATION directory defined by user.')
+						print('---------------------------------------------------------------------')
+						print(' p      || Print results to screen to be viewed by user.')
+						print('---------------------------------------------------------------------')
+						print(' r      || Remove results.')
+						print('---------------------------------------------------------------------')
+						print(' w      || Write full paths of results to .txt file.')
+						print('---------------------------------------------------------------------')
+						print(' z      || Zip results to .zip archive.')
+						print('---------------------------------------------------------------------')
+						input('Enter to continue.')
+					elif choice == 'e':
+						logging.info('Exiting.')
+						sys.exit()
+				else:
+					logging.critical('Improper input. Try again.')
+					input('Enter to continue.')
+		else:
+			logging.warning('Did not find results matching pattern [{}] in [{}]. Ensure you have entered your desired pattern and path correctly.'.format(self.list_search_pattern, self.list_search_path))
 
 class Setup:
 	'''
@@ -740,19 +884,19 @@ class Setup:
 	'''
 	search = parser.add_argument_group('Searching', 'Use these commands for finding and performing actions on orders. This section under development.')
 	search.add_argument(
-					'--action',
-					choices=['remove', 'print', 'combine', 'move'],
-					help='Perform [ACTION] on results found by --search.'
-	)
-	search.add_argument(
 					'--path',
 					nargs='+',
-					help=r'Path to search for orders in. Typically .\OUTPUT\UICS.'
+					help=r'Path to search for orders in. Typically will be looking within UICS directory.'
 	)
 	search.add_argument(
-					'--search',
+					'--pattern',
 					nargs='+',
-					help=r'Search for orders by name, ssn, etc. You can use multiple criteria search for. Typically by name LAST_FIRST_MI or ssn 123-45-6789.'
+					help=r'Search for pattern or multiple patterns in --path. Typically searching for name LAST_FIRST_M___SSN pattern or ssn with 123-45-6789 pattern. You can pass multiple patterns if needed.'
+	)
+	search.add_argument(
+					'--exclude',
+					nargs='+',
+					help=r'Exclude pattern(s) from searching. You can pass multiple exclude patterns if needed.'
 	)
 
 	'''
@@ -952,7 +1096,7 @@ def main():
 	'''
 	Present what arguments and parameters are being used. Useful for developer and user of script to easily start troubleshooting by having as much info in logs as possible.
 	'''
-	logging.info('Hello {}! You are running [{}] with the following arguments: '.format(setup.user, setup.program))
+	logging.info('Hello [{}]! You are running [{}] with the following arguments: '.format(setup.user, setup.program))
 	for a in args.__dict__:
 		logging.info(str(a) + ' : ' + str(args.__dict__[a]))
 
@@ -1068,6 +1212,27 @@ def main():
 				dict_data['cleanup_current_year_minus_two']
 			]
 			Process(**dict_data).cleanup()
+		sys.exit()
+	if args.path and args.pattern and args.exclude:
+		dict_data = {
+			'setup' : setup,
+			'args' : args,
+			'list_search_path' : args.path,
+			'list_search_pattern' : args.pattern,
+			'list_search_exclude' : args.exclude,
+			'list_search_results' : []
+		}
+		Process(**dict_data).search()
+		sys.exit()
+	if args.path and args.pattern:
+		dict_data = {
+			'setup' : setup,
+			'args' : args,
+			'list_search_path' : args.path,
+			'list_search_pattern' : args.pattern,
+			'list_search_results' : []
+		}
+		Process(**dict_data).search()
 		sys.exit()
 	else:
 		var_statistics_action = 'ERROR'
