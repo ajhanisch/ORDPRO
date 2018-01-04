@@ -36,7 +36,7 @@ Running the tool:
 `.\ordpro.py [options]`
 
 Typical Usage Example:  
-`.\ordpro.py --input \\\path\to\input --output \\\path\to\output --create --combine`
+`.\ordpro.py --input \\path\to\input --output \\path\to\output --create --combine`
 
 Options:   
 
