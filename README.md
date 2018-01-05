@@ -43,7 +43,7 @@ Options:
 Check the Wiki for detailed information on all options and initial use examples.
 
 # **WISH LIST / TO DO**  
-- [ ] Implement web application front end using virtual environment and flask
+- [ ] Implement web application version including webpage and/or database if needed
 - [ ] Implement multi threading
 - [ ] Implement notification of when orders are processed
 - [ ] Implement individual UIC 'registry file' for admins to see who/what/when orders were cut for that UIC
