@@ -22,16 +22,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import re
 import os
 import sys
+import uuid
 import zlib
 import time
-import glob
 import shutil
 import timeit
 import zipfile
+import hashlib
 import getpass
 import logging
 import argparse
-from time import strftime
 from datetime import datetime
 
 class Order:
@@ -92,7 +92,7 @@ class Order:
 			self.combine_end = self.combine_start + len(self.combine_order_files) - 1
 
 	def create(self):
-		logging.debug('Creating Order Number: [{}]. Published Year: [{}]. Format: [{}]. Name: [{}]. UIC: [{}]. Period From: [{}]. Period To: [{}]. SSN: [{}].'.format(self.order_number, self.published_year, self.format, self.name, self.uic, self.period_from, self.period_to, self.ssn))
+		logging.debug('Creating Order Number: [{}]. Published Year: [{}]. Format: [{}]. Name: [{}]. UIC: [{}]. Period From: [{}]. Period To: [{}]. UID: [{}].'.format(self.order_number, self.published_year, self.format, self.name, self.uic, self.period_from, self.period_to, self.uid))
 
 		if not os.path.exists(self.directory_uics):
 			os.makedirs(self.directory_uics)
@@ -131,59 +131,59 @@ class Process:
 			if os.path.isdir(p):
 				logging.info('Working on [{}]. All input is {}.'.format(p, self.list_cleanup_path))
 				'''
-				Create list of dictionaries containing directories and files of UICS directory and create list of ssn.
+				Create list of dictionaries containing directories and files of UICS directory and create list of name___uid.
 				'''
 				for root, dirs, files, in os.walk(p):
 					for file in files:
 						if file.endswith('.doc'):
-							self.dict_auditing_result = { 'LAST_FIRST_M___SSN': root, 'ORDER': file }
-							ssn = self.dict_auditing_result['LAST_FIRST_M___SSN'].split(os.sep)[-1].split('_')[-1]
+							self.dict_auditing_result = { 'NAME___UID': root, 'ORDER': file }
+							name_uid = self.dict_auditing_result['NAME___UID'].split(os.sep)[-1].split('_')[-1]
 							self.list_cleanup_directories_orders.append(self.dict_auditing_result)
-							if ssn not in self.list_cleanup_ssn:
-								self.list_cleanup_ssn.append(ssn)
+							if name_uid not in self.list_cleanup_name_uid:
+								self.list_cleanup_name_uid.append(name_uid)
 				'''
-				Look for ssn in list within list of dictionaries. Determine active and inactive. If inactive, remove ssn directories in all UICS. If active, consolidate to most recent UIC folder.
+				Look for name___uid in list within list of dictionaries. Determine active and inactive. If inactive, remove name___uid directories in all UICS. If active, consolidate to most recent UIC folder.
 				'''
-				for ssn in self.list_cleanup_ssn:
-					self.list_cleanup_active = [ y for y in self.list_cleanup_directories_orders if p in y['LAST_FIRST_M___SSN'] and ssn in y['LAST_FIRST_M___SSN'] and y['ORDER'].split('___')[0] in self.list_cleanup_years_to_consider_active ]
+				for name_uid in self.list_cleanup_name_uid:
+					self.list_cleanup_active = [ y for y in self.list_cleanup_directories_orders if p in y['NAME___UID'] and name_uid in y['NAME___UID'] and y['ORDER'].split('___')[0] in self.list_cleanup_years_to_consider_active ]
 
 					if len(self.list_cleanup_active) > 0:
-						logging.info('[{}] appears to be ACTIVE. Consolidating to most recent location.'.format(ssn))
+						logging.info('[{}] appears to be ACTIVE. Consolidating to most recent location.'.format(name_uid))
 						'''
 						Determine most recent order.
 						'''
-						active_ssn_most_recent_order = ''
-						active_ssn_most_recent_dir = ''
+						active_name_uid_most_recent_order = ''
+						active_name_uid_most_recent_dir = ''
 						for i in self.list_cleanup_active:
-							if i['LAST_FIRST_M___SSN'].split(os.sep)[-1] not in list_stats_active and 'UICS' in i['LAST_FIRST_M___SSN']:
-								list_stats_active.append(i['LAST_FIRST_M___SSN'].split(os.sep)[-1])
+							if i['NAME___UID'].split(os.sep)[-1] not in list_stats_active and 'UICS' in i['NAME___UID']:
+								list_stats_active.append(i['NAME___UID'].split(os.sep)[-1])
 
-							if active_ssn_most_recent_order == '':
-								active_ssn_most_recent_order = i['ORDER']
-								active_ssn_most_recent_dir = i['LAST_FIRST_M___SSN']
-								logging.debug('[{}] is the first order for [{}] to be evaluated.'.format(active_ssn_most_recent_order, active_ssn_most_recent_dir))
-								logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(active_ssn_most_recent_order, active_ssn_most_recent_dir))
+							if active_name_uid_most_recent_order == '':
+								active_name_uid_most_recent_order = i['ORDER']
+								active_name_uid_most_recent_dir = i['NAME___UID']
+								logging.debug('[{}] is the first order for [{}] to be evaluated.'.format(active_name_uid_most_recent_order, active_name_uid_most_recent_dir))
+								logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(active_name_uid_most_recent_order, active_name_uid_most_recent_dir))
 
-							elif i['ORDER'].split('___')[0] > active_ssn_most_recent_order.split('___')[0]:
-								logging.debug('Comparing [{}] to [{}].'.format(i['ORDER'], active_ssn_most_recent_order))
-								logging.debug('Year of [{}] is greater than year of [{}].'.format(i['ORDER'].split('___')[0], active_ssn_most_recent_order.split('___')[0]))
-								active_ssn_most_recent_order = i['ORDER']
-								active_ssn_most_recent_dir = i['LAST_FIRST_M___SSN']
-								logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(active_ssn_most_recent_order, active_ssn_most_recent_dir))
+							elif i['ORDER'].split('___')[0] > active_name_uid_most_recent_order.split('___')[0]:
+								logging.debug('Comparing [{}] to [{}].'.format(i['ORDER'], active_name_uid_most_recent_order))
+								logging.debug('Year of [{}] is greater than year of [{}].'.format(i['ORDER'].split('___')[0], active_name_uid_most_recent_order.split('___')[0]))
+								active_name_uid_most_recent_order = i['ORDER']
+								active_name_uid_most_recent_dir = i['NAME___UID']
+								logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(active_name_uid_most_recent_order, active_name_uid_most_recent_dir))
 
-							elif i['ORDER'].split('___')[0] == active_ssn_most_recent_order.split('___')[0] \
-							and i['ORDER'].split('___')[2].replace('-','') > active_ssn_most_recent_order.split('___')[2].replace('-','') \
+							elif i['ORDER'].split('___')[0] == active_name_uid_most_recent_order.split('___')[0] \
+							and i['ORDER'].split('___')[2].replace('-','') > active_name_uid_most_recent_order.split('___')[2].replace('-','') \
 							:
-								logging.debug('Comparing [{}] to [{}].'.format(i['ORDER'], active_ssn_most_recent_order))
-								logging.debug('Year of [{}] is equal to year of [{}], but order number [{}] is greater than order number [{}].'.format(i['ORDER'].split('___')[0], active_ssn_most_recent_order.split('___')[0], i['ORDER'].split('___')[2], active_ssn_most_recent_order.split('___')[2]))
-								active_ssn_most_recent_order = i['ORDER']
-								active_ssn_most_recent_dir = i['LAST_FIRST_M___SSN']
-								logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(active_ssn_most_recent_order, active_ssn_most_recent_dir))
+								logging.debug('Comparing [{}] to [{}].'.format(i['ORDER'], active_name_uid_most_recent_order))
+								logging.debug('Year of [{}] is equal to year of [{}], but order number [{}] is greater than order number [{}].'.format(i['ORDER'].split('___')[0], active_name_uid_most_recent_order.split('___')[0], i['ORDER'].split('___')[2], active_name_uid_most_recent_order.split('___')[2]))
+								active_name_uid_most_recent_order = i['ORDER']
+								active_name_uid_most_recent_dir = i['NAME___UID']
+								logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(active_name_uid_most_recent_order, active_name_uid_most_recent_dir))
 						'''
-						Move self.list_cleanup_active to the most recent LAST_FIRST_M___SSN directory.
+						Move self.list_cleanup_active to the most recent NAME___UID directory.
 						'''
-						active_source_directories = set([ z['LAST_FIRST_M___SSN'] for z in self.list_cleanup_directories_orders if p in z['LAST_FIRST_M___SSN'] and active_ssn_most_recent_dir not in z['LAST_FIRST_M___SSN'] and ssn in z['LAST_FIRST_M___SSN'] ])
-						destination_directory = active_ssn_most_recent_dir
+						active_source_directories = set([ z['NAME___UID'] for z in self.list_cleanup_directories_orders if p in z['NAME___UID'] and active_name_uid_most_recent_dir not in z['NAME___UID'] and name_uid in z['NAME___UID'] ])
+						destination_directory = active_name_uid_most_recent_dir
 
 						for active_directories in active_source_directories:
 							source_files = os.listdir(active_directories)
@@ -194,42 +194,42 @@ class Process:
 								except:
 									logging.debug('Issue while moving [{}] to [{}]. [{}] most likely already exists. Continuing.'.format(source_file, destination_directory, source_file))
 					else:
-						self.list_cleanup_inactive = [ x for x in self.list_cleanup_directories_orders if p in x['LAST_FIRST_M___SSN'] and ssn in x['LAST_FIRST_M___SSN'] and x['ORDER'].split('___')[0] not in self.list_cleanup_years_to_consider_active ]
+						self.list_cleanup_inactive = [ x for x in self.list_cleanup_directories_orders if p in x['NAME___UID'] and name_uid in x['NAME___UID'] and x['ORDER'].split('___')[0] not in self.list_cleanup_years_to_consider_active ]
 
 						if len(self.list_cleanup_inactive) > 0 and 'ORD_MANAGERS{}ORDERS_BY_SOLDIER'.format(os.sep) in p:
-							logging.debug('[{}] appears to be INACTIVE, but [{}] is for historical data for state level managers. Consolidating orders for [{}] in [{}].'.format(ssn, p, ssn, p))
+							logging.debug('[{}] appears to be INACTIVE, but [{}] is for historical data for state level managers. Consolidating orders for [{}] in [{}].'.format(name_uid, p, name_uid, p))
 							'''
 							Determine most recent order.
 							'''
-							inactive_ssn_most_recent_order = ''
-							inactive_ssn_most_recent_dir = ''
+							inactive_name_uid_most_recent_order = ''
+							inactive_name_uid_most_recent_dir = ''
 							for j in self.list_cleanup_inactive:
-								if inactive_ssn_most_recent_order == '':
-									inactive_ssn_most_recent_order = j['ORDER']
-									inactive_ssn_most_recent_dir = j['LAST_FIRST_M___SSN']
-									logging.debug('[{}] is the first order for [{}] to be evaluated.'.format(inactive_ssn_most_recent_order, inactive_ssn_most_recent_dir))
-									logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(inactive_ssn_most_recent_order, inactive_ssn_most_recent_dir))
+								if inactive_name_uid_most_recent_order == '':
+									inactive_name_uid_most_recent_order = j['ORDER']
+									inactive_name_uid_most_recent_dir = j['NAME___UID']
+									logging.debug('[{}] is the first order for [{}] to be evaluated.'.format(inactive_name_uid_most_recent_order, inactive_name_uid_most_recent_dir))
+									logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(inactive_name_uid_most_recent_order, inactive_name_uid_most_recent_dir))
 
-								elif j['ORDER'].split('___')[0] > inactive_ssn_most_recent_order.split('___')[0]:
-									logging.debug('Comparing [{}] to [{}].'.format(j['ORDER'], inactive_ssn_most_recent_order))
-									logging.debug('Year of [{}] is greater than year of [{}].'.format(j['ORDER'].split('___')[0], inactive_ssn_most_recent_order.split('___')[0]))
-									inactive_ssn_most_recent_order = j['ORDER']
-									inactive_ssn_most_recent_dir = j['LAST_FIRST_M___SSN']
-									logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(inactive_ssn_most_recent_order, inactive_ssn_most_recent_dir))
+								elif j['ORDER'].split('___')[0] > inactive_name_uid_most_recent_order.split('___')[0]:
+									logging.debug('Comparing [{}] to [{}].'.format(j['ORDER'], inactive_name_uid_most_recent_order))
+									logging.debug('Year of [{}] is greater than year of [{}].'.format(j['ORDER'].split('___')[0], inactive_name_uid_most_recent_order.split('___')[0]))
+									inactive_name_uid_most_recent_order = j['ORDER']
+									inactive_name_uid_most_recent_dir = j['NAME___UID']
+									logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(inactive_name_uid_most_recent_order, inactive_name_uid_most_recent_dir))
 
-								elif j['ORDER'].split('___')[0] == inactive_ssn_most_recent_order.split('___')[0] \
-								and j['ORDER'].split('___')[2].replace('-','') > inactive_ssn_most_recent_order.split('___')[2].replace('-','') \
+								elif j['ORDER'].split('___')[0] == inactive_name_uid_most_recent_order.split('___')[0] \
+								and j['ORDER'].split('___')[2].replace('-','') > inactive_name_uid_most_recent_order.split('___')[2].replace('-','') \
 								:
-									logging.debug('Comparing [{}] to [{}].'.format(j['ORDER'], inactive_ssn_most_recent_order))
-									logging.debug('Year of [{}] is equal to year of [{}], but order number [{}] is greater than order number [{}].'.format(j['ORDER'].split('___')[0], inactive_ssn_most_recent_order.split('___')[0], j['ORDER'].split('___')[2], inactive_ssn_most_recent_order.split('___')[2]))
-									inactive_ssn_most_recent_order = j['ORDER']
-									inactive_ssn_most_recent_dir = j['LAST_FIRST_M___SSN']
-									logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(inactive_ssn_most_recent_order, inactive_ssn_most_recent_dir))
+									logging.debug('Comparing [{}] to [{}].'.format(j['ORDER'], inactive_name_uid_most_recent_order))
+									logging.debug('Year of [{}] is equal to year of [{}], but order number [{}] is greater than order number [{}].'.format(j['ORDER'].split('___')[0], inactive_name_uid_most_recent_order.split('___')[0], j['ORDER'].split('___')[2], inactive_name_uid_most_recent_order.split('___')[2]))
+									inactive_name_uid_most_recent_order = j['ORDER']
+									inactive_name_uid_most_recent_dir = j['NAME___UID']
+									logging.debug('Most recent ORDER: [{}]. Most recent PATH is [{}].'.format(inactive_name_uid_most_recent_order, inactive_name_uid_most_recent_dir))
 							'''
-							Move self.list_cleanup_inactive to the most recent LAST_FIRST_M___SSN directory.
+							Move self.list_cleanup_inactive to the most recent NAME___UID directory.
 							'''
-							inactive_source_directories = set([ z['LAST_FIRST_M___SSN'] for z in self.list_cleanup_directories_orders if p in z['LAST_FIRST_M___SSN'] and inactive_ssn_most_recent_dir not in z['LAST_FIRST_M___SSN'] and ssn in z['LAST_FIRST_M___SSN'] ])
-							destination_directory = inactive_ssn_most_recent_dir
+							inactive_source_directories = set([ z['NAME___UID'] for z in self.list_cleanup_directories_orders if p in z['NAME___UID'] and inactive_name_uid_most_recent_dir not in z['NAME___UID'] and name_uid in z['NAME___UID'] ])
+							destination_directory = inactive_name_uid_most_recent_dir
 
 							for inactive_directory in inactive_source_directories:
 								source_files = os.listdir(inactive_directory)
@@ -241,15 +241,15 @@ class Process:
 										logging.debug('Issue while moving [{}] to [{}]. [{}] most likely already exists. Continuing.'.format(source_file, destination_directory, source_file))
 
 						elif len(self.list_cleanup_inactive) > 0 and 'UICS' in p:
-							logging.info('[{}] appears to be INACTIVE. Removing [{}] from all locations within [{}].'.format(ssn, ssn, p))
+							logging.info('[{}] appears to be INACTIVE. Removing [{}] from all locations within [{}].'.format(name_uid, name_uid, p))
 							for inactive_directory in self.list_cleanup_inactive:
 								try:
-									shutil.rmtree(inactive_directory['LAST_FIRST_M___SSN'], ignore_errors=True)
-									if inactive_directory['LAST_FIRST_M___SSN'].split(os.sep)[-1] not in list_stats_inactive:
-										list_stats_inactive.append(inactive_directory['LAST_FIRST_M___SSN'].split(os.sep)[-1])
+									shutil.rmtree(inactive_directory['NAME___UID'], ignore_errors=True)
+									if inactive_directory['NAME___UID'].split(os.sep)[-1] not in list_stats_inactive:
+										list_stats_inactive.append(inactive_directory['NAME___UID'].split(os.sep)[-1])
 								except FileNotFoundError:
 									pass
-				# < End for each ssn in self.list_cleanup_ssn
+				# < End for each name___uid in self.list_cleanup_name_uid
 			else:
 				logging.critical('{} is not a directory. Try again with proper input.'.format(p))
 				sys.exit()
@@ -258,6 +258,7 @@ class Process:
 		Remove empty directories within self.list_cleanup_path created from removing inactive and moving active.
 		'''
 		dict_data = {
+			'setup' : Setup(),
 			'list_empty_directories' : self.list_cleanup_path
 		}
 		Process(**dict_data).remove_empty_directories()
@@ -295,10 +296,17 @@ class Process:
 					self.dict_directory_files[root] = files
 					logging.info('Finished adding files from [{}].'.format(root))
 		return self.dict_directory_files
+		
+	def hash_string(self):
+		salt = 'd86d4265-842e-4a4a-b9d8-e6a6961bcfab' # Generated using str(uuid.uuid4()) on 2/23/2018 @ 1000
+		uid = (hashlib.md5(salt.encode() + self.user_info.encode()).hexdigest())[:10]
+		
+		return uid
 
 	def process_files(self):
 		start = time.strftime('%m-%d-%y %H:%M:%S')
 		start_time = timeit.default_timer()
+
 		'''
 		Lists for general statistics for both creation and removal.
 		'''
@@ -362,7 +370,10 @@ class Process:
 								uic = re.sub('\W', '_', line[37:42].strip())
 								period_from = line[48:54]
 								period_to = line[54:60]
-								ssn = line[60:63] + '-' + line[63:65] + '-' + line[65:69]
+								dict_data = {
+									'user_info' : line[60:69]
+								}
+								uid = Process(**dict_data).hash_string()
 								file_m_prt = [ x for x in list_order_batch if 'm.prt' in x ]
 								if len(file_m_prt) == 1:
 									with open(file_m_prt[0], 'r') as m:
@@ -370,7 +381,7 @@ class Process:
 										orders_m = [x + '\f' for x in orders_m.split('\f')]
 										order_m = [s for s in orders_m if order_number in s] # Look for order by order number in main file
 										if order_m:
-											logging.debug('Found valid main order for [{}] [{}] order number [{}].'.format(name, ssn, order_number))
+											logging.debug('Found valid main order for [{}] [{}] order number [{}].'.format(name, uid, order_number))
 											order_m = ''.join(order_m) # Turn order_m list into order_m string to write to file
 											order_m = order_m[:order_m.rfind('\f')] # Remove last line (\f) from the order to make printing work
 											dict_data = {
@@ -382,11 +393,12 @@ class Process:
 												'uic' : uic,
 												'period_from' : period_from,
 												'period_to' : period_to,
-												'ssn' : ssn,
+												'uid' : uid,
 												'order' : order_m,
-												'file_order' : '{}___{}___{}___{}___{}___{}.doc'.format(published_year, ssn, order_number, period_from, period_to, format),
-												'directory_uics' : os.path.join(self.setup.directory_output_uics, uic, '{}___{}'.format(name, ssn)),
-												'directory_ord_managers' : os.path.join(self.setup.directory_output_orders_by_soldier, '{}___{}'.format(name, ssn))
+												#'file_order' : '{}___{}___{}___{}___{}___{}.doc'.format(published_year, uid, order_number, period_from, period_to, format),
+												'file_order' : '{}___{}___{}___{}___{}.doc'.format(published_year, order_number, period_from, period_to, format),
+												'directory_uics' : os.path.join(self.setup.directory_output_uics, uic, '{}___{}'.format(name, uid)),
+												'directory_ord_managers' : os.path.join(self.setup.directory_output_orders_by_soldier, '{}___{}'.format(name, uid))
 											}
 											'''
 											Perform specific function on order_m based on command line arguments.
@@ -416,8 +428,9 @@ class Process:
 											Add missing main order to list_stats_main_orders_missing.
 											'''
 											stats_error_warning += 1
-											file_order = '{}___{}___{}___{}___{}___{}.doc'.format(published_year, ssn, order_number, period_from, period_to, format)
-											directory_uics = os.path.join(self.setup.directory_output_uics, uic, '{}___{}'.format(name, ssn))
+											#file_order = '{}___{}___{}___{}___{}___{}.doc'.format(published_year, uid, order_number, period_from, period_to, format)
+											file_order = '{}___{}___{}___{}___{}.doc'.format(published_year, uid, order_number, period_from, period_to, format)
+											directory_uics = os.path.join(self.setup.directory_output_uics, uic, '{}___{}'.format(name, uid))
 											logging.warning('Missing valid main order for [{}].'.format(file_order))
 											list_stats_main_orders_missing.append(os.path.join(directory_uics, file_order))
 									# < End creating looking for order in main order file
@@ -435,7 +448,7 @@ class Process:
 										order_c = [ x for x in orders_c if order_regex in x ] # Look for order by order number in cert file
 									if order_c:
 										order_c = ''.join(order_c)
-										logging.debug('Found valid cert order for [{}] [{}] order number [{}].'.format(name, ssn, order_number))
+										logging.debug('Found valid cert order for [{}] [{}] order number [{}].'.format(name, uid, order_number))
 										dict_data = {
 											'setup' : Setup(),
 											'order_number' : order_number,
@@ -445,11 +458,12 @@ class Process:
 											'uic' : uic,
 											'period_from' : period_from,
 											'period_to' : period_to,
-											'ssn' : ssn,
+											'uid' : uid,
 											'order' : order_c,
-											'file_order' : '{}___{}___{}___{}___{}___{}.doc'.format(published_year, ssn, order_number, period_from, period_to, 'cert'),
-											'directory_uics' : os.path.join(self.setup.directory_output_uics, uic, '{}___{}'.format(name, ssn)),
-											'directory_ord_managers' : os.path.join(self.setup.directory_output_orders_by_soldier, '{}___{}'.format(name, ssn))
+											#'file_order' : '{}___{}___{}___{}___{}___{}.doc'.format(published_year, uid, order_number, period_from, period_to, 'cert'),
+											'file_order' : '{}___{}___{}___{}___{}.doc'.format(published_year, order_number, period_from, period_to, 'cert'),
+											'directory_uics' : os.path.join(self.setup.directory_output_uics, uic, '{}___{}'.format(name, uid)),
+											'directory_ord_managers' : os.path.join(self.setup.directory_output_orders_by_soldier, '{}___{}'.format(name, uid))
 										}
 										'''
 										Perform specific function on order_m based on command line arguments.
@@ -474,8 +488,9 @@ class Process:
 										Add missing certificate order to list_stats_certificate_orders_missing.
 										'''
 										stats_error_warning += 1
-										file_order = '{}___{}___{}___{}___{}___cert.doc'.format(published_year, ssn, order_number, period_from, period_to)
-										directory_uics = os.path.join(self.setup.directory_output_uics, uic, '{}___{}'.format(name, ssn))
+										#file_order = '{}___{}___{}___{}___{}___cert.doc'.format(published_year, uid, order_number, period_from, period_to)
+										file_order = '{}___{}___{}___{}___cert.doc'.format(published_year, order_number, period_from, period_to)
+										directory_uics = os.path.join(self.setup.directory_output_uics, uic, '{}___{}'.format(name, uid))
 										logging.warning('Missing valid cert order for [{}].'.format(file_order))
 										list_stats_certificate_orders_missing.append(os.path.join(directory_uics, file_order))
 								elif len(file_c_prt) == 0:
@@ -492,26 +507,31 @@ class Process:
 						'''
 						Add published_year to self.list_years_processed to properly combine orders by year if self.args.combine is given.
 						'''
-						if dict_data['published_year']:
-							if dict_data['published_year'] not in self.list_years_processed:
-								logging.debug('Adding [{}] to list_years_processed'.format(dict_data['published_year']))
-								self.list_years_processed.append(dict_data['published_year'])
-							'''
-							Make historical year folder, if it doesn't exist.
-							'''
-							directory_year_historical = os.path.join(self.setup.directory_output_ord_registers, '{}_orders'.format(dict_data['published_year']))
-							if not os.path.exists(directory_year_historical):
-								logging.debug('Creating {}.'.format(directory_year_historical))
-								os.makedirs(directory_year_historical)
-							'''
-							Copy original m.prt, c.prt, r.reg, and r.prt files to ORD_MANAGERS\ORDERS_REGISTERS\[YR]_registers for historical backups.
-							'''
-							for i in list_order_batch:
-								if not os.path.exists(os.path.join(directory_year_historical, i.split(os.sep)[-1])):
-									logging.debug('Copying [{}] to [{}].'.format(i, directory_year_historical))
-									shutil.copy(i, directory_year_historical)
-						else:
-							input('missing published_year from {}'.format(os.path.join(key, v))) # should never get here.
+						try:
+							if dict_data['published_year']:
+								if dict_data['published_year'] not in self.list_years_processed:
+									logging.debug('Adding [{}] to list_years_processed'.format(dict_data['published_year']))
+									self.list_years_processed.append(dict_data['published_year'])
+								'''
+								Make historical year folder, if it doesn't exist.
+								'''
+								directory_year_historical = os.path.join(self.setup.directory_output_ord_registers, '{}_orders'.format(dict_data['published_year']))
+								if not os.path.exists(directory_year_historical):
+									logging.debug('Creating {}.'.format(directory_year_historical))
+									os.makedirs(directory_year_historical)
+								'''
+								Copy original m.prt, c.prt, r.reg, and r.prt files to ORD_MANAGERS\ORDERS_REGISTERS\[YR]_registers for historical backups.
+								'''
+								for i in list_order_batch:
+									if not os.path.exists(os.path.join(directory_year_historical, i.split(os.sep)[-1])):
+										logging.debug('Copying [{}] to [{}].'.format(i, directory_year_historical))
+										shutil.copy(i, directory_year_historical)
+							else:
+								logging.critical('Missing published_year from {}'.format(os.path.join(key, v)))
+								stats_error_critical += 1
+						except KeyError:
+							logging.critical('Missing published_year from {}'.format(os.path.join(key, v)))
+							stats_error_critical += 1
 					# < End if reg file or not
 				# < End if list_order_batch
 			# < End for each file in year directory
@@ -542,6 +562,7 @@ class Process:
 		'''
 		if self.args.remove:
 			dict_data = {
+				'setup' : Setup(),
 				'list_empty_directories' : [ self.setup.directory_output_orders_by_soldier, self.setup.directory_output_uics ]
 			}
 			Process(**dict_data).remove_empty_directories()
@@ -819,11 +840,11 @@ class Setup:
 	'''
 	VARIABLES
 	'''
-	version = '3.7'
+	version = '3.9'
 	program = os.path.basename(__file__)
 	repository = 'https://gitlab.com/ajhanisch/ORDPRO'
 	wiki = 'https://gitlab.com/ajhanisch/ORDPRO/wikis/home'
-	date = strftime('%Y-%m-%d_%H-%M-%S')
+	date = time.strftime('%Y-%m-%d_%H-%M-%S')
 	user = getpass.getuser()
 	platform = sys.platform
 	if platform == 'win32':
@@ -859,7 +880,7 @@ class Setup:
 	process.add_argument(
 						'--output',
 						type=str,
-						help=r'Output directory to create orders in. Created directory structure is as follows: .\OUTPUT\UICS containing all UICS processed from --input, designed for unit administrators to retrieve orders for their soldiers quickly. As well as .\OUTPUT\ORD_MANAGERS\ORDERS_BY_SOLDIER containing all SOLDIER_SSN directories from --input only, no UICS. Designed for state level administrators and fund managers to access all unit soldiers in one location. Finally .\OUTPUT\ORD_MANAGERS\IPERMS_INTEGRATOR containing combined order files from --combine.'
+						help=r'Output directory to create orders in. Created directory structure is as follows: .\OUTPUT\UICS containing all UICS processed from --input, designed for unit administrators to retrieve orders for their soldiers quickly. As well as .\OUTPUT\ORD_MANAGERS\ORDERS_BY_SOLDIER containing all SOLDIER_UID directories from --input only, no UICS. Designed for state level administrators and fund managers to access all unit soldiers in one location. Finally .\OUTPUT\ORD_MANAGERS\IPERMS_INTEGRATOR containing combined order files from --combine.'
 	)
 	process.add_argument(
 						'--remove',
@@ -875,7 +896,7 @@ class Setup:
 	audit.add_argument(
 					'--cleanup',
 					nargs='+',
-					help='Determine inactive (retired, no longer in, etc.) and active soldiers. Remove inactive orders and directories. Inactive is considered SOLDIER_SSN directories without orders cut from current year to current year minus two years. Automatically consolidate active soldiers orders spanning multiple years and directories into most recent directory. If UICS directory is given, inactive WILL be removed and consolidation by SSN will happen. If ORD_MANAGERS\ORDERS_BY_SOLDIER is given, inactive will NOT be removed and consolidation by SSN will happen. You can pass UICS and ORDERS_BY_SOLDIER as input if desired.'
+					help='Determine inactive (retired, no longer in, etc.) and active soldiers. Remove inactive orders and directories. Inactive is considered SOLDIER_UID directories without orders cut from current year to current year minus two years. Automatically consolidate active soldiers orders spanning multiple years and directories into most recent directory. If UICS directory is given, inactive WILL be removed and consolidation by UID will happen. If ORD_MANAGERS\ORDERS_BY_SOLDIER is given, inactive will NOT be removed and consolidation by UID will happen. You can pass UICS and ORDERS_BY_SOLDIER as input if desired.'
 	)
 	audit.add_argument(
 					'--report',
@@ -902,7 +923,7 @@ class Setup:
 	search.add_argument(
 					'--pattern',
 					nargs='+',
-					help=r'Search for pattern or multiple patterns in --path. Typically searching for name LAST_FIRST_M___SSN pattern or ssn with 123-45-6789 pattern. You can pass multiple patterns if needed.'
+					help=r'Search for pattern or multiple patterns in --path. Typically searching for name NAME___UID pattern. You can pass multiple patterns if needed.'
 	)
 	search.add_argument(
 					'--exclude',
@@ -1134,6 +1155,7 @@ def main():
 		Process(**dict_data).process_files()
 		if args.cleanup:
 			dict_data = {
+				'setup' : setup,
 				'list_cleanup_path' : args.cleanup,
 				'list_cleanup_directories_orders' : [],
 				'cleanup_current_year' : str(datetime.now().year),
@@ -1143,7 +1165,7 @@ def main():
 				'file_cleanup_inactive_txt' : os.path.join(setup.directory_working_log, '{}_inactive.txt'.format(setup.user)),
 				'file_cleanup_original_directories_csv' : os.path.join(setup.directory_working_log, '{}_directories.csv'.format(setup.user)),
 				'file_cleanup_empty_directories_txt' : os.path.join(setup.directory_working_log, '{}_empty_dirs.txt'.format(setup.user)),
-				'list_cleanup_ssn' : []
+				'list_cleanup_name_uid' : []
 			}
 			dict_data['list_cleanup_years_to_consider_active'] = [
 				dict_data['cleanup_current_year'],
@@ -1173,6 +1195,7 @@ def main():
 		Process(**dict_data).process_files()
 		if args.cleanup:
 			dict_data = {
+				'setup' : setup,
 				'list_cleanup_path' : args.cleanup,
 				'list_cleanup_directories_orders' : [],
 				'cleanup_current_year' : str(datetime.now().year),
@@ -1182,7 +1205,7 @@ def main():
 				'file_cleanup_inactive_txt' : os.path.join(setup.directory_working_log, '{}_inactive.txt'.format(setup.user)),
 				'file_cleanup_original_directories_csv' : os.path.join(setup.directory_working_log, '{}_directories.csv'.format(setup.user)),
 				'file_cleanup_empty_directories_txt' : os.path.join(setup.directory_working_log, '{}_empty_dirs.txt'.format(setup.user)),
-				'list_cleanup_ssn' : []
+				'list_cleanup_name_uid' : []
 			}
 			dict_data['list_cleanup_years_to_consider_active'] = [
 				dict_data['cleanup_current_year'],
@@ -1202,6 +1225,7 @@ def main():
 		Process(**dict_data).report()
 		if args.cleanup:
 			dict_data = {
+				'setup' : setup,
 				'list_cleanup_path' : args.cleanup,
 				'list_cleanup_directories_orders' : [],
 				'cleanup_current_year' : str(datetime.now().year),
@@ -1211,7 +1235,7 @@ def main():
 				'file_cleanup_inactive_txt' : os.path.join(setup.directory_working_log, '{}_inactive.txt'.format(setup.user)),
 				'file_cleanup_original_directories_csv' : os.path.join(setup.directory_working_log, '{}_directories.csv'.format(setup.user)),
 				'file_cleanup_empty_directories_txt' : os.path.join(setup.directory_working_log, '{}_empty_dirs.txt'.format(setup.user)),
-				'list_cleanup_ssn' : []
+				'list_cleanup_name_uid' : []
 			}
 			dict_data['list_cleanup_years_to_consider_active'] = [
 				dict_data['cleanup_current_year'],
@@ -1248,6 +1272,27 @@ def main():
 			'list_empty_directories' : args.empty
 		}
 		Process(**dict_data).remove_empty_directories()
+		sys.exit()
+	if args.cleanup:
+		dict_data = {
+			'setup' : setup,
+			'list_cleanup_path' : args.cleanup,
+			'list_cleanup_directories_orders' : [],
+			'cleanup_current_year' : str(datetime.now().year),
+			'cleanup_current_year_minus_one' : str(datetime.now().year - 1),
+			'cleanup_current_year_minus_two' : str(datetime.now().year - 2),
+			'file_cleanup_active_txt' : os.path.join(setup.directory_working_log, '{}_active.txt'.format(setup.user)),
+			'file_cleanup_inactive_txt' : os.path.join(setup.directory_working_log, '{}_inactive.txt'.format(setup.user)),
+			'file_cleanup_original_directories_csv' : os.path.join(setup.directory_working_log, '{}_directories.csv'.format(setup.user)),
+			'file_cleanup_empty_directories_txt' : os.path.join(setup.directory_working_log, '{}_empty_dirs.txt'.format(setup.user)),
+			'list_cleanup_name_uid' : []
+		}
+		dict_data['list_cleanup_years_to_consider_active'] = [
+			dict_data['cleanup_current_year'],
+			dict_data['cleanup_current_year_minus_one'],
+			dict_data['cleanup_current_year_minus_two']
+		]
+		Process(**dict_data).cleanup()
 		sys.exit()
 	else:
 		var_statistics_action = 'ERROR'
