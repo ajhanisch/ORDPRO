@@ -1,6 +1,14 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 3.9
+DATE: 2/27/2018
+CHANGES:
+- added setup call to each dict_data in main function to avoid not having it when needed
+- changed unique string from 5 to 10 characters (for cleanup process to run properly no matter what)
+- replaced SSN user throughout with use of uniquely generated string for each soldier
+- added try/except block when adding published year to self.list_years_processed to avoid KeyError
+------------------------------------
 VERSION: 3.8
 DATE: 1/3/2018
 CHANGES:
