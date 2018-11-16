@@ -31,6 +31,7 @@ Check out the Wiki page for all documentation.
 # **INSTALLATION**  
 1. **ordpro.py** -- Installation of Python 3.6.X is required on any machine running **ordpro.py**. While this is not complicated, it is simply an additional step that is needed in order to be up and running for processing orders.
 2. **ordpro.exe** -- NO INSTALLATION of Python 3.6.X is required for the compiled .exe version of Ordpro. This is included for windows users to save the step of Python installation in their environment if desired. With this version, users simply need to place ordpro.exe on any machine(s) they desire to process orders on.
+  
 # **USAGE**  
 Running the tool:  
 `.\ordpro.py [options]`
