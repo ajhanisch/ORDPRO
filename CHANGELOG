@@ -1,6 +1,11 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 4.0
+DATE: 12/27/2018
+CHANGES:
+- added email notification when new UIC is created
+------------------------------------
 VERSION: 3.9
 DATE: 2/27/2018
 CHANGES:
