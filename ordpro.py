@@ -25,6 +25,7 @@ import sys
 import uuid
 import zlib
 import time
+import socket
 import shutil
 import timeit
 import zipfile
@@ -32,6 +33,7 @@ import hashlib
 import getpass
 import logging
 import argparse
+import subprocess
 from datetime import datetime
 
 class Order:
@@ -96,6 +98,16 @@ class Order:
 
 		if not os.path.exists(self.directory_uics):
 			os.makedirs(self.directory_uics)
+			dict_data = {
+				'email_to' :  '',
+				'email_from' : '{}@mail.mil'.format(socket.gethostname()),
+				'email_cc' : '',
+				'email_subject' : 'New UIC Created: [{}]'.format(self.uic),
+				'email_body' : 'It appears we have created a new UIC [{}]. This will need to have appropriate permissions applied immediately.'.format(self.uic),
+				'email_server' : "",
+				
+			}
+			Process(**dict_data).new_uic()
 		if not os.path.exists(self.directory_ord_managers):
 			os.makedirs(self.directory_ord_managers)
 		if not os.path.exists(os.path.join(self.directory_uics, self.file_order)):
@@ -117,6 +129,20 @@ class Process:
 	def __init__(self, **kwargs):
 		for key, value in kwargs.items():
 			setattr(self, key, value)
+
+	def new_uic(self):
+		to = self.email_to
+		fr = self.email_from
+		cc = self.email_cc
+		subject = self.email_subject
+		body = self.email_body
+		smtp_server = self.email_server
+		pshell = "powershell.exe"
+		command = [ pshell ]
+		arguments = [ "Send-MailMessage", "-SmtpServer", "'{}'".format(smtp_server), "-To", "'{}'".format(to), "-From", "'{}'".format(fr), "-Cc", "'{}'".format(cc), "-Subject", "'{}'".format(subject), "-Body", "'{}'".format(body)]
+		command.extend(arguments)
+		output = subprocess.run(command)
+		logging.info('New UIC email notification sent!')
 
 	def cleanup(self):
 		start = time.strftime('%m-%d-%y %H:%M:%S')
