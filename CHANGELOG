@@ -1,6 +1,31 @@
 ------------------------------------
 CHANGELOG
 ------------------------------------
+VERSION: 4.1
+DATE: 1/19/2019
+CHANGES:
+- removed email notification from 4.0, was not working properly
+- added input validation on all dict_data items before storing in
+dictionary
+- added input validation on ehost and eport
+- added create, populate, output list of each missing order data
+[order_number, name, etc.]
+- added create, populate, output log files of each missing order data
+[order_number, name, etc.]
+- added run elasticsearch commands only if ehost and eport are specified
+- renamed log files to sort and organize better
+- added elasticsearch capabilities
+- added populate list_error_warning && list_error_critical and output
+its file
+- updated file_order name in missing main and cert file names to include
+order_number instead of uid
+- added create, populate, output list of each main order file processed
+- added create, populate, output log files of each main order file
+processed
+- added create, populate, output list of each cert order file processed
+- added create, populate, output log files of each cert order file
+processed
+------------------------------------
 VERSION: 4.0
 DATE: 12/27/2018
 CHANGES:
