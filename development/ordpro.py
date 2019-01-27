@@ -1,11 +1,13 @@
 #!python3
 # -*- coding: utf-8 -*-
 
+from pprint import pprint
 from sys import exit
 from json import dumps
 from time import sleep
 from shutil import move
 from hashlib import md5
+from exceptions import *
 from re import match, sub
 from shutil import rmtree
 from fnmatch import fnmatch
@@ -16,62 +18,6 @@ from os import walk, sep, listdir, makedirs
 from os.path import isdir, exists, isfile, join
 from configparser import ConfigParser, ExtendedInterpolation
 from logging import basicConfig, critical, error, warning, info, debug
-
-class Error(Exception):
-    ''' Base class for other exceptions '''
-    pass
-
-class OrdersDoNotExistError(Error):
-    ''' Raised when AfcosMonitor _check_orders_directory finds no order files in input directory and _count_current_orders comes back with no orders '''
-    pass
-
-class OrdersNumberPatternError(Error):
-    ''' Raised when AfcosMonitor _get_current_orders_number is unable to match set order number pattern '''
-    pass
-
-class OrdersNumberEqualError(Error):
-    ''' Raised when AfcosMonitor _compare_orders_numbers determines current and previous run of orders is the same '''
-    pass
-
-class MissingRequiredOrdersFilesError(Error):
-    ''' Raised when AfcosMonitor _gather_current_orders_files is unable to gather all (4) required files in input directory '''
-    pass
-
-class VariableValidationError(Error):
-    ''' Raised when AfcosParser _validate_variables is unable to match captured variables with required regex pattern '''
-    pass
-
-class NameDeterminationError(Error):
-    ''' Raised when AfcosParser _determine_names is unable to determine first, middle, and last name  '''
-    pass
-
-class InvalidHostError(Error):
-    ''' Raised when ElasticsearchManager _validate_host determines the host value given is not a proper IP address '''
-    pass
-
-class InvalidPortError(Error):
-    ''' Raised when ElasticsearchManager _validate_port determines the port value given is not a proper port number '''
-    pass
-
-class UnableToReachElasticsearchHostError(Error):
-    ''' Raised when ElasticsearchManager _validate_host_connection is unable to get a return code status of 200 (host is up and responding) from given host and port '''
-    pass
-
-class UnexpectedResultCreatingIndexError(Error):
-    ''' Raised when ElasticsearchManager _create_index receives an uknown/incorrect reponse when creating desired index '''
-    pass
-
-class FailedToAddDataToElasticsearchIndexError(Error):
-    ''' Raised when ElasticsearchManager _add_data does not get a created response from Elasticseach API '''
-    pass
-
-class NoConfigFileActionSpecified(Error):
-    ''' Raised when configuration file actions section is missing a True value for both create_orders_in_elasticsearch and create_orders_in_output_directory. At least one must be set to True. '''
-    pass
-
-class NoConfigFileExtensionSpecified(Error):
-    ''' Raised when configuration file orders section is missing a [doc] value. At least one must be specified. '''
-    pass
 
 class AfcosMonitor:
     def __init__(self, directory_input):
@@ -113,28 +59,26 @@ class AfcosMonitor:
 
     def _gather_current_orders_files(self):
         debug('Gathering current orders number [{}] (4) required files to process.'.format(self.current_orders_number))
-        files_found = 0
+        self.files_found = 0
         self.current_orders_files = {}
         self.current_orders_files[self.current_orders_number] = {}
         for file in listdir(self.directory_input):
             if fnmatch(file, 'ord{}m.prt'.format(self.current_orders_number)):
-                files_found += 1
+                self.files_found += 1
                 self.current_orders_files[self.current_orders_number]['main_order_file'] = join(self.directory_input, file)
             elif fnmatch(file, 'ord{}c.prt'.format(self.current_orders_number)):
-                files_found += 1
+                self.files_found += 1
                 self.current_orders_files[self.current_orders_number]['certificate_order_file'] = join(self.directory_input, file)
             elif fnmatch(file, 'reg{}r.reg'.format(self.current_orders_number)):
-                files_found += 1
+                self.files_found += 1
                 self.current_orders_files[self.current_orders_number]['registry_file'] = join(self.directory_input, file)
             elif fnmatch(file, 'reg{}r.prt'.format(self.current_orders_number)):
-                files_found += 1
+                self.files_found += 1
                 self.current_orders_files[self.current_orders_number]['registry_prt_file'] = join(self.directory_input, file)
-        if files_found == 4:
+        if self.files_found == 4:
             return self.current_orders_files
         else:
-            critical('Unable to gather current orders number [{}] (4) required files to process.'.format(self.current_orders_number))
-            critical('Found [{}/4] required files to process.'.format(files_found))
-            raise MissingRequiredOrdersFilesError
+            critical('Unable to gather current orders number [{}] (4) required files to process. Found [{}/4] required files to process.'.format(self.current_orders_number, self.files_found))
 
 class AfcosParser:
     def __init__(self, current_orders_files, config_file, config):
@@ -182,11 +126,11 @@ class AfcosParser:
 
     def _parse_registry_file(self, registry_file):
         debug('Parsing [{}].'.format(registry_file))
-        line_number = 0
+        self.line_number = 0
         with open(registry_file, 'r') as regfile:
             for line in regfile:
-                line_number += 1
-                self._results[line_number] = []
+                self.line_number += 1
+                self._results[self.line_number] = []
                 order_info = {
                     'order_number' : '',
                     'year' : '',
@@ -210,7 +154,7 @@ class AfcosParser:
                     'link_uics_certificate' : '',
                     'link_ord_managers_certificate' : ''
                 }
-                ''' Gather all required variables form registry file '''
+                ''' Gather all required variables from registry file '''
                 order_number = line[:6]
                 year = line[6:12]
                 format = line[12:15]
@@ -243,7 +187,10 @@ class AfcosParser:
                         ssn : r'^[0-9]{9}$'
                     }
                 }
-                self._validate_variables(variables=dict_variables_patterns)
+                try:
+                    self._validate_variables(variables=dict_variables_patterns)
+                except:
+                    continue
                 order_number = '{}-{}'.format(order_number[0:3], order_number[3:6])
                 soldier_uid = self._generate_uid(plain_text=ssn)
                 name = self._determine_names(name=sub('\W', '_', line[15:37].strip()))
@@ -274,15 +221,18 @@ class AfcosParser:
                 order_info['order_file_certificate'] =  '{}___{}___{}___{}___{}.{}'.format(year, order_number, period_from, period_to, 'cert', self.config['ORDERS']['EXTENSION'])
                 order_info['link_uics_certificate'] = join(order_info['directory_uics'], order_info['order_file_certificate'])
                 order_info['link_ord_managers_certificate'] = join(order_info['directory_ord_managers'], order_info['order_file_certificate'])
-                self._results[line_number].append(order_info)
+                self._results[self.line_number].append(order_info)
 
     def _validate_variables(self, variables):
         for key, value in variables.items():
             for v in value.items():
-                debug('Validating [{}] against pattern [{}].'.format(key, v[1]))
+                if key == 'ssn':
+                    debug('Validating [{}] against pattern [{}].'.format(key, v[1]))
+                else:
+                    debug('Validating [{}] [{}] against pattern [{}].'.format(key, v[0], v[1]))
                 if not match(v[1], v[0]):
-                    critical('[{}] does NOT match pattern [{}] for [{}].'.format(v[0], v[1], key))
-                    raise VariableValidationError
+                    critical('Line [{}] in [{}] value [{}] does not match pattern [{}] for [{}]'.format(self.line_number, self.current_orders_files[self.current_orders_number]['registry_file'], v[0], v[1], key))
+                    # raise VariableValidationError
 
     def _generate_uid(self, plain_text):
         ''' Generated using str(uuid.uuid4()) on 2/23/2018 @ 1000 '''
@@ -292,26 +242,24 @@ class AfcosParser:
 
     def _determine_names(self, name):
         names = {
-            'fname' : '',
+            'lname' : '',
             'mname' : '',
-            'lname' : ''
+            'fname' : ''
         }
         if len(name) > 0:
             if len(name.split('_')) == 3:
-            	names['fname'] = name.split('_')[0]
-            	names['lname'] = name.split('_')[1]
+            	names['lname'] = name.split('_')[0]
+            	names['fname'] = name.split('_')[1]
             	names['mname'] = name.split('_')[2]
             elif len(name.split('_')) == 2:
-            	names['fname'] = name.split('_')[0]
-            	names['lname'] = name.split('_')[1]
+            	names['lname'] = name.split('_')[0]
+            	names['fname'] = name.split('_')[1]
             	names['mname'] = '#'
-            else:
-                critical('Unable to determine name from [{}] order number [{}]. Name captured: [{}].'.format(self.current_orders_files[self.current_orders_number]['registry_file']))
-                raise NameDeterminationError
+        if len(names) != 3:
+            critical('Line [{}] in [{}] unable to determine name from [{}].'.format(self.line_number, self.current_orders_files[self.current_orders_number]['registry_file'], name))
+            # raise NameDeterminationError
         else:
-            critical('Unable to determine name from [{}] order number [{}]. Name captured: [{}].'.format(self.current_orders_files[self.current_orders_number]['registry_file']))
-            raise NameDeterminationError
-        return names
+            return names
 
     def _determine_year(self, year):
         if year.startswith('7'):
@@ -321,8 +269,12 @@ class AfcosParser:
         elif year.startswith('9'):
         	year = '19{}'.format(year)
         else:
-        	year = '20{}'.format(year)
-        return year
+        	year = '20{}'.format(year)        
+        if len(year) != 4:
+            critical('Line [{}] in [{}] unable to determine year from [{}].'.format(self.line_number, self.current_orders_files[self.current_orders_number]['registry_file'], year))
+            # raise YearDeterminationError
+        else:
+            return year
 
     def _determine_period_year(self, period_year):
         if match(r'^[0-9]{6}$', period_year):
@@ -334,7 +286,11 @@ class AfcosParser:
         		period_year = '19{}'.format(period_year)
         	else:
         		period_year = '20{}'.format(period_year)
-        return period_year
+        if len(period_year) != 8:
+            critical('Line [{}] in [{}] unable to determine period_year from [{}].'.format(self.line_number, self.current_orders_files[self.current_orders_number]['registry_file'], period_year))
+            # raise PeriodYearDeterminationError
+        else:
+            return period_year
 
     def _parse_main_file(self, main_order_file, order_number):
         debug('Parsing [{}] for [{}].'.format(main_order_file, order_number))
@@ -346,12 +302,10 @@ class AfcosParser:
             main_order = [ y for y in main_orders if order_number in y ]
             ''' Turn main_order list into main_order string to remove the comma between list values '''
             main_order = ''.join(main_order)
-            '''
-            Remove last line '\f' from main_order to make printing work
-            '''
+            ''' Remove last line '\f' from main_order to make printing work '''
             main_order = main_order[:main_order.rfind('\f')]
             if not main_order:
-                warning('Unable to find valid main order for [{}] in [{}].'.format(order_number, main_order_file))
+                warning('Line [{}] in [{}] unable to find valid main order for [{}] in [{}].'.format(self.line_number, self.current_orders_files[self.current_orders_number]['registry_file'], order_number, main_order_file))
             else:
                 return main_order
 
@@ -363,7 +317,7 @@ class AfcosParser:
             certificate_order = [ y for y in certificate_orders if certificate_order_regex in y ]
             certificate_order = ''.join(certificate_order)
             if not certificate_order:
-                warning('Unable to find valid certificate order for [{}] in [{}].'.format(order_number, certificate_order_file))
+                warning('Line [{}] in [{}] unable to find valid certificate order for [{}] from [{}].'.format(self.line_number, self.current_orders_files[self.current_orders_number]['registry_file'], order_number, certificate_order_file))
             else:
                 return certificate_order
 
@@ -391,7 +345,7 @@ class ElasticsearchManager:
     def _validate_host_connection(self):
         debug('Validating connection to [{}].'.format(self.host))
         if urlopen('http://{}:{}'.format(self.host, self.port)).getcode() != 200:
-            critical('Unable to reach host [{}]. Ensure host [{}] is up and accepting requests on port [{}].'.format(self.host, self.port))
+            critical('Unable to reach host [{}]. Ensure host [{}] is up and accepting requests on port [{}].'.format(self.host, self.port, self.port))
             raise UnableToReachElasticsearchHostError
 
     def _connect_to_host(self):
@@ -487,17 +441,18 @@ class OrderFileManager:
             debug('Moving [{}] to [{}].'.format(order, self.config['DIRECTORIES']['ARCHIVE']))
             move(order, self.config['DIRECTORIES']['ARCHIVE'])
 
-    def _create_orders_word_doc(self, results):
+    def _move_mising_orders(self, orders_number, orders):
+        ''' This method requires a list of full path orders to archive '''
+        debug('Moving orders number [{}] files to [{}].'.format(orders_number, self.config['DIRECTORIES']['MISSING_FILES']))
+        for order in orders:
+            debug('Moving [{}] to [{}].'.format(order, self.config['DIRECTORIES']['MISSING_FILES']))
+            move(order, self.config['DIRECTORIES']['MISSING_FILES'])
+
+    def _create_orders_doc(self, results):
         ''' This method requires full results instead of a list '''
         ''' Gather a list of dictionaries containing the following keys with their corresponding values '''
         list_keys_to_find = [ 'main_order', 'certificate_order', 'directory_uics', 'directory_ord_managers', 'order_file_main', 'order_file_certificate' ]
-        list_orders_to_create = []
-        for key in results.keys():
-            for order in results[key]:
-                d = {}
-                for x in list_keys_to_find:
-                    d[x] = order[x]
-            list_orders_to_create.append(d)
+        list_orders_to_create = ResultsParser(results=results, keys=list_keys_to_find)._look_for_keys()
 
         ''' Create word documents utilizing list of dictionaries list_orders_to_create '''
         for order in list_orders_to_create:
@@ -511,6 +466,12 @@ class OrderFileManager:
                     f.write(order.get('certificate_order'))
                 with open(join(order['directory_ord_managers'], order['order_file_certificate']), 'w') as f:
                     f.write(order.get('certificate_order'))
+
+    def _combine_orders(self, results):
+        list_keys_to_find = [ 'main_order' ]
+        list_orders_to_combine = ResultsParser(results=results, keys=list_keys_to_find)._look_for_keys()
+        pprint(list_orders_to_combine)
+        exit()
 
 class ConfigurationFileManager:
     def __init__(self, config_file, config, section, option, value):
@@ -526,6 +487,23 @@ class ConfigurationFileManager:
         with open(self.config_file, 'w') as file:
             self.config.write(file)
 
+class ResultsParser:
+    def __init__(self, results, keys):
+        self.results = results
+        self.keys = keys
+
+    def _look_for_keys(self):
+        ''' Method requires dictionary results from AfcosParser and list of keys to look for. It return a list of dictionaries. '''
+        debug('Parsing results for keys {}.'.format(self.keys))
+        self.list_results = []
+        for key in self.results.keys():
+            for order in self.results[key]:
+                d = {}
+                for x in self.keys:
+                    d[x] = order[x]
+            self.list_results.append(d)
+        return self.list_results
+
 def _watchdog(config_file, config):
     ''' Monitor configuration file input directory for any new order files. '''
     monitor = AfcosMonitor(directory_input=config['DIRECTORIES']['INPUT'])
@@ -534,63 +512,59 @@ def _watchdog(config_file, config):
     monitor._get_current_orders_number()
     monitor._compare_orders_numbers(last_orders_number=config['LASTRUN']['NUMBER'])
     current_orders_files = monitor._gather_current_orders_files()
-    if config['ACTIONS']['CREATE_ORDERS_IN_ELASTICSEARCH'] == 'True' or config['ACTIONS']['CREATE_ORDERS_IN_OUTPUT_DIRECTORY'] == 'True':
-        ''' Parse new files in configuration file input directory when new order files are present. '''
-        parser = AfcosParser(current_orders_files=current_orders_files, config_file=config_file, config=config)
-    else:
-        critical('Missing a required True value in [{}] under [ACTIONS] for create_orders_in_elasticsearch or create_orders_in_output_directory. At least one much be specified, both may be specified.'.format(config_file))
-        raise NoConfigFileActionSpecified
-
-    if config['ACTIONS']['CREATE_ORDERS_IN_ELASTICSEARCH'] == 'True':
-        ''' API data into Elasticsearch '''
-        elasticsearch = ElasticsearchManager(results=parser._results, host=config['ELASTICSEARCH']['HOST'], port=config['ELASTICSEARCH']['PORT'])
-        elasticsearch._validate_host()
-        elasticsearch._validate_port()
-        elasticsearch._validate_host_connection()
-        elasticsearch._connect_to_host()
-        elasticsearch._validate_index_existence(index_name=config['ELASTICSEARCH']['INDEX_NAME'])
-        elasticsearch._add_data()
-
-    if config['ACTIONS']['CREATE_ORDERS_IN_OUTPUT_DIRECTORY'] == 'True':
-        ''' Create parsed output directories in config file output directory '''
-        list_keys_to_find = [ 'directory_uics', 'directory_ord_managers' ]
-        list_directories_to_create = sorted(list(set([ order[x] for key in parser._results.keys() for order in parser._results[key] for x in list_keys_to_find ])))
-        directorymanager = DirectoryManager(directories=list_directories_to_create)
-        directorymanager._create_directories()
-
-        if config['ORDERS']['EXTENSION'] == 'doc':
-            filemanager = OrderFileManager(config_file=config_file, config=config)
-            filemanager._create_orders_word_doc(results=parser._results)
+    if monitor.files_found == 4:
+        if config['ACTIONS']['CREATE_ORDERS_IN_ELASTICSEARCH'] == 'True' or config['ACTIONS']['CREATE_ORDERS_IN_OUTPUT_DIRECTORY'] == 'True':
+            ''' Parse new files in configuration file input directory when new order files are present. '''
+            parser = AfcosParser(current_orders_files=current_orders_files, config_file=config_file, config=config)
         else:
-            critical('Missing a required value [doc] in [{}} under [ORDERS] for extension. At least one must be specified.'.format(config_file))
-            raise NoConfigFileExtensionSpecified
+            critical('Missing a required True value in [{}] under [ACTIONS] for create_orders_in_elasticsearch or create_orders_in_output_directory. At least one much be specified, both may be specified.'.format(config_file))
+            raise NoConfigFileActionSpecified
 
-    if config['ACTIONS']['ARCHIVE_ORDERS'] == 'True':
-        ''' Move orders parsed from configuration file input directory to configuration file archive directory '''
-        list_orders_to_archive = [v for key, value in parser.current_orders_files.items() for v in value.values()]
-        filemanager = OrderFileManager(config_file=config_file, config=config)
-        filemanager._archive_orders(orders_number=parser.current_orders_number, orders=list_orders_to_archive)
+        if config['ACTIONS']['CREATE_ORDERS_IN_ELASTICSEARCH'] == 'True':
+            ''' API data into Elasticsearch '''
+            elasticsearch = ElasticsearchManager(results=parser._results, host=config['ELASTICSEARCH']['HOST'], port=config['ELASTICSEARCH']['PORT'])
+            elasticsearch._validate_host()
+            elasticsearch._validate_port()
+            elasticsearch._validate_host_connection()
+            elasticsearch._connect_to_host()
+            elasticsearch._validate_index_existence(index_name=config['ELASTICSEARCH']['INDEX_NAME'])
+            elasticsearch._add_data()
 
-    ''' Update configuration file lastrun number '''
-    ConfigurationFileManager(config_file=config_file, config=config, section='LASTRUN', option='NUMBER', value=parser.current_orders_number)._update_value()
+        if config['ACTIONS']['CREATE_ORDERS_IN_OUTPUT_DIRECTORY'] == 'True':
+            ''' Create parsed output directories in config file output directory '''
+            list_keys_to_find = [ 'directory_uics', 'directory_ord_managers' ]
+            list_directories_to_create = sorted(list(set([ order[x] for key in parser._results.keys() for order in parser._results[key] for x in list_keys_to_find ])))
+            directorymanager = DirectoryManager(directories=list_directories_to_create)
+            directorymanager._create_directories()
 
-def _create_required_directories(config):
-    '''
-    Create required directories from setup.
-    '''
-    dict_directories = {
-        'directories_log' : config['DIRECTORIES']['LOG'],
-        'directories_output' : config['DIRECTORIES']['OUTPUT'],
-        'directories_uics' : config['DIRECTORIES']['UICS'],
-        'directories_ord_managers' : config['DIRECTORIES']['ORD_MANAGERS'],
-        'directories_ord_registers' : config['DIRECTORIES']['ORD_REGISTERS'],
-        'directories_iperms_integrator' : config['DIRECTORIES']['IPERMS_INTEGRATOR'],
-        'directories_orders_by_soldier' : config['DIRECTORIES']['ORDERS_BY_SOLDIER'],
-        'directories_archive' : config['DIRECTORIES']['ARCHIVE']
-    }
-    for key, value in dict_directories.items():
-    	if not exists(value):
-    		makedirs(value)
+            if config['ORDERS']['EXTENSION'] == 'doc':
+                try:
+                    if len(parser._results[next(iter(parser._results))]) > 0:
+                        filemanager = OrderFileManager(config_file=config_file, config=config)
+                        filemanager._create_orders_doc(results=parser._results)
+                    else:
+                        critical('Line [{}] in [{}] does not contain enough parsed results to create proper order documents.'.format(next(iter(parser._results)), parser.current_orders_files[parser.current_orders_number]['registry_file']))
+                except:
+                    critical('Zero results came back from [{}]. Check to make sure this batch of order files has data.'.format(parser.current_orders_files[parser.current_orders_number]['registry_file']))
+            else:
+                critical('Missing a required value [doc] in [{}] under [ORDERS] for extension. At least one must be specified.'.format(config_file))
+                raise NoConfigFileActionSpecified
+
+        if config['ACTIONS']['COMBINE_ORDERS_FOR_IPERMS_INTEGRATOR'] == 'True':
+            filemanager._combine_orders(results=parser._results)
+
+        if config['ACTIONS']['ARCHIVE_ORDERS'] == 'True':
+            ''' Move orders parsed from configuration file input directory to configuration file archive directory '''
+            list_orders_to_archive = [v for key, value in parser.current_orders_files.items() for v in value.values()]
+            filemanager = OrderFileManager(config_file=config_file, config=config)
+            filemanager._archive_orders(orders_number=parser.current_orders_number, orders=list_orders_to_archive)
+
+        ''' Update configuration file lastrun number '''
+        ConfigurationFileManager(config_file=config_file, config=config, section='LASTRUN', option='NUMBER', value=parser.current_orders_number)._update_value()
+    else:
+        ''' Batch is missing required file(s). '''
+        list_orders_to_move = [ v for key in monitor.current_orders_files.keys() for k, v in monitor.current_orders_files[key].items() ]
+        OrderFileManager(config_file=config_file, config=config)._move_mising_orders(orders_number=monitor.current_orders_number, orders=list_orders_to_move)
 
 def _sleep(config):
     ''' Wait configuration file monitoring time before checking for new orders. '''
@@ -609,7 +583,18 @@ def main():
     ''' Perfrom sanity checks on configuration file to ensure no conflicts in settings and all settings have expected/required values '''
 
     ''' Create required directories. '''
-    _create_required_directories(config)
+    list_directories_to_create = [ 
+        config['DIRECTORIES']['OUTPUT'],
+        config['DIRECTORIES']['LOG'],
+        config['DIRECTORIES']['UICS'],
+        config['DIRECTORIES']['ORD_MANAGERS'],
+        config['DIRECTORIES']['ORD_REGISTERS'],
+        config['DIRECTORIES']['IPERMS_INTEGRATOR'],
+        config['DIRECTORIES']['ORDERS_BY_SOLDIER'],
+        config['DIRECTORIES']['ARCHIVE'],
+        config['DIRECTORIES']['MISSING_FILES']
+        ]
+    DirectoryManager(directories=list_directories_to_create)._create_directories()
 
     ''' Setup logging from configuration file logging settings '''
     basicConfig(filename=config['LOGGING']['FILE'], level=config['LOGGING']['LEVEL'], format='%(asctime)s - %(levelname)s - %(message)s')
@@ -629,6 +614,10 @@ def main():
         except VariableValidationError:
             _sleep(config)
         except NameDeterminationError:
+            _sleep(config)
+        except YearDeterminationError:
+            _sleep(config)
+        except PeriodYearDeterminationError:
             _sleep(config)
         except InvalidHostError:
             _sleep(config)
