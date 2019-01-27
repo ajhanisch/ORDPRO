@@ -1,0 +1,19 @@
+------------------------------------
+CHANGELOG
+------------------------------------
+VERSION: 4.2
+DATE: 1/27/2019
+CHANGES:
+- performed complete rewrite of previous versions 
+- added much heavier class/function/method use to be more pythonic and easier to maintain
+- added custom exceptions allowing infinite monitoring loop
+- added Elastic stack integration for faster indexing/searching and ability to write web front end for state/unit level administrators in either current or future dev versions
+- added configuration file utilization instead of command line arguments
+- added ability to watch any input directory to infinitely monitor/check for newly created orders based on time set in configuration file, eliminating need for cron or scheduled task
+- added ConfigurationFileManager class to take any needed actions on config file during operations
+- modified logging capabilities, can now define log settings in configuration file
+- explicitly imported needed modules from each library
+- created separate exceptions.py file for all custom created exceptions
+- added additional specific logging output during variable validation and all functions within AfcosParser class for easier troubleshooting
+- added improved error handling during large batch orders processing, errors and logged and processing continues instead of error looping
+------------------------------------
