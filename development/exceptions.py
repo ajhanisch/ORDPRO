@@ -22,18 +22,6 @@ class VariableValidationError(Error):
     ''' Raised when AfcosParser _validate_variables is unable to match captured variables with required regex pattern '''
     pass
 
-class NameDeterminationError(Error):
-    ''' Raised when AfcosParser _determine_names is unable to determine first, middle, and last name  '''
-    pass
-
-class YearDeterminationError(Error):
-    ''' Raised when AfcosParser _determine_year is unable to determine year  '''
-    pass
-
-class PeriodYearDeterminationError(Error):
-    ''' Raised when AfcosParser _determine_period_year is unable to determine period_year '''
-    pass
-
 class InvalidHostError(Error):
     ''' Raised when ElasticsearchManager _validate_host determines the host value given is not a proper IP address '''
     pass
@@ -56,8 +44,4 @@ class FailedToAddDataToElasticsearchIndexError(Error):
 
 class NoConfigFileActionSpecified(Error):
     ''' Raised when configuration file actions section is missing a True value for both create_orders_in_elasticsearch and create_orders_in_output_directory. At least one must be set to True. '''
-    pass
-
-class NoConfigFileExtensionSpecified(Error):
-    ''' Raised when configuration file orders section is missing a [doc] value. At least one must be specified. '''
     pass
