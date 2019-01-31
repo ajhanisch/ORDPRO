@@ -1,13 +1,13 @@
 #!python3
 # -*- coding: utf-8 -*-
 
-from pprint import pprint
 from sys import exit
 from json import dumps
 from time import sleep
 from shutil import move
 from hashlib import md5
 from exceptions import *
+from time import strftime
 from re import match, sub
 from shutil import rmtree
 from fnmatch import fnmatch
@@ -30,17 +30,17 @@ class AfcosMonitor:
         debug('Checking if any orders exist in [{}].'.format(self.directory_input))
         if exists(self.directory_input) and isdir(self.directory_input):
             if not listdir(self.directory_input):
-                warning('Orders DO NOT exist in [{}].'.format(self.directory_input))
+                debug('Orders DO NOT exist in [{}].'.format(self.directory_input))
                 raise OrdersDoNotExistError
         else:
-            warning('[{}] does not exist or is not a directory.'.format(self.directory_input))
+            critical('[{}] does not exist or is not a directory.'.format(self.directory_input))
             raise OrdersDoNotExistError
 
     def _count_current_orders(self):
         debug('Counting files in [{}].'.format(self.directory_input))
-        self.count_orders = len(listdir(self.directory_input))
+        self.count_orders = len([ x for x in listdir(self.directory_input) if x.endswith('.reg') or x.endswith('.prt') ])
         if not self.count_orders > 0:
-            critical('[{}] has [{}] files.'.format(self.directory_input, self.count_orders))
+            debug('[{}] has [{}] files.'.format(self.directory_input, self.count_orders))
             raise OrdersDoNotExistError
 
     def _get_current_orders_number(self):
@@ -54,7 +54,7 @@ class AfcosMonitor:
         debug('Comparing current order batch against previous order batch.')
         self.last_orders_number = last_orders_number
         if int(self.current_orders_number) == int(self.last_orders_number):
-            critical('Current orders number [{}] is equal to last orders number [{}].'.format(self.current_orders_number, self.last_orders_number))
+            debug('Current orders number [{}] is equal to last orders number [{}].'.format(self.current_orders_number, self.last_orders_number))
             raise OrdersNumberEqualError
 
     def _gather_current_orders_files(self):
@@ -122,7 +122,8 @@ class AfcosParser:
         '''
         self._results = {}
         debug('Processing current orders number [{}]'.format(self.current_orders_number))
-        self._parse_registry_file(self.current_orders_files[self.current_orders_number]['registry_file'])
+        self.registry_file = self.current_orders_files[self.current_orders_number]['registry_file']
+        self._parse_registry_file(self.registry_file)
 
     def _parse_registry_file(self, registry_file):
         debug('Parsing [{}].'.format(registry_file))
@@ -215,10 +216,10 @@ class AfcosParser:
                 order_info['certificate_order'] = certificate_order
                 order_info['directory_uics'] = join(self.config['DIRECTORIES']['UICS'], uic, '{}___{}'.format(order_info['name'], soldier_uid))
                 order_info['directory_ord_managers'] = join(self.config['DIRECTORIES']['ORDERS_BY_SOLDIER'], '{}___{}'.format(order_info['name'], soldier_uid))
-                order_info['order_file_main'] = '{}___{}___{}___{}___{}.{}'.format(year, order_number, period_from, period_to, format, self.config['ORDERS']['EXTENSION'])
+                order_info['order_file_main'] = '{}___{}___{}___{}___{}.{}'.format(year, order_number, period_from, period_to, format, self.config['ORDERS']['EXTENSION_CREATE'])
                 order_info['link_uics_main'] = join(order_info['directory_uics'], order_info['order_file_main'])
                 order_info['link_ord_managers_main'] = join(order_info['directory_ord_managers'], order_info['order_file_main'])
-                order_info['order_file_certificate'] =  '{}___{}___{}___{}___{}.{}'.format(year, order_number, period_from, period_to, 'cert', self.config['ORDERS']['EXTENSION'])
+                order_info['order_file_certificate'] =  '{}___{}___{}___{}___{}.{}'.format(year, order_number, period_from, period_to, 'cert', self.config['ORDERS']['EXTENSION_CREATE'])
                 order_info['link_uics_certificate'] = join(order_info['directory_uics'], order_info['order_file_certificate'])
                 order_info['link_ord_managers_certificate'] = join(order_info['directory_ord_managers'], order_info['order_file_certificate'])
                 self._results[self.line_number].append(order_info)
@@ -232,7 +233,6 @@ class AfcosParser:
                     debug('Validating [{}] [{}] against pattern [{}].'.format(key, v[0], v[1]))
                 if not match(v[1], v[0]):
                     critical('Line [{}] in [{}] value [{}] does not match pattern [{}] for [{}]'.format(self.line_number, self.current_orders_files[self.current_orders_number]['registry_file'], v[0], v[1], key))
-                    # raise VariableValidationError
 
     def _generate_uid(self, plain_text):
         ''' Generated using str(uuid.uuid4()) on 2/23/2018 @ 1000 '''
@@ -257,7 +257,6 @@ class AfcosParser:
             	names['mname'] = '#'
         if len(names) != 3:
             critical('Line [{}] in [{}] unable to determine name from [{}].'.format(self.line_number, self.current_orders_files[self.current_orders_number]['registry_file'], name))
-            # raise NameDeterminationError
         else:
             return names
 
@@ -272,7 +271,6 @@ class AfcosParser:
         	year = '20{}'.format(year)        
         if len(year) != 4:
             critical('Line [{}] in [{}] unable to determine year from [{}].'.format(self.line_number, self.current_orders_files[self.current_orders_number]['registry_file'], year))
-            # raise YearDeterminationError
         else:
             return year
 
@@ -288,7 +286,6 @@ class AfcosParser:
         		period_year = '20{}'.format(period_year)
         if len(period_year) != 8:
             critical('Line [{}] in [{}] unable to determine period_year from [{}].'.format(self.line_number, self.current_orders_files[self.current_orders_number]['registry_file'], period_year))
-            # raise PeriodYearDeterminationError
         else:
             return period_year
 
@@ -322,8 +319,11 @@ class AfcosParser:
                 return certificate_order
 
 class ElasticsearchManager:
-    def __init__(self, results, host, port):
+    def __init__(self, config_file, config, results, protocol, host, port):
+        self.config_file = config_file
+        self.config = config
         self.results = results
+        self.protocol = protocol
         self.host = host
         self.port = port
 
@@ -344,7 +344,7 @@ class ElasticsearchManager:
 
     def _validate_host_connection(self):
         debug('Validating connection to [{}].'.format(self.host))
-        if urlopen('http://{}:{}'.format(self.host, self.port)).getcode() != 200:
+        if urlopen('{}://{}:{}'.format(self.protocol, self.host, self.port)).getcode() != 200:
             critical('Unable to reach host [{}]. Ensure host [{}] is up and accepting requests on port [{}].'.format(self.host, self.port, self.port))
             raise UnableToReachElasticsearchHostError
 
@@ -356,14 +356,16 @@ class ElasticsearchManager:
         debug('Validating index [{}] existence in Elasticsearch.'.format(self.index_name))
         if self.es.indices.exists(index=self.index_name) == False:
             info('Index [{}] does NOT exist. Creating now.'.format(self.index_name))
-            self._define_index()
+            self._define_index(shards=int(self.config['ELASTICSEARCH']['SHARDS']), replicas=int(self.config['ELASTICSEARCH']['REPLICAS']))
             self._create_index()
 
-    def _define_index(self):
+    def _define_index(self, shards, replicas):
+        self.shards = shards
+        self.replicas = replicas
         self.index_settings = {
         	"settings" : {
-        		"number_of_shards" : 1,
-        		"number_of_replicas" : 0
+        		"number_of_shards" : self.shards,
+        		"number_of_replicas" : self.replicas
         	},
           "mappings": {
             "_doc": {
@@ -408,7 +410,7 @@ class ElasticsearchManager:
                 json_data = order
                 ''' Add individual order json data to Elasticseach index '''
                 debug('Adding order number [{}] from year [{}] to index [{}].'.format(order['order_number'], order['year'], self.index_name))
-                result_add_data = self.es.index(index=self.index_name, doc_type='_doc', id=order['document_uid'], body=json_data)
+                result_add_data = self.es.index(index=self.index_name, doc_type=self.config['ELASTICSEARCH']['DOC_TYPE'], id=order['document_uid'], body=json_data)
                 if result_add_data['result'] != 'created' and result_add_data['result'] != 'updated':
                     critical('Did not receive response of created or updated when trying to add order number [{}] from [{}]. Respone was [{}]. Investigate immediately.'.format(order['order_number'], order['year'], result_add_data['result']))
                     raise FailedToAddDataToElasticsearchIndexError
@@ -434,23 +436,30 @@ class OrderFileManager:
         self.config_file = config_file
         self.config = config
 
-    def _archive_orders(self, orders_number, orders):
+    def _archive_orders(self, year, orders_number, orders):
         ''' This method requires a list of full path orders to archive '''
-        debug('Archiving orders number [{}] files.'.format(orders_number))
+        directory_archive_year = join(self.config['DIRECTORIES']['ARCHIVE'], '{}_orders'.format(year[0]))
+        debug('Archiving orders number [{}] files.'.format(directory_archive_year))
+        if not exists(directory_archive_year):
+            directory_to_create = [ directory_archive_year ]
+            DirectoryManager(directories=directory_to_create)._create_directories()
         for order in orders:
-            debug('Moving [{}] to [{}].'.format(order, self.config['DIRECTORIES']['ARCHIVE']))
-            move(order, self.config['DIRECTORIES']['ARCHIVE'])
+            debug('Moving [{}] to [{}].'.format(order, directory_archive_year))
+            move(order, directory_archive_year)
 
-    def _move_mising_orders(self, orders_number, orders):
-        ''' This method requires a list of full path orders to archive '''
-        debug('Moving orders number [{}] files to [{}].'.format(orders_number, self.config['DIRECTORIES']['MISSING_FILES']))
+    def _move_orders(self, move_time, orders_number, orders, destination):
+        ''' This method requires a list of full path orders to move '''
+        directory_move_time = join(destination, '{}_orders'.format(move_time))
+        debug('Moving orders number [{}] files to [{}].'.format(orders_number, directory_move_time))
+        if not exists(directory_move_time):
+            directory_to_create = [ directory_move_time ]
+            DirectoryManager(directories=directory_to_create)._create_directories()
         for order in orders:
-            debug('Moving [{}] to [{}].'.format(order, self.config['DIRECTORIES']['MISSING_FILES']))
-            move(order, self.config['DIRECTORIES']['MISSING_FILES'])
+            debug('Moving [{}] to [{}].'.format(order, directory_move_time))
+            move(order, directory_move_time)
 
     def _create_orders_doc(self, results):
         ''' This method requires full results instead of a list '''
-        ''' Gather a list of dictionaries containing the following keys with their corresponding values '''
         list_keys_to_find = [ 'main_order', 'certificate_order', 'directory_uics', 'directory_ord_managers', 'order_file_main', 'order_file_certificate' ]
         list_orders_to_create = ResultsParser(results=results, keys=list_keys_to_find)._look_for_keys()
 
@@ -467,11 +476,58 @@ class OrderFileManager:
                 with open(join(order['directory_ord_managers'], order['order_file_certificate']), 'w') as f:
                     f.write(order.get('certificate_order'))
 
-    def _combine_orders(self, results):
-        list_keys_to_find = [ 'main_order' ]
+    def _combine_orders(self, results, registry_file):
+        list_keys_to_find = [ 'main_order', 'year', 'order_number' ]
         list_orders_to_combine = ResultsParser(results=results, keys=list_keys_to_find)._look_for_keys()
-        pprint(list_orders_to_combine)
-        exit()
+        list_orders_combined = []
+        list_next_batch = [ order for order in list_orders_to_combine if order['order_number'] not in list_orders_combined and order['main_order'] != None and order['main_order'] != 'None' ]
+        first_order_number = registry_file.split(sep)[-1][3:9]
+        first_order_number = '{}-{}'.format(first_order_number[:3], first_order_number[3:])
+        last_order_number = list_next_batch[-1]['order_number']
+        directory_year_perms_integrator = join(self.config['DIRECTORIES']['IPERMS_INTEGRATOR'], '{}_orders'.format(list_next_batch[0]['year']))
+
+        if not exists(directory_year_perms_integrator):
+            debug('Creating directory [{}].'.format(directory_year_perms_integrator))
+            directory_to_create = [ directory_year_perms_integrator ]
+            DirectoryManager(directories=directory_to_create)._create_directories()
+
+        if len(list_next_batch) <= int(self.config['ORDERS']['COMBINE_ORDERS_BATCH_SIZE']):
+            file_output = join(directory_year_perms_integrator, '{}_{}_{}.{}'.format(list_next_batch[0]['year'], first_order_number, last_order_number, self.config['ORDERS']['EXTENSION_COMBINE']))
+            if not exists(file_output):
+                debug('Combinging orders number [{}] to [{}] from [{}] into [{}].'.format(first_order_number, last_order_number, list_next_batch[0]['year'], file_output))
+                with open(file_output, 'a') as output:
+                    for order in list_next_batch:
+                        if order['order_number'] not in list_orders_combined:
+                            debug('Writing order [{}] from [{}] to [{}].'.format(order.get('order_number'), order.get('year'), file_output))
+                            output.write(order.get('main_order'))
+                            list_orders_combined.append(order['order_number'])
+            else:
+                debug('[{}] already exists.'.format(file_output))
+
+        if len(list_next_batch) > int(self.config['ORDERS']['COMBINE_ORDERS_BATCH_SIZE']):
+            list_batch = list_next_batch[:int(self.config['ORDERS']['COMBINE_ORDERS_BATCH_SIZE'])]
+            last_order_number = list_batch[-1]['order_number']
+            file_output = join(directory_year_perms_integrator, '{}_{}_{}.{}'.format(list_batch[0]['year'], first_order_number, last_order_number, self.config['ORDERS']['EXTENSION_COMBINE']))
+            while True:
+                if not exists(file_output):
+                    debug('Combinging orders number [{}] to [{}] from [{}] into [{}].'.format(first_order_number, last_order_number, list_batch[0]['year'], file_output))
+                    with open(file_output, 'a') as output:
+                        for order in list_batch:
+                            if order['order_number'] not in list_orders_combined:
+                                debug('Writing order [{}] from [{}] to [{}].'.format(order.get('order_number'), order.get('year'), file_output))
+                                output.write(order.get('main_order'))
+                                list_orders_combined.append(order['order_number'])
+                else:
+                    debug('[{}] already exists.'.format(file_output))
+                    break
+                list_batch = [ order for order in list_next_batch if order['order_number'] not in list_orders_combined and order['main_order'] != None and order['main_order'] != 'None' ]
+                list_batch = list_batch[:int(self.config['ORDERS']['COMBINE_ORDERS_BATCH_SIZE'])]
+                if len(list_batch) > 0:
+                    first_order_number =  list_batch[0]['order_number']
+                    last_order_number = list_batch[-1]['order_number']
+                    file_output = join(directory_year_perms_integrator, '{}_{}_{}.{}'.format(list_batch[0]['year'], first_order_number, last_order_number, self.config['ORDERS']['EXTENSION_COMBINE']))
+                else:
+                    break
 
 class ConfigurationFileManager:
     def __init__(self, config_file, config, section, option, value):
@@ -506,12 +562,14 @@ class ResultsParser:
 
 def _watchdog(config_file, config):
     ''' Monitor configuration file input directory for any new order files. '''
+    move_time = strftime('%Y-%m-%d_%H-%M-%S')
     monitor = AfcosMonitor(directory_input=config['DIRECTORIES']['INPUT'])
     monitor._check_orders_directory()
     monitor._count_current_orders()
     monitor._get_current_orders_number()
     monitor._compare_orders_numbers(last_orders_number=config['LASTRUN']['NUMBER'])
     current_orders_files = monitor._gather_current_orders_files()
+
     if monitor.files_found == 4:
         if config['ACTIONS']['CREATE_ORDERS_IN_ELASTICSEARCH'] == 'True' or config['ACTIONS']['CREATE_ORDERS_IN_OUTPUT_DIRECTORY'] == 'True':
             ''' Parse new files in configuration file input directory when new order files are present. '''
@@ -522,7 +580,7 @@ def _watchdog(config_file, config):
 
         if config['ACTIONS']['CREATE_ORDERS_IN_ELASTICSEARCH'] == 'True':
             ''' API data into Elasticsearch '''
-            elasticsearch = ElasticsearchManager(results=parser._results, host=config['ELASTICSEARCH']['HOST'], port=config['ELASTICSEARCH']['PORT'])
+            elasticsearch = ElasticsearchManager(config_file=config_file, config=config, results=parser._results, protocol=config['ELASTICSEARCH']['PROTOCOL'], host=config['ELASTICSEARCH']['HOST'], port=config['ELASTICSEARCH']['PORT'])
             elasticsearch._validate_host()
             elasticsearch._validate_port()
             elasticsearch._validate_host_connection()
@@ -537,34 +595,36 @@ def _watchdog(config_file, config):
             directorymanager = DirectoryManager(directories=list_directories_to_create)
             directorymanager._create_directories()
 
-            if config['ORDERS']['EXTENSION'] == 'doc':
-                try:
-                    if len(parser._results[next(iter(parser._results))]) > 0:
+            if config['ORDERS']['EXTENSION_CREATE'] == 'doc':
+                list_keys_to_find = [ 'main_order' ]
+                list_main_orders_to_test = list(set(order[x] for key in parser._results.keys() for order in parser._results[key] for x in list_keys_to_find))
+                if len(list_main_orders_to_test) != 0 and None not in list_main_orders_to_test or len(list_main_orders_to_test) > 1:
+                    filemanager = OrderFileManager(config_file=config_file, config=config)
+                    filemanager._create_orders_doc(results=parser._results)
+
+                    if config['ACTIONS']['COMBINE_ORDERS_FOR_IPERMS_INTEGRATOR'] == 'True':
+                        filemanager._combine_orders(results=parser._results, registry_file=parser.registry_file)
+
+                    if config['ACTIONS']['ARCHIVE_ORDERS'] == 'True':
+                        ''' Move orders parsed from configuration file input directory to configuration file archive directory '''
+                        list_orders_to_archive = [v for key, value in parser.current_orders_files.items() for v in value.values()]
+                        archive_year = list(set(v['year'] for value in parser._results.values() for v in value if len(value) > 0))
                         filemanager = OrderFileManager(config_file=config_file, config=config)
-                        filemanager._create_orders_doc(results=parser._results)
-                    else:
-                        critical('Line [{}] in [{}] does not contain enough parsed results to create proper order documents.'.format(next(iter(parser._results)), parser.current_orders_files[parser.current_orders_number]['registry_file']))
-                except:
-                    critical('Zero results came back from [{}]. Check to make sure this batch of order files has data.'.format(parser.current_orders_files[parser.current_orders_number]['registry_file']))
+                        filemanager._archive_orders(year=archive_year, orders_number=parser.current_orders_number, orders=list_orders_to_archive)
+                else:
+                    critical('[{}] does not contain enough parsed results to create proper order documents. Check the registry file and main orders file for proper data.'.format(parser.current_orders_files[parser.current_orders_number]['registry_file']))
+                    ''' Batch is missing required data in either *m.prt, *c.prt, or *r.reg '''
+                    list_orders_to_move = [ v for key in monitor.current_orders_files.keys() for k, v in monitor.current_orders_files[key].items() ]
+                    OrderFileManager(config_file=config_file, config=config)._move_orders(move_time=move_time, orders_number=monitor.current_orders_number, orders=list_orders_to_move, destination=config['DIRECTORIES']['MISSING_ORDER_DATA'])
             else:
                 critical('Missing a required value [doc] in [{}] under [ORDERS] for extension. At least one must be specified.'.format(config_file))
                 raise NoConfigFileActionSpecified
-
-        if config['ACTIONS']['COMBINE_ORDERS_FOR_IPERMS_INTEGRATOR'] == 'True':
-            filemanager._combine_orders(results=parser._results)
-
-        if config['ACTIONS']['ARCHIVE_ORDERS'] == 'True':
-            ''' Move orders parsed from configuration file input directory to configuration file archive directory '''
-            list_orders_to_archive = [v for key, value in parser.current_orders_files.items() for v in value.values()]
-            filemanager = OrderFileManager(config_file=config_file, config=config)
-            filemanager._archive_orders(orders_number=parser.current_orders_number, orders=list_orders_to_archive)
-
         ''' Update configuration file lastrun number '''
         ConfigurationFileManager(config_file=config_file, config=config, section='LASTRUN', option='NUMBER', value=parser.current_orders_number)._update_value()
     else:
-        ''' Batch is missing required file(s). '''
+        ''' Batch is missing required files (either *m.prt, *c.prt, or *r.reg) '''
         list_orders_to_move = [ v for key in monitor.current_orders_files.keys() for k, v in monitor.current_orders_files[key].items() ]
-        OrderFileManager(config_file=config_file, config=config)._move_mising_orders(orders_number=monitor.current_orders_number, orders=list_orders_to_move)
+        OrderFileManager(config_file=config_file, config=config)._move_orders(move_time=move_time, orders_number=monitor.current_orders_number, orders=list_orders_to_move, destination=config['DIRECTORIES']['MISSING_ORDER_FILES'])
 
 def _sleep(config):
     ''' Wait configuration file monitoring time before checking for new orders. '''
@@ -592,7 +652,8 @@ def main():
         config['DIRECTORIES']['IPERMS_INTEGRATOR'],
         config['DIRECTORIES']['ORDERS_BY_SOLDIER'],
         config['DIRECTORIES']['ARCHIVE'],
-        config['DIRECTORIES']['MISSING_FILES']
+        config['DIRECTORIES']['MISSING_ORDER_FILES'],
+        config['DIRECTORIES']['MISSING_ORDER_DATA']
         ]
     DirectoryManager(directories=list_directories_to_create)._create_directories()
 
@@ -612,12 +673,6 @@ def main():
         except MissingRequiredOrdersFilesError:
             _sleep(config)
         except VariableValidationError:
-            _sleep(config)
-        except NameDeterminationError:
-            _sleep(config)
-        except YearDeterminationError:
-            _sleep(config)
-        except PeriodYearDeterminationError:
             _sleep(config)
         except InvalidHostError:
             _sleep(config)
