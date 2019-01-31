@@ -2,6 +2,22 @@
 CHANGELOG
 ------------------------------------
 VERSION: 4.2
+DATE: 1/30/2019
+CHANGES:
+- modified various logging output levels throughout from criticals to debugs
+- removed some raise exceptions
+- added individual settings for the extension of orders being created and orders being combined to allow for customization down the line
+- added a protocol setting for elasticsearchmanager to specify http or https for customization down the line
+- added shards and replicas settings for elasticsearchmanager for customization down the line
+- added doc_type setting for elasticsearchmanager for customization down the line
+- modified archiving orders to create and store archived orders in a folder specific to the order year, YY_orders
+- modified moving orders into a single function that will move problem order files to specified destination instead of two separate functions for two destinations
+- rebuilt and improved orders combining functionality, this is now handling and sorting problem order files to their appropriate locations (MISSING_ORDER_FILES and MISSING_ORDER_DATA)
+- added a batch number setting for combining orders (maximum should still be 250)
+- modified watchdog functionality to be stronger and less error prone as well as handle errors properly
+- added MISSING_ORDER_DATA and MISSING_ORDER_FILES directories to house their perspective problem order files
+------------------------------------
+VERSION: 4.2
 DATE: 1/27/2019
 CHANGES:
 - performed complete rewrite of previous versions 
